@@ -27,10 +27,11 @@ func main() {
 func run(devMode bool) error {
 	log.Infoln("Starting LinCast")
 
-	// Arguments should be obtained from settings.
-	err := backend.Run(8080, true, devMode, true)
+	// Make a new instance of the server.
+	sv := backend.New(8080, true, devMode, true)
+	err := sv.ListenAndServe()
 	if err != nil {
-		return err
+		log.Panicln(err.Error())
 	}
 
 	return nil

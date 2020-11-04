@@ -47,7 +47,10 @@ func (s spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.FileServer(pkger.Dir(s.staticPath)).ServeHTTP(w, r)
 }
 
-func setup(port uint16, localServer bool, devMode bool, logRequests bool) error {
+// New returns a new instance of the server. To execute it, the method `ListenAndServe` must be called.
+func New(port uint16, localServer bool, devMode bool, logRequests bool) http.Server {
+	// Include the frontend inside the binary.
+	_ = pkger.Include(frontendPath)
 	router := mux.NewRouter()
 
 	if logRequests {
@@ -64,6 +67,9 @@ func setup(port uint16, localServer bool, devMode bool, logRequests bool) error 
 		addr = "127.0.0.1"
 	}
 
+	router.PathPrefix("/").Handler(spa)
+	// APIs here
+
 	s := http.Server{
 		Addr:           addr + ":" + strconv.Itoa(int(port)),
 		Handler:        router,
@@ -72,9 +78,6 @@ func setup(port uint16, localServer bool, devMode bool, logRequests bool) error 
 		MaxHeaderBytes: 8000, // 8KB
 	}
 
-	router.PathPrefix("/").Handler(spa)
-	// APIs here
-
 	log.WithFields(log.Fields{
 		"address":        s.Addr,
 		"readTimeout":    s.ReadTimeout.String(),
@@ -82,12 +85,5 @@ func setup(port uint16, localServer bool, devMode bool, logRequests bool) error 
 		"maxHeaderBytes": s.MaxHeaderBytes,
 	}).Infoln("Starting server")
 
-	return s.ListenAndServe()
-}
-
-func Run(port uint16, localServer bool, devMode bool, logRequests bool) error {
-	// Include the frontend inside the binary.
-	_ = pkger.Include(frontendPath)
-
-	return setup(port, localServer, devMode, logRequests)
+	return s
 }
