@@ -8,16 +8,16 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/markbates/pkger"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
 	// Frontend path ("/" is the root of the project).
-	frontendPath = "/webui/frontend/dist/spa"
+	frontendPath = "/webui/frontend/dist"
 )
 
 type spaHandler struct {
 	staticPath string
-	indexPath  string
 	devMode    bool
 }
 
@@ -25,6 +25,8 @@ func (s spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(s.staticPath, r.URL.Path)
 
 	if s.devMode {
+		log.Debugln("Dev mode enabled, adding cache prevention headers")
+
 		// Avoid cache if we are on development mode.
 		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 		w.Header().Set("Pragma", "no-cache")
@@ -34,6 +36,7 @@ func (s spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Check if the file exists.
 	_, err := pkger.Stat(path)
 	if err != nil {
+		log.WithField("requestedPath", r.RequestURI).Warnln("Unrecognized path requested, redirecting to root")
 		// If not, then redirect the request to the root path.
 		http.Redirect(w, r, "/", http.StatusPermanentRedirect)
 
@@ -44,7 +47,7 @@ func (s spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.FileServer(pkger.Dir(s.staticPath)).ServeHTTP(w, r)
 }
 
-func setup(port uint16, localServer bool, frontendPath string, devMode bool, logRequests bool) error {
+func setup(port uint16, localServer bool, devMode bool, logRequests bool) error {
 	router := mux.NewRouter()
 
 	if logRequests {
@@ -53,7 +56,6 @@ func setup(port uint16, localServer bool, frontendPath string, devMode bool, log
 
 	spa := spaHandler{
 		staticPath: frontendPath,
-		indexPath:  "index.html",
 		devMode:    devMode,
 	}
 
@@ -73,6 +75,13 @@ func setup(port uint16, localServer bool, frontendPath string, devMode bool, log
 	router.PathPrefix("/").Handler(spa)
 	// APIs here
 
+	log.WithFields(log.Fields{
+		"address":        s.Addr,
+		"readTimeout":    s.ReadTimeout.String(),
+		"writeTimeout":   s.WriteTimeout.String(),
+		"maxHeaderBytes": s.MaxHeaderBytes,
+	}).Infoln("Starting server")
+
 	return s.ListenAndServe()
 }
 
@@ -80,5 +89,5 @@ func Run(port uint16, localServer bool, devMode bool, logRequests bool) error {
 	// Include the frontend inside the binary.
 	_ = pkger.Include(frontendPath)
 
-	return setup(port, localServer, frontendPath, devMode, logRequests)
+	return setup(port, localServer, devMode, logRequests)
 }

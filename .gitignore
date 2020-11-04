@@ -20,3 +20,5 @@
 
 # Pkger
 pkged.go
+
+*.log
