@@ -13,7 +13,7 @@ import (
 
 const (
 	// Frontend path ("/" is the root of the project).
-	frontendPath = "/webui/frontend/dist"
+	frontendPath = "/webui/frontend/dist/spa"
 )
 
 type spaHandler struct {
@@ -48,27 +48,15 @@ func (s spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // New returns a new instance of the server. To execute it, the method `ListenAndServe` must be called.
-func New(port uint16, localServer bool, devMode bool, logRequests bool) http.Server {
+func New(port uint16, localServer bool, devMode bool, logRequests bool) *http.Server {
 	// Include the frontend inside the binary.
 	_ = pkger.Include(frontendPath)
-	router := mux.NewRouter()
-
-	if logRequests {
-		router.Use(loggingMiddleware)
-	}
-
-	spa := spaHandler{
-		staticPath: frontendPath,
-		devMode:    devMode,
-	}
+	router := newRouter(devMode, logRequests)
 
 	var addr string
 	if localServer {
 		addr = "127.0.0.1"
 	}
-
-	router.PathPrefix("/").Handler(spa)
-	// APIs here
 
 	s := http.Server{
 		Addr:           addr + ":" + strconv.Itoa(int(port)),
@@ -85,5 +73,23 @@ func New(port uint16, localServer bool, devMode bool, logRequests bool) http.Ser
 		"maxHeaderBytes": s.MaxHeaderBytes,
 	}).Infoln("Starting server")
 
-	return s
+	return &s
+}
+
+func newRouter(devMode, logRequests bool) *mux.Router {
+	router := mux.NewRouter()
+
+	if logRequests {
+		router.Use(loggingMiddleware)
+	}
+
+	spa := spaHandler{
+		staticPath: frontendPath,
+		devMode:    devMode,
+	}
+
+	router.PathPrefix("/").Handler(spa)
+	// APIs here
+
+	return router
 }
