@@ -33,7 +33,7 @@ func (s *ServerTestSuite) TestIndex() {
 	}
 
 	// Get the absolute path of the frontend.
-	fd, err := filepath.Abs("../frontend/dist/spa/index.html")
+	fd, err := filepath.Abs("../frontend/dist/index.html")
 	if err != nil {
 		panic(err)
 	}
