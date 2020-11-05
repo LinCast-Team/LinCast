@@ -1,5 +1,6 @@
 # IDE
 .idea/
+.vscode/
 
 # Binaries for programs and plugins
 *.exe
@@ -16,3 +17,8 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# Pkger
+pkged.go
+
+*.log
