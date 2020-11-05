@@ -1,0 +1,6 @@
+backend:
+  - ./*.go
+  - webui/backend/**/*
+
+frontend:
+  - webui/frontend/**/*
