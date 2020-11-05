@@ -13,7 +13,7 @@ import (
 
 const (
 	// Frontend path ("/" is the root of the project).
-	frontendPath = "/webui/frontend/dist/spa"
+	frontendPath = "/webui/frontend/dist"
 )
 
 type spaHandler struct {
