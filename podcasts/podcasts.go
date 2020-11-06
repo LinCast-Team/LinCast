@@ -1,6 +1,7 @@
 package podcasts
 
 import (
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
 
@@ -22,6 +23,13 @@ func GetPodcast(feedURL string) (*gofeed.Feed, error) {
 	if err != nil {
 		return nil, errorx.DataUnavailable.Wrap(err, "the request has failed")
 	}
+
+	defer func() {
+		err := res.Body.Close()
+		if err != nil {
+			log.Error(errorx.Decorate(err, "error when trying to close response's body"))
+		}
+	}()
 
 	parser := gofeed.NewParser()
 	feed, err := parser.Parse(res.Body)
