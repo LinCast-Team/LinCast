@@ -1,8 +1,6 @@
 package podcasts
 
 import (
-	log "github.com/sirupsen/logrus"
-	"net/http"
 	"net/url"
 
 	"github.com/joomcode/errorx"
@@ -11,30 +9,18 @@ import (
 
 // GetPodcast returns information of a podcast parsed into a struct of type *gofeed.Feed. The information will be
 // obtained from the feed's URL. Possible errors:
-// 	- errorx.IllegalFormat: if the format of the URL or the feed are incorrect.
-// 	- errorx.DataUnavailable: if the request to `feedURL` fails.
+// 	- errorx.IllegalFormat: if the format of the URL is incorrect.
+// 	- errorx.ExternalError: if the request to `feedURL` or the parsing of the response fails.
 func GetPodcast(feedURL string) (*gofeed.Feed, error) {
 	valid, parsedURL := isValidURL(feedURL)
 	if !valid {
 		return nil, errorx.IllegalFormat.New("the url '%s' is not correctly formatted", feedURL)
 	}
 
-	res, err := http.Get(parsedURL.String())
-	if err != nil {
-		return nil, errorx.DataUnavailable.Wrap(err, "the request has failed")
-	}
-
-	defer func() {
-		err := res.Body.Close()
-		if err != nil {
-			log.Error(errorx.Decorate(err, "error when trying to close response's body"))
-		}
-	}()
-
 	parser := gofeed.NewParser()
-	feed, err := parser.Parse(res.Body)
+	feed, err := parser.ParseURL(parsedURL.String())
 	if err != nil {
-		return nil, errorx.IllegalFormat.Wrap(err, "the feed can't be parsed")
+		return nil, errorx.ExternalError.New("the feed can't be obtained/parsed")
 	}
 
 	return feed, nil

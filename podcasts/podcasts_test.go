@@ -43,8 +43,8 @@ func (s *PodcastsTestSuite) TestNewPodcast() {
 	p, err = GetPodcast(wrongURL)
 
 	if assert.Error(err, "if there is a problem with the request an error should be returned") {
-		assert.True(errorx.IsOfType(err, errorx.DataUnavailable), "the returned error should be of type "+
-			"DataUnavailable")
+		assert.True(errorx.IsOfType(err, errorx.ExternalError), "the returned error should be of type "+
+			"ExternalError")
 	}
 	assert.Nil(p, "the returned struct should be nil")
 }
