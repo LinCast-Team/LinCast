@@ -2,16 +2,57 @@ package podcasts
 
 import (
 	"net/url"
+	"time"
 
 	"github.com/joomcode/errorx"
 	"github.com/mmcdole/gofeed"
 )
 
+// Podcast is the structure that represents a podcast.
+type Podcast struct {
+	ID          int
+	AuthorName  string
+	AuthorEmail string
+	Title       string
+	Description string
+	Categories  []string
+	ImageURL    string
+	ImageTitle  string
+	Link        string
+	FeedLink    string
+	FeedType    string
+	FeedVersion string
+	Language    string
+	Updated     *time.Time // Use the field gofeed.Feed.UpdatedParsed
+}
+
+// Episode is the structure that represent an episode of a podcast.
+type Episode struct {
+	ParentPodcastID int
+	Title           string
+	Description     string
+	Link            string
+	Published       *time.Time // Use the field gofeed.Item.PublishedParsed
+	AuthorName      string
+	GUID            string // Unique identifier for an item
+	ImageURL        string
+	ImageTitle      string
+	Categories      []string
+	EnclosureURL    string
+	EnclosureLength string
+	EnclosureType   string
+	Season          string // Comes from gofeed.Item.ITunesExt.Season - can be empty
+}
+
+// Episodes is a slice of structures of type Episode.
+type Episodes []Episode
+
 // GetPodcast returns information of a podcast parsed into a struct of type *gofeed.Feed. The information will be
-// obtained from the feed's URL. Possible errors:
+// obtained from the feed's URL.
+// Possible errors:
 // 	- errorx.IllegalFormat: if the format of the URL is incorrect.
 // 	- errorx.ExternalError: if the request to `feedURL` or the parsing of the response fails.
-func GetPodcast(feedURL string) (*gofeed.Feed, error) {
+func GetPodcast(feedURL string) (*Podcast, error) {
 	valid, parsedURL := isValidURL(feedURL)
 	if !valid {
 		return nil, errorx.IllegalFormat.New("the url '%s' is not correctly formatted", feedURL)
@@ -23,7 +64,64 @@ func GetPodcast(feedURL string) (*gofeed.Feed, error) {
 		return nil, errorx.ExternalError.New("the feed can't be obtained/parsed")
 	}
 
-	return feed, nil
+	p := &Podcast{
+		ID:          0,
+		AuthorName:  feed.Author.Name,
+		AuthorEmail: feed.Author.Email,
+		Title:       feed.Title,
+		Description: feed.Description,
+		Categories:  feed.Categories,
+		ImageURL:    feed.Image.URL,
+		ImageTitle:  feed.Image.Title,
+		Link:        feed.Link,
+		FeedLink:    feed.FeedLink,
+		FeedType:    feed.FeedType,
+		FeedVersion: feed.FeedVersion,
+		Language:    feed.Language,
+		Updated:     feed.UpdatedParsed,
+	}
+
+	return p, nil
+}
+
+// GetEpisodes returns the episodes (struct Episodes) of the given Podcast.
+// Possible errors:
+// 	- errorx.ExternalError: if the request to `p.FeedLink` or the parsing of the response fails.
+func (p *Podcast) GetEpisodes() (*Episodes, error) {
+	parser := gofeed.NewParser()
+	feed, err := parser.ParseURL(p.FeedLink)
+	if err != nil {
+		return nil, errorx.ExternalError.New("the feed can't be obtained/parsed")
+	}
+
+	var episodes Episodes
+	for _, item := range feed.Items {
+		e := Episode{
+			ParentPodcastID: p.ID,
+			Title:           item.Title,
+			Description:     item.Description,
+			Link:            item.Link,
+			Published:       item.PublishedParsed,
+			AuthorName:      item.Author.Name,
+			GUID:            item.GUID,
+			ImageURL:        item.Image.URL,
+			ImageTitle:      item.Image.Title,
+			Categories:      item.Categories,
+			EnclosureURL:    item.Enclosures[0].URL,
+			EnclosureLength: item.Enclosures[0].Length,
+			EnclosureType:   item.Enclosures[0].Type,
+			Season:          item.ITunesExt.Season,
+		}
+
+		episodes = append(episodes, e)
+	}
+
+	// Not needed (I think)
+	//sort.SliceStable(episodes, func(i, j int) bool {
+	//	return episodes[i].Published.Before(*episodes[j].Published)
+	//})
+
+	return &episodes, nil
 }
 
 func isValidURL(url1 string) (bool, url.URL) {

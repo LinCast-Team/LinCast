@@ -4,6 +4,7 @@ import (
 	"github.com/joomcode/errorx"
 	assert2 "github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"reflect"
 	"testing"
 )
 
@@ -19,11 +20,7 @@ func (s *PodcastsTestSuite) SetupTest() {
 
 func (s *PodcastsTestSuite) BeforeTest(_, _ string) {}
 
-func (s *PodcastsTestSuite) TestQueue() {
-
-}
-
-func (s *PodcastsTestSuite) TestNewPodcast() {
+func (s *PodcastsTestSuite) TestGetPodcast() {
 	assert := assert2.New(s.T())
 
 	p, err := GetPodcast(s.feedURL)
@@ -47,6 +44,23 @@ func (s *PodcastsTestSuite) TestNewPodcast() {
 			"ExternalError")
 	}
 	assert.Nil(p, "the returned struct should be nil")
+}
+
+func (s *PodcastsTestSuite) TestGetEpisodes() {
+	assert := assert2.New(s.T())
+
+	p, err := GetPodcast(s.feedURL)
+	if err != nil {
+		assert.FailNow(err.Error(), "a podcast to test method `GetEpisodes` is needed")
+	}
+	if reflect.ValueOf(p).IsNil() {
+		assert.FailNow("a pointer to a Podcast instance is needed")
+	}
+
+	eps, err := p.GetEpisodes()
+
+	assert.NoError(err, "episodes should be obtained without errors")
+	assert.True(len(*eps) != 0, "a slice with episodes should be returned")
 }
 
 func (s *PodcastsTestSuite) AfterTest(_, _ string) {}
