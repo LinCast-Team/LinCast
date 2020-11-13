@@ -11,6 +11,7 @@ import (
 // Podcast is the structure that represents a podcast.
 type Podcast struct {
 	ID          int
+	Subscribed  bool
 	AuthorName  string
 	AuthorEmail string
 	Title       string
@@ -23,16 +24,18 @@ type Podcast struct {
 	FeedType    string
 	FeedVersion string
 	Language    string
-	Updated     *time.Time // Use the field gofeed.Feed.UpdatedParsed
+	Updated     time.Time // Use the field gofeed.Feed.UpdatedParsed
+	LastCheck   time.Time
+	Added       time.Time
 }
 
 // Episode is the structure that represent an episode of a podcast.
 type Episode struct {
+	ID              int
 	ParentPodcastID int
 	Title           string
 	Description     string
 	Link            string
-	Published       *time.Time // Use the field gofeed.Item.PublishedParsed
 	AuthorName      string
 	GUID            string // Unique identifier for an item
 	ImageURL        string
@@ -41,7 +44,10 @@ type Episode struct {
 	EnclosureURL    string
 	EnclosureLength string
 	EnclosureType   string
-	Season          string // Comes from gofeed.Item.ITunesExt.Season - can be empty
+	Season          string    // Comes from gofeed.Item.ITunesExt.Season - can be empty
+	Published       time.Time // Use the field gofeed.Item.PublishedParsed
+	Played          bool
+	CurrentProgress string
 }
 
 // Episodes is a slice of structures of type Episode.
@@ -64,8 +70,11 @@ func GetPodcast(feedURL string) (*Podcast, error) {
 		return nil, errorx.ExternalError.New("the feed can't be obtained/parsed")
 	}
 
+	now := time.Now()
+
 	p := &Podcast{
 		ID:          0,
+		Subscribed:  false,
 		AuthorName:  feed.Author.Name,
 		AuthorEmail: feed.Author.Email,
 		Title:       feed.Title,
@@ -78,7 +87,9 @@ func GetPodcast(feedURL string) (*Podcast, error) {
 		FeedType:    feed.FeedType,
 		FeedVersion: feed.FeedVersion,
 		Language:    feed.Language,
-		Updated:     feed.UpdatedParsed,
+		Updated:     *feed.UpdatedParsed,
+		LastCheck:   now,
+		Added:       now,
 	}
 
 	return p, nil
@@ -101,7 +112,7 @@ func (p *Podcast) GetEpisodes() (*Episodes, error) {
 			Title:           item.Title,
 			Description:     item.Description,
 			Link:            item.Link,
-			Published:       item.PublishedParsed,
+			Published:       *item.PublishedParsed,
 			AuthorName:      item.Author.Name,
 			GUID:            item.GUID,
 			ImageURL:        item.Image.URL,
@@ -111,6 +122,8 @@ func (p *Podcast) GetEpisodes() (*Episodes, error) {
 			EnclosureLength: item.Enclosures[0].Length,
 			EnclosureType:   item.Enclosures[0].Type,
 			Season:          item.ITunesExt.Season,
+			Played:          false,
+			CurrentProgress: "00:00:00",
 		}
 
 		episodes = append(episodes, e)
