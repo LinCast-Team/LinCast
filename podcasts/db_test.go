@@ -86,6 +86,13 @@ func (s *DBTestSuite) TestInsertPodcast() {
 	err = db.InsertPodcast(&p)
 
 	assert.NoError(err, "the podcast should be added without problems")
+
+	err = db.InsertPodcast(&p)
+
+	if assert.Error(err, "if the podcast already exists (has the same FeedLink), an error should be returned") {
+		assert.True(errorx.IsOfType(err, errorx.RejectedOperation), "the returned error should be of "+
+			"type errorx.RejectedOperation")
+	}
 }
 
 func (s *DBTestSuite) TestDeletePodcast() {
@@ -252,8 +259,8 @@ func (s *DBTestSuite) TestGetAllPodcasts() {
 			Categories:  []string{"Tech", "Another Thing", "Sky is Blue"},
 			ImageURL:    "https://dogsimages.dog/dog.png",
 			ImageTitle:  "A beauty dog",
-			Link:        "https://random-podcast1234.org",
-			FeedLink:    "https://random-podcast1234.org/feed",
+			Link:        "https://random-podcast12345.org",
+			FeedLink:    "https://random-podcast12345.org/feed",
 			FeedType:    "rss",
 			FeedVersion: "2.0",
 			Language:    "en",
@@ -271,8 +278,8 @@ func (s *DBTestSuite) TestGetAllPodcasts() {
 			Categories:  []string{"Tech", "Another Thing", "Sky is Blue"},
 			ImageURL:    "https://dogsimages.dog/dog.png",
 			ImageTitle:  "A beauty dog",
-			Link:        "https://random-podcast1234.org",
-			FeedLink:    "https://random-podcast1234.org/feed",
+			Link:        "https://random-podcast123456.org",
+			FeedLink:    "https://random-podcast123456.org/feed",
 			FeedType:    "rss",
 			FeedVersion: "2.0",
 			Language:    "en",
@@ -337,8 +344,8 @@ func (s *DBTestSuite) TestGetPodcastsBySubscribedStatus() {
 			Categories:  []string{"Tech", "Another Thing", "Sky is Blue"},
 			ImageURL:    "https://dogsimages.dog/dog.png",
 			ImageTitle:  "A beauty dog",
-			Link:        "https://random-podcast1234.org",
-			FeedLink:    "https://random-podcast1234.org/feed",
+			Link:        "https://random-podcast12345.org",
+			FeedLink:    "https://random-podcast12345.org/feed",
 			FeedType:    "rss",
 			FeedVersion: "2.0",
 			Language:    "en",
@@ -356,8 +363,8 @@ func (s *DBTestSuite) TestGetPodcastsBySubscribedStatus() {
 			Categories:  []string{"Tech", "Another Thing", "Sky is Blue"},
 			ImageURL:    "https://dogsimages.dog/dog.png",
 			ImageTitle:  "A beauty dog",
-			Link:        "https://random-podcast1234.org",
-			FeedLink:    "https://random-podcast1234.org/feed",
+			Link:        "https://random-podcast123456.org",
+			FeedLink:    "https://random-podcast123456.org/feed",
 			FeedType:    "rss",
 			FeedVersion: "2.0",
 			Language:    "en",
@@ -378,8 +385,8 @@ func (s *DBTestSuite) TestGetPodcastsBySubscribedStatus() {
 			Categories:  []string{"Tech", "Another Thing", "Sky is Blue"},
 			ImageURL:    "https://dogsimages.dog/dog.png",
 			ImageTitle:  "A beauty dog",
-			Link:        "https://random-podcast1234.org",
-			FeedLink:    "https://random-podcast1234.org/feed",
+			Link:        "https://random-podcast1234567.org",
+			FeedLink:    "https://random-podcast1234567.org/feed",
 			FeedType:    "rss",
 			FeedVersion: "2.0",
 			Language:    "en",
@@ -397,8 +404,8 @@ func (s *DBTestSuite) TestGetPodcastsBySubscribedStatus() {
 			Categories:  []string{"Tech", "Another Thing", "Sky is Blue"},
 			ImageURL:    "https://dogsimages.dog/dog.png",
 			ImageTitle:  "A beauty dog",
-			Link:        "https://random-podcast1234.org",
-			FeedLink:    "https://random-podcast1234.org/feed",
+			Link:        "https://random-podcast12345678.org",
+			FeedLink:    "https://random-podcast12345678.org/feed",
 			FeedType:    "rss",
 			FeedVersion: "2.0",
 			Language:    "en",
@@ -416,8 +423,8 @@ func (s *DBTestSuite) TestGetPodcastsBySubscribedStatus() {
 			Categories:  []string{"Tech", "Another Thing", "Sky is Blue"},
 			ImageURL:    "https://dogsimages.dog/dog.png",
 			ImageTitle:  "A beauty dog",
-			Link:        "https://random-podcast1234.org",
-			FeedLink:    "https://random-podcast1234.org/feed",
+			Link:        "https://random-podcast123456789.org",
+			FeedLink:    "https://random-podcast123456789.org/feed",
 			FeedType:    "rss",
 			FeedVersion: "2.0",
 			Language:    "en",
@@ -523,6 +530,263 @@ func (s *DBTestSuite) TestGetPodcastsBySubscribedStatus() {
 				" returned from the database", p.ID)
 		}
 	}
+}
+
+func (s *DBTestSuite) TestPodcastExists() {
+	assert := assert2.New(s.T())
+
+	db, err := NewDB(s.dbPath, "podcast_exists_"+s.dbFilename)
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		_ = db.Close()
+	}()
+
+	p := Podcast{
+		Subscribed:  false,
+		AuthorName:  "Martin Diaz",
+		AuthorEmail: "something@myemail.com",
+		Title:       "Random Podcast",
+		Description: "Just something random.",
+		Categories:  []string{"Tech", "Another Thing", "Sky is Blue"},
+		ImageURL:    "https://dogsimages.dog/dog.png",
+		ImageTitle:  "A beauty dog",
+		Link:        "https://random-podcast1234.org",
+		FeedLink:    "https://random-podcast1234.org/feed",
+		FeedType:    "rss",
+		FeedVersion: "2.0",
+		Language:    "en",
+		Updated:     time.Now(),
+		LastCheck:   time.Now(),
+		Added:       time.Now(),
+	}
+
+	err = db.InsertPodcast(&p)
+	if err != nil {
+		panic(err)
+	}
+
+	exists, err := db.PodcastExists(p.FeedLink)
+
+	assert.NoError(err, "there shouldn't be errors")
+	assert.True(exists, "the podcast exists on the database, so the method should reflect that and "+
+		"return true")
+
+	exists, err = db.PodcastExists("https://another-feed.org/feed")
+
+	assert.NoError(err, "there shouldn't be errors")
+	assert.False(exists, "the podcast doesn't exist on the database, so the method should return false")
+}
+
+func (s *DBTestSuite) TestPodcastExistsByID() {
+	assert := assert2.New(s.T())
+
+	db, err := NewDB(s.dbPath, "podcast_exists_by_id_"+s.dbFilename)
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		_ = db.Close()
+	}()
+
+	p := Podcast{
+		ID:          1,
+		Subscribed:  false,
+		AuthorName:  "Martin Diaz",
+		AuthorEmail: "something@myemail.com",
+		Title:       "Random Podcast",
+		Description: "Just something random.",
+		Categories:  []string{"Tech", "Another Thing", "Sky is Blue"},
+		ImageURL:    "https://dogsimages.dog/dog.png",
+		ImageTitle:  "A beauty dog",
+		Link:        "https://random-podcast1234.org",
+		FeedLink:    "https://random-podcast1234.org/feed",
+		FeedType:    "rss",
+		FeedVersion: "2.0",
+		Language:    "en",
+		Updated:     time.Now(),
+		LastCheck:   time.Now(),
+		Added:       time.Now(),
+	}
+
+	err = db.InsertPodcast(&p)
+	if err != nil {
+		panic(err)
+	}
+
+	exists, err := db.PodcastExistsByID(p.ID)
+
+	assert.NoError(err, "there shouldn't be errors")
+	assert.True(exists, "the podcast exists on the database, so the method should reflect that and "+
+		"return true")
+
+	exists, err = db.PodcastExistsByID(10)
+
+	assert.NoError(err, "there shouldn't be errors")
+	assert.False(exists, "the podcast doesn't exist on the database, so the method should return false")
+}
+
+func (s *DBTestSuite) TestEpisodeExists() {
+	assert := assert2.New(s.T())
+
+	db, err := NewDB(s.dbPath, "episode_exists_"+s.dbFilename)
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		_ = db.Close()
+	}()
+
+	podcast := Podcast{
+		ID:          1,
+		Subscribed:  true,
+		AuthorName:  "Martin Diaz",
+		AuthorEmail: "something@myemail.com",
+		Title:       "Random Podcast",
+		Description: "Just something random.",
+		Categories:  []string{"Tech", "Another Thing", "Sky is Blue"},
+		ImageURL:    "https://dogsimages.dog/dog.png",
+		ImageTitle:  "A beauty dog",
+		Link:        "https://random-podcast1234.org",
+		FeedLink:    "https://random-podcast1234.org/feed",
+		FeedType:    "rss",
+		FeedVersion: "2.0",
+		Language:    "en",
+		Updated:     time.Now(),
+		LastCheck:   time.Now(),
+		Added:       time.Now(),
+	}
+
+	episode := Episode{
+		ID:              1,
+		ParentPodcastID: podcast.ID,
+		Title:           "My First Episode",
+		Description:     "This is te description of my awesome episode.",
+		Link:            "https://random-podcast1234.org/episodes/1",
+		AuthorName:      "Martin Diaz",
+		GUID:            "some-random-guid-1234",
+		ImageURL:        "https://random-podcast1234.org/assets/episodes/1.png",
+		ImageTitle:      "Me wearing a tutu",
+		Categories:      []string{"Tech", "Tech News"},
+		EnclosureURL:    "https://random-podcast1234.org/assets/episodes/1.mp3",
+		EnclosureLength: "14098",
+		EnclosureType:   "audio/mp3",
+		Season:          "1",
+		Published:       time.Time{},
+		Played:          false,
+		CurrentProgress: "",
+	}
+
+	err = db.InsertPodcast(&podcast)
+	if err != nil {
+		panic(err)
+	}
+
+	err = db.InsertEpisode(&episode)
+	if err != nil {
+		panic(err)
+	}
+
+	exists, err := db.EpisodeExists(episode.GUID)
+
+	assert.NoError(err, "there shouldn't be an error")
+	assert.True(exists, "the method should return true because the episode is already stored in the database")
+
+	exists, err = db.EpisodeExists(episode.GUID + "1")
+
+	assert.NoError(err, "there shouldn't be an error")
+	assert.False(exists, "the method should return false because the episode is not stored in the database")
+}
+
+func (s *DBTestSuite) TestInsertEpisode() {
+	assert := assert2.New(s.T())
+
+	db, err := NewDB(s.dbPath, "insert_episode_"+s.dbFilename)
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		_ = db.Close()
+	}()
+
+	podcast := Podcast{
+		ID:          1,
+		Subscribed:  true,
+		AuthorName:  "Martin Diaz",
+		AuthorEmail: "something@myemail.com",
+		Title:       "Random Podcast",
+		Description: "Just something random.",
+		Categories:  []string{"Tech", "Another Thing", "Sky is Blue"},
+		ImageURL:    "https://dogsimages.dog/dog.png",
+		ImageTitle:  "A beauty dog",
+		Link:        "https://random-podcast1234.org",
+		FeedLink:    "https://random-podcast1234.org/feed",
+		FeedType:    "rss",
+		FeedVersion: "2.0",
+		Language:    "en",
+		Updated:     time.Now(),
+		LastCheck:   time.Now(),
+		Added:       time.Now(),
+	}
+
+	episode := Episode{
+		ID:              1,
+		ParentPodcastID: podcast.ID,
+		Title:           "My First Episode",
+		Description:     "This is te description of my awesome episode.",
+		Link:            "https://random-podcast1234.org/episodes/1",
+		AuthorName:      "Martin Diaz",
+		GUID:            "some-random-guid-1234",
+		ImageURL:        "https://random-podcast1234.org/assets/episodes/1.png",
+		ImageTitle:      "Me wearing a tutu",
+		Categories:      []string{"Tech", "Tech News"},
+		EnclosureURL:    "https://random-podcast1234.org/assets/episodes/1.mp3",
+		EnclosureLength: "14098",
+		EnclosureType:   "audio/mp3",
+		Season:          "1",
+		Published:       time.Time{},
+		Played:          false,
+		CurrentProgress: "",
+	}
+
+	err = db.InsertPodcast(&podcast)
+	if err != nil {
+		panic(err)
+	}
+
+	err = db.InsertEpisode(&episode)
+
+	assert.NoError(err, "the episode should be inserted into the database without errors")
+
+	err = db.InsertEpisode(&episode)
+
+	if assert.Error(err, "the episode shouldn't be inserted into the database because it already exists") {
+		assert.True(errorx.IsOfType(err, errorx.RejectedOperation), "the error should be of type"+
+			" errorx.RejectedOperation")
+	}
+
+	// Use the ID of a non-existent podcast
+	episode.ParentPodcastID = 10
+	err = db.InsertEpisode(&episode)
+
+	if assert.Error(err, "the episode shouldn't be inserted into the database because the parent podcast"+
+		" doesn't exist") {
+		assert.True(errorx.IsOfType(err, errorx.RejectedOperation), "the error should be of type"+
+			" errorx.RejectedOperation")
+	}
+}
+
+func (s *DBTestSuite) TestGetEpisodesByPodcast() {
+
+}
+
+func (s *DBTestSuite) TestGetEpisodeByGUID() {
+
 }
 
 func (s *DBTestSuite) AfterTest(_, _ string) {}

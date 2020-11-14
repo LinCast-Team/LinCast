@@ -17,6 +17,15 @@ type Database struct {
 }
 
 func (db *Database) InsertPodcast(p *Podcast) error {
+	exists, err := db.PodcastExists(p.FeedLink)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		return errorx.RejectedOperation.New("the podcast with feed '%s' already exists", p.FeedLink)
+	}
+
 	query := `
 INSERT INTO podcasts (
 	subscribed,
@@ -35,7 +44,7 @@ INSERT INTO podcasts (
 	updated,
 	last_check,
 	added
-) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
 `
 	stmt, err := db.instance.Prepare(query)
 	if err != nil {
@@ -184,6 +193,157 @@ WHERE subscribed = ?;
 	}
 
 	return db.scanRows(rows)
+}
+
+func (db *Database) PodcastExists(feedURL string) (bool, error) {
+	query := `
+SELECT feed_link FROM podcasts
+WHERE feed_link = ?;
+`
+
+	row, err := db.instance.Query(query, feedURL)
+	if err != nil {
+		return false, err
+	}
+
+	defer func() {
+		err = row.Close()
+		if err != nil {
+			log.Error(errorx.Decorate(err, "error when trying to close rows"))
+		}
+	}()
+
+	return row.Next(), nil
+}
+
+func (db *Database) PodcastExistsByID(id int) (bool, error) {
+	query := `
+SELECT id FROM podcasts
+WHERE id = ?;
+`
+
+	row, err := db.instance.Query(query, id)
+	if err != nil {
+		return false, err
+	}
+
+	defer func() {
+		err = row.Close()
+		if err != nil {
+			log.Error(errorx.Decorate(err, "error when trying to close rows"))
+		}
+	}()
+
+	return row.Next(), nil
+}
+
+func (db *Database) EpisodeExists(guid string) (bool, error) {
+	query := `
+SELECT guid FROM episodes
+WHERE guid = ?;
+`
+
+	row, err := db.instance.Query(query, guid)
+	if err != nil {
+		return false, err
+	}
+
+	defer func() {
+		err = row.Close()
+		if err != nil {
+			log.Error(errorx.Decorate(err, "error when trying to close rows"))
+		}
+	}()
+
+	return row.Next(), nil
+}
+
+func (db *Database) InsertEpisode(e *Episode) error {
+	exists, err := db.EpisodeExists(e.GUID)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		return errorx.RejectedOperation.New("the episode with GUID '%s' already exists", e.GUID)
+	}
+
+	ppExists, err := db.PodcastExistsByID(e.ParentPodcastID)
+	if err != nil {
+		return err
+	}
+
+	if !ppExists {
+		return errorx.RejectedOperation.New("the parent podcast with ID '%d' doesn't exist", e.ParentPodcastID)
+	}
+
+	query := `
+INSERT INTO episodes (
+	parent_podcast_id,
+    title,
+    description,
+	link,
+	author_name,
+	guid,
+	image_url,
+	image_title,
+	categories,
+	enclosure_url,
+	enclosure_length,
+	enclosure_type,
+	season,
+	published,
+	played,
+	current_progress
+) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
+`
+
+	stmt, err := db.instance.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		err = stmt.Close()
+		if err != nil {
+			log.Error(errorx.Decorate(err, "error when trying to execute statement's close method"))
+		}
+	}()
+
+	categories := strings.Join(e.Categories, ",")
+
+	r, err := stmt.Exec(
+		e.ParentPodcastID,
+		e.Title,
+		e.Description,
+		e.Link,
+		e.AuthorName,
+		e.GUID,
+		e.ImageURL,
+		e.ImageTitle,
+		categories,
+		e.EnclosureURL,
+		e.EnclosureLength,
+		e.EnclosureType,
+		e.Season,
+		e.Published,
+		e.Played,
+		e.CurrentProgress,
+	)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := r.RowsAffected()
+	if err != nil {
+		return errorx.InternalError.WrapWithNoMessage(err)
+	}
+
+	if rowsAffected == 0 {
+		return errorx.InternalError.New("no rows has been affected")
+	}
+
+	return nil
 }
 
 // Close closes the database executing sql.DB.Close().
