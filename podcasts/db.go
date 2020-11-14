@@ -12,8 +12,8 @@ import (
 )
 
 type Database struct {
-	Path string
-	*sql.DB
+	Path     string
+	instance *sql.DB
 }
 
 func (db *Database) InsertPodcast(p *Podcast) error {
@@ -37,7 +37,7 @@ INSERT INTO podcasts (
 	added
 ) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 `
-	stmt, err := db.Prepare(query)
+	stmt, err := db.instance.Prepare(query)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ DELETE FROM podcasts
 WHERE id = ?;
 `
 
-	result, err := db.Exec(query, id)
+	result, err := db.instance.Exec(query, id)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ SELECT * FROM podcasts
 WHERE id = ?;
 `
 
-	row, err := db.Query(query, id)
+	row, err := db.instance.Query(query, id)
 	if err != nil {
 		return nil, err
 	}
@@ -161,6 +161,36 @@ WHERE id = ?;
 	return &p, nil
 }
 
+func (db *Database) GetAllPodcasts() (*[]Podcast, error) {
+	query := "SELECT * FROM podcasts;"
+
+	rows, err := db.instance.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	return db.scanRows(rows)
+}
+
+func (db *Database) GetPodcastsBySubscribedStatus(subscribed bool) (*[]Podcast, error) {
+	query := `
+SELECT * FROM podcasts
+WHERE subscribed = ?;
+`
+
+	rows, err := db.instance.Query(query, subscribed)
+	if err != nil {
+		return nil, err
+	}
+
+	return db.scanRows(rows)
+}
+
+// Close closes the database executing sql.DB.Close().
+func (db *Database) Close() error {
+	return db.instance.Close()
+}
+
 func NewDB(path, filename string) (*Database, error) {
 	if filename == "" {
 		return nil, errorx.IllegalArgument.New("filename argument can't be an empty string")
@@ -174,9 +204,9 @@ func NewDB(path, filename string) (*Database, error) {
 			filepath.Join(path, filename))
 	}
 
-	db.DB = sqlDB
+	db.instance = sqlDB
 
-	err = createTables(db.DB)
+	err = createTables(db.instance)
 	if err != nil {
 		return nil, errorx.Decorate(err, "error when trying to create tables")
 	}
@@ -184,6 +214,51 @@ func NewDB(path, filename string) (*Database, error) {
 	db.Path = filepath.Join(path, filename)
 
 	return &db, nil
+}
+
+func (db *Database) scanRows(rows *sql.Rows) (*[]Podcast, error) {
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error(errorx.Decorate(err, "error when trying to close rows"))
+		}
+	}()
+
+	var podcasts []Podcast
+
+	for rows.Next() {
+		var p Podcast
+		var categories string
+
+		err := rows.Scan(
+			&p.ID,
+			&p.Subscribed,
+			&p.AuthorName,
+			&p.AuthorEmail,
+			&p.Title,
+			&p.Description,
+			&categories,
+			&p.ImageURL,
+			&p.ImageTitle,
+			&p.Link,
+			&p.FeedLink,
+			&p.FeedType,
+			&p.FeedVersion,
+			&p.Language,
+			&p.Updated,
+			&p.LastCheck,
+			&p.Added,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		p.Categories = strings.Split(categories, ",")
+
+		podcasts = append(podcasts, p)
+	}
+
+	return &podcasts, nil
 }
 
 func initDB(path, filename string) (*sql.DB, error) {
