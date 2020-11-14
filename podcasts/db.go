@@ -178,7 +178,7 @@ func (db *Database) GetAllPodcasts() (*[]Podcast, error) {
 		return nil, err
 	}
 
-	return db.scanRows(rows)
+	return db.scanRowsToPodcasts(rows)
 }
 
 func (db *Database) GetPodcastsBySubscribedStatus(subscribed bool) (*[]Podcast, error) {
@@ -192,7 +192,7 @@ WHERE subscribed = ?;
 		return nil, err
 	}
 
-	return db.scanRows(rows)
+	return db.scanRowsToPodcasts(rows)
 }
 
 func (db *Database) PodcastExists(feedURL string) (bool, error) {
@@ -346,6 +346,28 @@ INSERT INTO episodes (
 	return nil
 }
 
+func (db *Database) GetEpisodesByPodcast(id int) (*Episodes, error) {
+	exists, err := db.PodcastExistsByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if !exists {
+		return nil, errorx.RejectedOperation.New("the podcast with ID '%d' doesn't exist", id)
+	}
+
+	query := `
+SELECT * FROM episodes
+WHERE parent_podcast_id = ?;
+`
+	rows, err := db.instance.Query(query, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return db.scanRowsToEpisodes(rows)
+}
+
 // Close closes the database executing sql.DB.Close().
 func (db *Database) Close() error {
 	return db.instance.Close()
@@ -376,7 +398,7 @@ func NewDB(path, filename string) (*Database, error) {
 	return &db, nil
 }
 
-func (db *Database) scanRows(rows *sql.Rows) (*[]Podcast, error) {
+func (db *Database) scanRowsToPodcasts(rows *sql.Rows) (*[]Podcast, error) {
 	defer func() {
 		err := rows.Close()
 		if err != nil {
@@ -419,6 +441,51 @@ func (db *Database) scanRows(rows *sql.Rows) (*[]Podcast, error) {
 	}
 
 	return &podcasts, nil
+}
+
+func (db *Database) scanRowsToEpisodes(rows *sql.Rows) (*Episodes, error) {
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Error(errorx.Decorate(err, "error when trying to close rows"))
+		}
+	}()
+
+	var episodes Episodes
+
+	for rows.Next() {
+		var e Episode
+		var categories string
+
+		err := rows.Scan(
+			&e.ID,
+			&e.ParentPodcastID,
+			&e.Title,
+			&e.Description,
+			&e.Link,
+			&e.AuthorName,
+			&e.GUID,
+			&e.ImageURL,
+			&e.ImageTitle,
+			&categories,
+			&e.EnclosureURL,
+			&e.EnclosureLength,
+			&e.EnclosureType,
+			&e.Season,
+			&e.Published,
+			&e.Played,
+			&e.CurrentProgress,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		e.Categories = strings.Split(categories, ",")
+
+		episodes = append(episodes, e)
+	}
+
+	return &episodes, nil
 }
 
 func initDB(path, filename string) (*sql.DB, error) {
