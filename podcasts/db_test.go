@@ -809,6 +809,61 @@ func (s *DBTestSuite) TestSetEpisodeAsPlayed() {
 	}
 }
 
+func (s *DBTestSuite) TestUpdateEpisodeProgress() {
+	assert := assert2.New(s.T())
+
+	db, err := NewDB(s.dbPath, "update_episode_progress_"+s.dbFilename)
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		_ = db.Close()
+	}()
+
+	err = db.InsertPodcast(&s.podcasts[0])
+	if err != nil {
+		panic(err)
+	}
+
+	err = db.InsertEpisode(&s.episodes[0])
+	if err != nil {
+		panic(err)
+	}
+
+	//              hh:mm:ss
+	newProgress := "00:10:50"
+	err = db.UpdateEpisodeProgress(newProgress, s.episodes[0].GUID)
+
+	assert.NoError(err, "the episode of the podcast should be updated without problems")
+
+	eps, err := db.GetEpisodesByPodcast(s.podcasts[0].ID)
+	if err != nil {
+		panic(err)
+	}
+
+	assert.Equal(newProgress, (*eps)[0].CurrentProgress)
+
+	cases := []string{
+		"00:15",
+		"16",
+		"00:21:50:09",
+		"00:15:90",
+		"00:80:10",
+		"-80:15:10",
+		"This is not supposed to be here",
+	}
+
+	for _, c := range cases {
+		err = db.UpdateEpisodeProgress(c, s.episodes[0].GUID)
+
+		if assert.Errorf(err, "the usage of a wrong format ('%s') should return an error", c) {
+			assert.True(errorx.IsOfType(err, errorx.IllegalFormat), "the returned error should be of"+
+				" type errorx.IllegalFormat")
+		}
+	}
+}
+
 func (s *DBTestSuite) AfterTest(_, _ string) {}
 
 func (s *DBTestSuite) TearDownTest() {

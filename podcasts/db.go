@@ -4,12 +4,15 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/joomcode/errorx"
 	_ "github.com/mattn/go-sqlite3" // SQLite3 package
 	log "github.com/sirupsen/logrus"
 )
+
+var _progressRgx = regexp.MustCompile("^[0-9][0-9]:[0-5][0-9]:[0-5][0-9]$")
 
 type Database struct {
 	Path     string
@@ -384,6 +387,42 @@ SET played = 1
 WHERE guid = ?;
 `
 	result, err := db.instance.Exec(query, guid)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errorx.IllegalArgument.New("episode with guid '%s' does not exist", guid)
+	}
+
+	return nil
+}
+
+func (db *Database) UpdateEpisodeProgress(newProgress, guid string) error {
+	exists, err := db.EpisodeExists(guid)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return errorx.IllegalArgument.New("the episode with GUID '%s' doesn't exist", guid)
+	}
+
+	if !_progressRgx.MatchString(newProgress) {
+		return errorx.IllegalFormat.New("illegal format on argument newProgress ('%s')", newProgress)
+	}
+
+	query := `
+UPDATE episodes
+SET current_progress = ?
+WHERE guid = ?;
+`
+	result, err := db.instance.Exec(query, newProgress, guid)
 	if err != nil {
 		return err
 	}
