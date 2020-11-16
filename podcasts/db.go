@@ -353,7 +353,7 @@ func (db *Database) GetEpisodesByPodcast(id int) (*Episodes, error) {
 	}
 
 	if !exists {
-		return nil, errorx.RejectedOperation.New("the podcast with ID '%d' doesn't exist", id)
+		return nil, errorx.IllegalArgument.New("the podcast with ID '%d' doesn't exist", id)
 	}
 
 	query := `
@@ -366,6 +366,38 @@ WHERE parent_podcast_id = ?;
 	}
 
 	return db.scanRowsToEpisodes(rows)
+}
+
+func (db *Database) SetEpisodeAsPlayed(guid string) error {
+	exists, err := db.EpisodeExists(guid)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return errorx.IllegalArgument.New("the episode with GUID '%s' doesn't exist", guid)
+	}
+
+	query := `
+UPDATE episodes
+SET played = 1
+WHERE guid = ?;
+`
+	result, err := db.instance.Exec(query, guid)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errorx.IllegalArgument.New("episode with guid '%s' does not exist", guid)
+	}
+
+	return nil
 }
 
 // Close closes the database executing sql.DB.Close().
