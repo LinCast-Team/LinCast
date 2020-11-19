@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/joomcode/errorx"
 	_ "github.com/mattn/go-sqlite3" // SQLite3 package
@@ -240,6 +241,56 @@ WHERE id = ?;
 	return row.Next(), nil
 }
 
+func (db *Database) SetPodcastSubscription(id int, subscribed bool) error {
+	query := `
+UPDATE podcasts
+SET subscribed = ?
+WHERE id = ?;
+`
+	result, err := db.instance.Exec(query, subscribed, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errorx.IllegalArgument.New("podcast with ID '%d' does not exist", id)
+	}
+
+	return nil
+}
+
+func (db *Database) UpdatePodcastLastCheck(id int, t time.Time) error {
+	if t.IsZero() {
+		return errorx.IllegalState.New("time (t) can't be zero")
+	}
+
+	query := `
+UPDATE podcasts
+SET last_check = ?
+WHERE id = ?;
+`
+	result, err := db.instance.Exec(query, t, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errorx.IllegalArgument.New("podcast with ID '%d' does not exist", id)
+	}
+
+	return nil
+}
+
 func (db *Database) EpisodeExists(guid string) (bool, error) {
 	query := `
 SELECT guid FROM episodes
@@ -371,22 +422,13 @@ WHERE parent_podcast_id = ?;
 	return db.scanRowsToEpisodes(rows)
 }
 
-func (db *Database) SetEpisodeAsPlayed(guid string) error {
-	exists, err := db.EpisodeExists(guid)
-	if err != nil {
-		return err
-	}
-
-	if !exists {
-		return errorx.IllegalArgument.New("the episode with GUID '%s' doesn't exist", guid)
-	}
-
+func (db *Database) SetEpisodePlayed(guid string, played bool) error {
 	query := `
 UPDATE episodes
-SET played = 1
+SET played = ?
 WHERE guid = ?;
 `
-	result, err := db.instance.Exec(query, guid)
+	result, err := db.instance.Exec(query, played, guid)
 	if err != nil {
 		return err
 	}
@@ -397,22 +439,13 @@ WHERE guid = ?;
 	}
 
 	if rowsAffected == 0 {
-		return errorx.IllegalArgument.New("episode with guid '%s' does not exist", guid)
+		return errorx.IllegalArgument.New("episode with GUID '%s' does not exist", guid)
 	}
 
 	return nil
 }
 
 func (db *Database) UpdateEpisodeProgress(newProgress, guid string) error {
-	exists, err := db.EpisodeExists(guid)
-	if err != nil {
-		return err
-	}
-
-	if !exists {
-		return errorx.IllegalArgument.New("the episode with GUID '%s' doesn't exist", guid)
-	}
-
 	if !_progressRgx.MatchString(newProgress) {
 		return errorx.IllegalFormat.New("illegal format on argument newProgress ('%s')", newProgress)
 	}

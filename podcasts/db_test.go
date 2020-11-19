@@ -652,6 +652,81 @@ func (s *DBTestSuite) TestPodcastExistsByID() {
 	assert.False(exists, "the podcast doesn't exist on the database, so the method should return false")
 }
 
+func (s *DBTestSuite) TestSetPodcastSubscription() {
+	assert := assert2.New(s.T())
+
+	db, err := NewDB(s.dbPath, "set_podcast_subscription_"+s.dbFilename)
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		_ = db.Close()
+	}()
+
+	err = db.InsertPodcast(&s.podcasts[0])
+	if err != nil {
+		panic(err)
+	}
+
+	err = db.SetPodcastSubscription(s.podcasts[0].ID, true)
+
+	assert.NoError(err, "the subscription of a podcast should be changed without errors")
+
+	p, err := db.GetPodcastsBySubscribedStatus(true)
+	if err != nil {
+		panic(err)
+	}
+
+	if assert.Len(*p, 1, "the subscribed status should be changed in the database") {
+		assert.True((*p)[0].Subscribed, "the subscription should be reflected on the database")
+	}
+
+	err = db.SetPodcastSubscription(200, true)
+
+	if assert.Error(err, "if a non recognized ID is used, an error should be returned") {
+		assert.True(errorx.IsOfType(err, errorx.IllegalArgument), "the returned error should be of"+
+			" type errorx.IllegalArgument")
+	}
+}
+
+func (s *DBTestSuite) TestUpdatePodcastLastCheck() {
+	assert := assert2.New(s.T())
+	ltTime := time.Now()
+
+	db, err := NewDB(s.dbPath, "update_podcast_last_check_"+s.dbFilename)
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		_ = db.Close()
+	}()
+
+	err = db.InsertPodcast(&s.podcasts[0])
+	if err != nil {
+		panic(err)
+	}
+
+	err = db.UpdatePodcastLastCheck(s.podcasts[0].ID, ltTime)
+
+	assert.NoError(err, "the field LastCheck should be updated without issues on the database")
+
+	err = db.UpdatePodcastLastCheck(200, ltTime)
+
+	if assert.Error(err, "if an unrecognized ID is used, an error should be returned") {
+		assert.True(errorx.IsOfType(err, errorx.IllegalArgument), "the returned error should be of"+
+			" type errorx.IllegalArgument")
+	}
+
+	err = db.UpdatePodcastLastCheck(s.podcasts[0].ID, time.Time{})
+
+	if assert.Error(err, "if a time with value zero is passed as argument, an error should be returned") {
+		assert.True(errorx.IsOfType(err, errorx.IllegalState), "the returned error should be of"+
+			" type errorx.IllegalState")
+	}
+}
+
 func (s *DBTestSuite) TestEpisodeExists() {
 	assert := assert2.New(s.T())
 
@@ -766,10 +841,10 @@ func (s *DBTestSuite) TestGetEpisodesByPodcast() {
 	assert.Nil(retrievedEps, "if there is an error no episodes should be returned")
 }
 
-func (s *DBTestSuite) TestSetEpisodeAsPlayed() {
+func (s *DBTestSuite) TestSetEpisodePlayed() {
 	assert := assert2.New(s.T())
 
-	db, err := NewDB(s.dbPath, "set_episode_as_played_"+s.dbFilename)
+	db, err := NewDB(s.dbPath, "set_episode_played_"+s.dbFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -788,7 +863,7 @@ func (s *DBTestSuite) TestSetEpisodeAsPlayed() {
 		panic(err)
 	}
 
-	err = db.SetEpisodeAsPlayed(s.episodes[0].GUID)
+	err = db.SetEpisodePlayed(s.episodes[0].GUID, true)
 
 	assert.NoError(err, "the episode should be set as played without errors")
 
@@ -801,7 +876,7 @@ func (s *DBTestSuite) TestSetEpisodeAsPlayed() {
 	assert.True(e.Played, "if the episode was set as played, the changes should be "+
 		"reflected on the database")
 
-	err = db.SetEpisodeAsPlayed(s.episodes[0].GUID + "1234")
+	err = db.SetEpisodePlayed(s.episodes[0].GUID+"1234", true)
 
 	if assert.Error(err, "if the passed GUID does not exist, an error should be returned") {
 		assert.True(errorx.IsOfType(err, errorx.IllegalArgument), "the type of the error should "+
