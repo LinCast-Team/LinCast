@@ -6,6 +6,7 @@ import (
 
 	"github.com/joomcode/errorx"
 	"github.com/mmcdole/gofeed"
+	ext "github.com/mmcdole/gofeed/extensions"
 )
 
 // Podcast is the structure that represents a podcast.
@@ -118,6 +119,24 @@ func (p *Podcast) GetEpisodes() (*Episodes, error) {
 
 		if item.PublishedParsed == nil {
 			item.PublishedParsed = new(time.Time)
+		}
+
+		if item.Author == nil {
+			item.Author = new(gofeed.Person)
+		}
+
+		if item.Image == nil {
+			item.Image = new(gofeed.Image)
+		}
+
+		if len(item.Enclosures) == 0 {
+			item.Enclosures = []*gofeed.Enclosure{
+				new(gofeed.Enclosure),
+			}
+		}
+
+		if item.ITunesExt == nil {
+			item.ITunesExt = new(ext.ITunesItemExtension)
 		}
 
 		e := Episode{

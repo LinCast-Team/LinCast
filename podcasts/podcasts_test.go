@@ -9,13 +9,18 @@ import (
 )
 
 type PodcastsTestSuite struct {
-	feedURL string
+	sampleFeeds []string
 
 	suite.Suite
 }
 
 func (s *PodcastsTestSuite) SetupTest() {
-	s.feedURL = "https://feeds.emilcar.fm/daily"
+	s.sampleFeeds = []string{
+		"https://changelog.com/gotime/feed",
+		"https://feeds.emilcar.fm/daily",
+		"https://www.ivoox.com/podcast-despeja-x-by-xataka_fg_f1579492_filtro_1.xml",
+		"https://www.ivoox.com/podcast-tortulia-podcast-episodios_fg_f1157653_filtro_1.xml",
+	}
 }
 
 func (s *PodcastsTestSuite) BeforeTest(_, _ string) {}
@@ -23,13 +28,16 @@ func (s *PodcastsTestSuite) BeforeTest(_, _ string) {}
 func (s *PodcastsTestSuite) TestGetPodcast() {
 	assert := assert2.New(s.T())
 
-	p, err := GetPodcast(s.feedURL)
+	for _, feed := range s.sampleFeeds {
+		p, err := GetPodcast(feed)
 
-	assert.NoError(err, "the podcast should be created without errors")
-	assert.NotNil(p, "the struct returned should contain the info of the podcast")
+		assert.NoErrorf(err, "the podcast should be created without errors (feed %s)", feed)
+		assert.NotNil(p, "the struct returned should contain the info of the podcast and"+
+			" not be nil (feed %s)", feed)
+	}
 
 	wrongURL := "something-wrong.com"
-	p, err = GetPodcast(wrongURL)
+	p, err := GetPodcast(wrongURL)
 
 	if assert.Error(err, "if the passed url is incorrect an error should be returned") {
 		assert.True(errorx.IsOfType(err, errorx.IllegalFormat), "the error should be of type IllegalFormat")
@@ -49,18 +57,20 @@ func (s *PodcastsTestSuite) TestGetPodcast() {
 func (s *PodcastsTestSuite) TestGetEpisodes() {
 	assert := assert2.New(s.T())
 
-	p, err := GetPodcast(s.feedURL)
-	if err != nil {
-		assert.FailNow(err.Error(), "a podcast to test method `GetEpisodes` is needed")
-	}
-	if reflect.ValueOf(p).IsNil() {
-		assert.FailNow("a pointer to a Podcast instance is needed")
-	}
+	for _, feed := range s.sampleFeeds {
+		p, err := GetPodcast(feed)
+		if err != nil {
+			panic(errorx.Decorate(err, "podcast can't be obtained (feed %s)", feed))
+		}
+		if reflect.ValueOf(p).IsNil() {
+			panic(errorx.Decorate(err, "the returned Podcast struct is nil (feed %s)", feed))
+		}
 
-	eps, err := p.GetEpisodes()
+		eps, err := p.GetEpisodes()
 
-	assert.NoError(err, "episodes should be obtained without errors")
-	assert.True(len(*eps) != 0, "a slice with episodes should be returned")
+		assert.NoError(err, "episodes should be obtained without errors")
+		assert.True(len(*eps) != 0, "a slice with episodes should be returned")
+	}
 }
 
 func (s *PodcastsTestSuite) AfterTest(_, _ string) {}
