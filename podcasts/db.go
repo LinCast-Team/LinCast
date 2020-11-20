@@ -472,6 +472,38 @@ WHERE guid = ?;
 	return nil
 }
 
+func (db *Database) GetEpisodeUpdated(guid string) (time.Time, error) {
+	query := `
+SELECT updated FROM episodes
+WHERE guid = ?;
+`
+
+	row, err := db.instance.Query(query, guid)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	defer func() {
+		err = row.Close()
+		if err != nil {
+			log.Error(errorx.Decorate(err, "error when trying to close rows"))
+		}
+	}()
+
+	if !row.Next() {
+		return time.Time{}, errorx.IllegalArgument.New("episode with GUID '%s' does not exist", guid)
+	}
+
+	var t time.Time
+
+	err = row.Scan(&t)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return t, nil
+}
+
 // Close closes the database executing sql.DB.Close().
 func (db *Database) Close() error {
 	return db.instance.Close()

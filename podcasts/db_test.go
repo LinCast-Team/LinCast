@@ -939,6 +939,46 @@ func (s *DBTestSuite) TestUpdateEpisodeProgress() {
 	}
 }
 
+func (s *DBTestSuite) TestGetEpisodeUpdated() {
+	assert := assert2.New(s.T())
+
+	db, err := NewDB(s.dbPath, "get_episode_updated_"+s.dbFilename)
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		_ = db.Close()
+	}()
+
+	err = db.InsertPodcast(&s.podcasts[0])
+	if err != nil {
+		panic(err)
+	}
+
+	ep := s.episodes[0]
+	ep.Updated = time.Now()
+
+	err = db.InsertEpisode(&ep)
+	if err != nil {
+		panic(err)
+	}
+
+	ut, err := db.GetEpisodeUpdated(ep.GUID)
+
+	assert.NoError(err, "the updated time of the episode should be returned without errors")
+	assert.True(ep.Updated.Equal(ut), "the updated time returned should be the same as the"+
+		" introduced on the episode")
+
+	ut, err = db.GetEpisodeUpdated("some-random-GUID")
+
+	if assert.Error(err, "the usage of a non existent GUID should return an error") {
+		assert.True(errorx.IsOfType(err, errorx.IllegalArgument), "the returned error should be"+
+			" of type errorx.IllegalArgument")
+	}
+	assert.True(ut.IsZero(), "if there is an error a nil time should be returned")
+}
+
 func (s *DBTestSuite) AfterTest(_, _ string) {}
 
 func (s *DBTestSuite) TearDownTest() {
