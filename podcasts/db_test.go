@@ -85,6 +85,7 @@ func (s *DBTestSuite) SetupTest() {
 			EnclosureType:   "audio/mp3",
 			Season:          "1",
 			Published:       time.Time{},
+			Updated:         time.Time{},
 			Played:          false,
 			CurrentProgress: "",
 		},

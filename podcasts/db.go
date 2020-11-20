@@ -347,9 +347,10 @@ INSERT INTO episodes (
 	enclosure_type,
 	season,
 	published,
+    updated,
 	played,
 	current_progress
-) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
+) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
 `
 
 	stmt, err := db.instance.Prepare(query)
@@ -381,6 +382,7 @@ INSERT INTO episodes (
 		e.EnclosureType,
 		e.Season,
 		e.Published,
+		e.Updated,
 		e.Played,
 		e.CurrentProgress,
 	)
@@ -609,6 +611,7 @@ func (db *Database) scanRowsToEpisodes(rows *sql.Rows) (*Episodes, error) {
 			&e.EnclosureType,
 			&e.Season,
 			&e.Published,
+			&e.Updated,
 			&e.Played,
 			&e.CurrentProgress,
 		)
@@ -681,6 +684,7 @@ CREATE TABLE IF NOT EXISTS episodes (
 	enclosure_type 		TEXT,
 	season 				TEXT,
 	published 			DATETIME NOT NULL,
+	updated 			DATETIME NOT NULL,
 	played 				BOOLEAN NOT NULL DEFAULT false,
 	current_progress 	TEXT NOT NULL DEFAULT '00:00:00'
 );

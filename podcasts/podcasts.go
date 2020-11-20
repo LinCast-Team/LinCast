@@ -46,6 +46,7 @@ type Episode struct {
 	EnclosureType   string
 	Season          string    // Comes from gofeed.Item.ITunesExt.Season - can be empty
 	Published       time.Time // Use the field gofeed.Item.PublishedParsed
+	Updated         time.Time // Use the field gofeed.Item.UpdatedParsed
 	Played          bool
 	CurrentProgress string
 }
@@ -71,6 +72,10 @@ func GetPodcast(feedURL string) (*Podcast, error) {
 	}
 
 	now := time.Now()
+
+	if feed.UpdatedParsed == nil {
+		feed.UpdatedParsed = new(time.Time)
+	}
 
 	p := &Podcast{
 		ID:          0,
@@ -107,12 +112,21 @@ func (p *Podcast) GetEpisodes() (*Episodes, error) {
 
 	var episodes Episodes
 	for _, item := range feed.Items {
+		if item.UpdatedParsed == nil {
+			item.UpdatedParsed = new(time.Time)
+		}
+
+		if item.PublishedParsed == nil {
+			item.PublishedParsed = new(time.Time)
+		}
+
 		e := Episode{
 			ParentPodcastID: p.ID,
 			Title:           item.Title,
 			Description:     item.Description,
 			Link:            item.Link,
 			Published:       *item.PublishedParsed,
+			Updated:         *item.UpdatedParsed,
 			AuthorName:      item.Author.Name,
 			GUID:            item.GUID,
 			ImageURL:        item.Image.URL,
