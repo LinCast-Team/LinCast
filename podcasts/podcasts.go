@@ -7,6 +7,7 @@ import (
 	"github.com/joomcode/errorx"
 	"github.com/mmcdole/gofeed"
 	ext "github.com/mmcdole/gofeed/extensions"
+	log "github.com/sirupsen/logrus"
 )
 
 // Podcast is the structure that represents a podcast.
@@ -113,6 +114,17 @@ func (p *Podcast) GetEpisodes() (*Episodes, error) {
 
 	var episodes Episodes
 	for _, item := range feed.Items {
+		if len(item.Enclosures) == 0 {
+			log.WithFields(log.Fields{
+				"podcastFeed": p.FeedLink,
+				"episodeGUID": item.GUID,
+				"error": errorx.DataUnavailable.New("the episode (GUID '%s') doesn't have"+
+					" enclosures", item.GUID),
+			}).Error("Episode with no enclosures")
+
+			continue
+		}
+
 		if item.UpdatedParsed == nil {
 			item.UpdatedParsed = new(time.Time)
 		}
@@ -127,12 +139,6 @@ func (p *Podcast) GetEpisodes() (*Episodes, error) {
 
 		if item.Image == nil {
 			item.Image = new(gofeed.Image)
-		}
-
-		if len(item.Enclosures) == 0 {
-			item.Enclosures = []*gofeed.Enclosure{
-				new(gofeed.Enclosure),
-			}
 		}
 
 		if item.ITunesExt == nil {
