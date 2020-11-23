@@ -3,6 +3,7 @@ package podcasts
 import (
 	"os"
 	"runtime"
+	"sync"
 	"testing"
 
 	"github.com/joomcode/errorx"
@@ -11,9 +12,10 @@ import (
 )
 
 type QueueTestSuite struct {
-	length     int
-	dbPath     string
-	dbFilename string
+	length      int
+	dbPath      string
+	dbFilename  string
+	sampleFeeds []string
 
 	suite.Suite
 }
@@ -22,6 +24,12 @@ func (s *QueueTestSuite) SetupTest() {
 	s.length = runtime.NumCPU()
 	s.dbPath = "./test_queue"
 	s.dbFilename = "queue_test.sqlite"
+	s.sampleFeeds = []string{
+		"https://changelog.com/gotime/feed",
+		"https://feeds.emilcar.fm/daily",
+		"https://www.ivoox.com/podcast-despeja-x-by-xataka_fg_f1579492_filtro_1.xml",
+		"https://www.ivoox.com/podcast-tortulia-podcast-episodios_fg_f1157653_filtro_1.xml",
+	}
 
 	err := os.Mkdir(s.dbPath, os.ModePerm)
 	if err != nil {
@@ -56,6 +64,94 @@ func (s *QueueTestSuite) TestNewUpdateQueue() {
 			"errorx.IllegalArgument should be returned")
 	}
 	assert.Nil(q, "if the argument is incorrect, the instance of Queue returned should be nil")
+}
+
+func (s *QueueTestSuite) TestWorker() {
+	assert := assert2.New(s.T())
+
+	db, err := NewDB(s.dbPath, "worker_"+s.dbFilename)
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		_ = db.Close()
+	}()
+
+	q := UpdateQueue{
+		dbInstance: db,
+		q:          make(chan Job),
+	}
+
+	var wg sync.WaitGroup
+
+	for i, feed := range s.sampleFeeds {
+		wg.Add(i)
+
+		go func(i int, feed string, wg *sync.WaitGroup) {
+			defer wg.Done()
+
+			// Try to process a podcast
+			p, err := GetPodcast(feed)
+			if err != nil {
+				panic(errorx.Decorate(err, "error when trying to get podcast"))
+			}
+
+			err = db.InsertPodcast(p)
+			if err != nil {
+				panic(errorx.Decorate(err, "error when trying to store podcast"))
+			}
+
+			p, err = db.GetPodcastByID(i + 1)
+			if err != nil {
+				panic(errorx.Decorate(err, "error when trying to get the podcast with ID %d"+
+					" from the database", i+1))
+			}
+
+			job := NewJob(p)
+
+			go q.worker(i)
+
+			q.Send(job)
+
+			// Wait until the job has been reported as done.
+			<-job.Done
+
+			// Check if the episodes of the processed podcast has been saved in the database.
+			eps, err := db.GetEpisodesByPodcast(i + 1)
+			if err != nil {
+				panic(errorx.Decorate(err, "error when trying to get episodes of podcast with ID 0"))
+			}
+
+			assert.True(len(*eps) > 0, "the episodes of the processed podcast should be stored in the database")
+		}(i, feed, &wg)
+
+	}
+
+}
+
+func (s *QueueTestSuite) TestNewJob() {
+	assert := assert2.New(s.T())
+
+	db, err := NewDB(s.dbPath, "new_job_"+s.dbFilename)
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		_ = db.Close()
+	}()
+
+	p, err := GetPodcast(s.sampleFeeds[0])
+	if err != nil {
+		panic(errorx.Decorate(err, "error when trying to get the podcast"))
+	}
+
+	job := NewJob(p)
+
+	if assert.NotNil(job, "the returned Job should not be nil") {
+		assert.NotNil(job.Done, "Job.Done should not be nil")
+	}
 }
 
 func (s *QueueTestSuite) AfterTest(_, _ string) {}

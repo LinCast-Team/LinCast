@@ -6,8 +6,11 @@ import (
 	"time"
 )
 
+// Job returns a new job to be processed by a worker of an active UpdateQueue. The channel Job.Done can be used to know
+// when that job has been processed and it shouldn't be used to send something, just to receive.
 type Job struct {
 	Podcast *Podcast
+	Done    chan struct{}
 }
 
 type UpdateQueue struct {
@@ -40,11 +43,15 @@ func (q *UpdateQueue) Send(job *Job) {
 	q.q <- *job
 }
 
-/*
 func NewJob(p *Podcast) *Job {
+	j := Job{
+		Podcast: p,
+		Done:    make(chan struct{}),
+	}
 
+	return &j
 }
-*/
+
 func (q *UpdateQueue) worker(id int) {
 	log.WithField("worker", id).Debug("Starting worker")
 
@@ -71,6 +78,8 @@ func (q *UpdateQueue) worker(id int) {
 		}
 
 		for _, e := range *eps {
+			startTime := time.Now()
+
 			exists, err := q.dbInstance.EpisodeExists(e.GUID)
 			if err != nil {
 				log.WithFields(log.Fields{
@@ -79,7 +88,7 @@ func (q *UpdateQueue) worker(id int) {
 					"podcastFeed": job.Podcast.FeedLink,
 					"episodeGUID": e.GUID,
 					"error":       errorx.Decorate(err, "error when trying to check if an episode exists"),
-				}).Error("Can't get the episodes of the podcast")
+				}).Error("Can't check if the episode already exists")
 
 				continue
 			}
@@ -108,25 +117,46 @@ func (q *UpdateQueue) worker(id int) {
 				continue
 			}
 
-			err = q.dbInstance.UpdatePodcastLastCheck(job.Podcast.ID, time.Now())
-			if err != nil {
-				log.WithFields(log.Fields{
-					"worker":      id,
-					"podcastID":   job.Podcast.ID,
-					"podcastFeed": job.Podcast.FeedLink,
-					"error": errorx.Decorate(err, "error when trying to update the column "+
-						"'last_check' in the database"),
-				}).Error("Can't update the LastCheck time in the database")
-
-				continue
-			}
-
 			log.WithFields(log.Fields{
-				"worker":         id,
-				"podcastID":      job.Podcast.ID,
-				"podcastFeed":    job.Podcast.FeedLink,
-				"updateDuration": time.Since(receivedTime).String(),
-			}).Info("Job finished. Podcast updated correctly")
+				"worker":                    id,
+				"podcastID":                 job.Podcast.ID,
+				"podcastFeed":               job.Podcast.FeedLink,
+				"episodeGUID":               e.GUID,
+				"episodeProcessingDuration": time.Since(startTime).String(),
+			}).Info("Episode processed")
 		}
+
+		err = q.dbInstance.UpdatePodcastLastCheck(job.Podcast.ID, time.Now())
+		if err != nil {
+			log.WithFields(log.Fields{
+				"worker":      id,
+				"podcastID":   job.Podcast.ID,
+				"podcastFeed": job.Podcast.FeedLink,
+				"error": errorx.Decorate(err, "error when trying to update the column "+
+					"'last_check' in the database"),
+			}).Error("Can't update the LastCheck time in the database")
+
+			continue
+		}
+
+		log.WithFields(log.Fields{
+			"worker":         id,
+			"podcastID":      job.Podcast.ID,
+			"podcastFeed":    job.Podcast.FeedLink,
+			"doneChannelNil": job.Done == nil,
+		}).Info("Sending notification through the channel Job.Done before finish the job")
+
+		// Notify that the job has been processed without blocking.
+		select {
+		case job.Done <- struct{}{}:
+		default:
+		}
+
+		log.WithFields(log.Fields{
+			"worker":         id,
+			"podcastID":      job.Podcast.ID,
+			"podcastFeed":    job.Podcast.FeedLink,
+			"updateDuration": time.Since(receivedTime).String(),
+		}).Info("Job finished. Podcast updated correctly")
 	}
 }
