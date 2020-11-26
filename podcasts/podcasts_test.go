@@ -40,7 +40,8 @@ func (s *PodcastsTestSuite) TestGetPodcast() {
 	p, err := GetPodcast(wrongURL)
 
 	if assert.Error(err, "if the passed url is incorrect an error should be returned") {
-		assert.True(errorx.IsOfType(err, errorx.IllegalFormat), "the error should be of type IllegalFormat")
+		assert.True(errorx.IsOfType(err, errorx.ExternalError), "the error should be of type "+
+			"errorx.ExternalError")
 	}
 	assert.Nil(p, "the returned struct should be nil")
 
