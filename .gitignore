@@ -21,4 +21,8 @@
 # Pkger
 pkged.go
 
+# Log files
 *.log
+
+# Data directory
+data/
