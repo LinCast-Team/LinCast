@@ -65,21 +65,37 @@ func (q *UpdateQueue) worker(id int) {
 			"podcastFeed": job.Podcast.FeedLink,
 		}).Info("New job received. Updating podcast")
 
+		log.WithFields(log.Fields{
+			"worker":      id,
+			"podcastID":   job.Podcast.ID,
+			"podcastFeed": job.Podcast.FeedLink,
+		}).Debug("Getting episodes")
 		eps, err := job.Podcast.GetEpisodes()
 		if err != nil {
 			log.WithFields(log.Fields{
 				"worker":      id,
 				"podcastID":   job.Podcast.ID,
 				"podcastFeed": job.Podcast.FeedLink,
-				"error":       errorx.Decorate(err, "error when getting episodes of the podcast"),
-			}).Error("Can't get the episodes of the podcast")
+				"error": errorx.Decorate(errorx.EnsureStackTrace(err), "error when getting episodes"+
+					" of the podcast")}).Error("Can't get the episodes of the podcast")
 
 			continue
 		}
+		log.WithFields(log.Fields{
+			"worker":      id,
+			"podcastID":   job.Podcast.ID,
+			"podcastFeed": job.Podcast.FeedLink,
+		}).Info("Episodes obtained")
 
 		for _, e := range *eps {
 			startTime := time.Now()
 
+			log.WithFields(log.Fields{
+				"worker":      id,
+				"podcastID":   job.Podcast.ID,
+				"podcastFeed": job.Podcast.FeedLink,
+				"episodeGUID": e.GUID,
+			}).Debug("Checking if the episode is already on the database")
 			exists, err := q.dbInstance.EpisodeExists(e.GUID)
 			if err != nil {
 				log.WithFields(log.Fields{
@@ -104,6 +120,12 @@ func (q *UpdateQueue) worker(id int) {
 				continue
 			}
 
+			log.WithFields(log.Fields{
+				"worker":      id,
+				"podcastID":   job.Podcast.ID,
+				"podcastFeed": job.Podcast.FeedLink,
+				"episodeGUID": e.GUID,
+			}).Debug("Episode is not in the database, storing")
 			err = q.dbInstance.InsertEpisode(&e)
 			if err != nil {
 				log.WithFields(log.Fields{
@@ -123,9 +145,14 @@ func (q *UpdateQueue) worker(id int) {
 				"podcastFeed":               job.Podcast.FeedLink,
 				"episodeGUID":               e.GUID,
 				"episodeProcessingDuration": time.Since(startTime).String(),
-			}).Info("Episode processed")
+			}).Debug("Episode processed")
 		}
 
+		log.WithFields(log.Fields{
+			"worker":      id,
+			"podcastID":   job.Podcast.ID,
+			"podcastFeed": job.Podcast.FeedLink,
+		}).Debug("Updating last_check column in the database")
 		err = q.dbInstance.UpdatePodcastLastCheck(job.Podcast.ID, time.Now())
 		if err != nil {
 			log.WithFields(log.Fields{
@@ -138,13 +165,18 @@ func (q *UpdateQueue) worker(id int) {
 
 			continue
 		}
+		log.WithFields(log.Fields{
+			"worker":      id,
+			"podcastID":   job.Podcast.ID,
+			"podcastFeed": job.Podcast.FeedLink,
+		}).Debug("last_check column updated")
 
 		log.WithFields(log.Fields{
 			"worker":         id,
 			"podcastID":      job.Podcast.ID,
 			"podcastFeed":    job.Podcast.FeedLink,
 			"doneChannelNil": job.Done == nil,
-		}).Info("Sending notification through the channel Job.Done before finish the job")
+		}).Debug("Sending notification through the channel Job.Done before finish the job")
 
 		// Notify that the job has been processed without blocking.
 		select {
