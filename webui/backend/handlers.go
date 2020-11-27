@@ -3,10 +3,12 @@ package backend
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
+	"lincast/podcasts"
+
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
-	"lincast/podcasts"
-	"net/http"
 )
 
 var _podcastsDB *podcasts.Database

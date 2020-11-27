@@ -1,11 +1,12 @@
 package podcasts
 
 import (
+	"reflect"
+	"testing"
+
 	"github.com/joomcode/errorx"
 	assert2 "github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"reflect"
-	"testing"
 )
 
 type PodcastsTestSuite struct {

@@ -1,12 +1,13 @@
 package backend
 
 import (
-	assert2 "github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 	"io/ioutil"
 	"net/http/httptest"
 	"path/filepath"
 	"testing"
+
+	assert2 "github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 type ServerTestSuite struct {

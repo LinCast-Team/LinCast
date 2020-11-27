@@ -1,12 +1,13 @@
 package podcasts
 
 import (
-	"github.com/joomcode/errorx"
-	assert2 "github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/joomcode/errorx"
+	assert2 "github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 type DBTestSuite struct {

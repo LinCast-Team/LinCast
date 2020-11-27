@@ -1,9 +1,10 @@
 package podcasts
 
 import (
+	"time"
+
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 // Job returns a new job to be processed by a worker of an active UpdateQueue. The channel Job.Done can be used to know
