@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"lincast/podcasts"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -48,7 +49,13 @@ func (s spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // New returns a new instance of the server. To execute it, the method `ListenAndServe` must be called.
-func New(port uint16, localServer bool, devMode bool, logRequests bool) *http.Server {
+func New(port uint16, localServer bool, devMode bool, logRequests bool, podcastsDB *podcasts.Database) *http.Server {
+	if podcastsDB == nil {
+		log.Panic("'podcastsDB' is nil")
+	}
+
+	_podcastsDB = podcastsDB
+
 	// Include the frontend inside the binary.
 	_ = pkger.Include(frontendPath)
 	router := newRouter(devMode, logRequests)
@@ -88,8 +95,8 @@ func newRouter(devMode, logRequests bool) *mux.Router {
 		devMode:    devMode,
 	}
 
+	router.HandleFunc("/api/v0/feeds/subscribe", subscribeToPodcastHandler).Methods("POST")
 	router.PathPrefix("/").Handler(spa)
-	// APIs here
 
 	return router
 }
