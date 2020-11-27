@@ -1,6 +1,7 @@
 backend:
   - ./*.go
   - webui/backend/**/*
+  - podcasts/**/*
 
 frontend:
   - webui/frontend/**/*
