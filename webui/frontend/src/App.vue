@@ -7,6 +7,8 @@
   <player
     :audioSrc="'https://wavesurfer-js.org/example/media/demo.wav'"
     :artworkSrc="'http://static-2.ivoox.com/canales/1/5/3/4/7691470744351_XXL.jpg'"
+    :podcastTitle="'La tortulia podcast'"
+    :episodeTitle="'India vs China'"
   />
 </template>
 
