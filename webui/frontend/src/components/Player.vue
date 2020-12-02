@@ -1,7 +1,7 @@
 <template>
-<div class="flex flex-col container mx-auto border-2 border-solid border-gray-100 rounded-xl">
-  <div id="waveform" class="bg-gray-50 rounded-t-xl"></div>
-  <div class="bg-gray-50 text-black transition-colors duration-500 dark:bg-gray-900 dark:text-white rounded-b-xl py-4 px-1 sm:px-3 lg:px-1 xl:px-3 grid grid-cols-5 sm:grid-cols-7 lg:grid-cols-5 xl:grid-cols-7 items-center">
+<div class="flex flex-col border-2 border-solid border-gray-100 bg-gray-50 rounded-t-xl z-100 fixed bottom-0 right-0 left-0 shadow-lg">
+  <div id="waveform" class="bg-gray-50 rounded-t-xl mx-2"></div>
+  <div class="bg-gray-50 text-black transition-colors duration-500 dark:bg-gray-900 dark:text-white py-4 px-1 sm:px-3 lg:px-1 xl:px-3 grid grid-cols-5 sm:grid-cols-7 lg:grid-cols-5 xl:grid-cols-7 items-center">
     <div class="cursor-pointer mx-auto">
       <svg width="24" height="24" fill="none">
         <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
@@ -53,7 +53,13 @@ import WaveSurfer from 'wavesurfer.js';
 // http://www.ivoox.com/tortulia-209-william-adams-parte-1_mf_60745571_feed_1.mp3
 
 export default {
-  setup() {
+  props: {
+    audioSrc: {
+      type: String,
+      required: true,
+    },
+  },
+  setup(props) {
     const wavesurfer = ref();
 
     onMounted(() => {
@@ -69,7 +75,7 @@ export default {
         barGap: 3,
       });
 
-      wavesurfer.value.load('https://wavesurfer-js.org/example/media/demo.wav');
+      wavesurfer.value.load(props.audioSrc);
     });
 
     return { wavesurfer };
