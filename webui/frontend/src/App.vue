@@ -4,7 +4,10 @@
     <router-link to="/about">About</router-link>
   </div>
   <router-view />
-  <player :audioSrc="'https://wavesurfer-js.org/example/media/demo.wav'"/>
+  <player
+    :audioSrc="'https://wavesurfer-js.org/example/media/demo.wav'"
+    :artworkSrc="'http://static-2.ivoox.com/canales/1/5/3/4/7691470744351_XXL.jpg'"
+  />
 </template>
 
 <script>
