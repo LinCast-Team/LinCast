@@ -3,8 +3,19 @@
     <router-link to="/">Home</router-link> |
     <router-link to="/about">About</router-link>
   </div>
-  <router-view/>
+  <router-view />
+  <player :audioSrc="'https://wavesurfer-js.org/example/media/demo.wav'"/>
 </template>
+
+<script>
+import Player from '@/components/Player.vue';
+
+export default {
+  components: {
+    Player,
+  },
+};
+</script>
 
 <style lang="scss">
 #app {
