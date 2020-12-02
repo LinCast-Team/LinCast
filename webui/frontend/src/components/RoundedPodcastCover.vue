@@ -2,7 +2,7 @@
   <div class="flex flex-col items-center justify-center w-24 h-40 m-1">
     <img
       :src="artworkSrc"
-      :alt="podcastTitle + ' artwork'"
+      :alt="podcastTitle + '\'s artwork'"
       class="rounded-full w-24 h-24"
     />
     <p class="text-gray-600 font-sans">{{ podcastTitle }}</p>
