@@ -14,11 +14,21 @@
   </div>
   <div id="waveform" class="bg-gray-50 mx-4"></div>
   <div class="bg-gray-50 text-black transition-colors duration-500 dark:bg-gray-900 dark:text-white py-4 px-1 sm:px-3 lg:px-1 xl:px-3 my-auto md:mx-20 grid grid-cols-5 items-center">
-    <div class="cursor-pointer mx-auto w-6 h-6 md:w-10 md:h-10" data-feather="skip-back" stroke-width="1.5"/>
-    <div @click="wavesurfer.skipBackward(15)" class="cursor-pointer mx-auto w-8 h-8 md:w-12 md:h-12" data-feather="rotate-ccw" stroke-width="1.5"/>
-    <div @click="wavesurfer.playPause()" class="cursor-pointer mx-auto w-16 h-16 md:w-20 md:h-20" data-feather="play-circle" stroke-width="0.8"/>
-    <div @click="wavesurfer.skipForward(15)" class="cursor-pointer mx-auto w-8 h-8 md:w-12 md:h-12" data-feather="rotate-cw" stroke-width="1.5"/>
-    <div class="cursor-pointer mx-auto w-6 h-6 md:w-10 md:h-10" data-feather="skip-forward" stroke-width="1.5"/>
+    <button class="mx-auto rounded-full">
+      <span class="w-6 h-6 md:w-10 md:h-10" data-feather="skip-back" stroke-width="1.5"></span>
+    </button>
+    <button @click="wavesurfer.skipBackward(15)" class="mx-auto rounded-full">
+      <span class="w-8 h-8 md:w-12 md:h-12" data-feather="rotate-ccw" stroke-width="1.5"></span>
+    </button>
+    <button @click="wavesurfer.playPause()" class="mx-auto rounded-full">
+      <span class="w-16 h-16 md:w-20 md:h-20" stroke-width="0.8" data-feather="play-circle"></span>
+    </button>
+    <button @click="wavesurfer.skipForward(15)" class="mx-auto rounded-full">
+      <span class="w-8 h-8 md:w-12 md:h-12" data-feather="rotate-cw" stroke-width="1.5"></span>
+    </button>
+    <button class="mx-auto rounded-full">
+      <span class="w-6 h-6 md:w-10 md:h-10" data-feather="skip-forward" stroke-width="1.5"></span>
+    </button>
   </div>
 </div>
 </template>
@@ -79,6 +89,42 @@ export default {
       });
 
       wavesurfer.value.load(props.audioSrc);
+
+      wavesurfer.value.on('play', () => {
+        // TODO Call the API to update progress using `wavesurfer.getCurrentTime()`.
+        // If the current time remains the same, the request should not be sent.
+        console.log('Playing');
+      });
+
+      wavesurfer.value.on('pause', () => {
+        // TODO Stop calling the API to update progress.
+        console.log('Paused');
+      });
+
+      wavesurfer.value.on('seek', (newPosition) => {
+        console.log('New position on player\'s cursor:', newPosition);
+        // TODO Call the API to update progress using `wavesurfer.getCurrentTime()`.
+        // If the current time remains the same, the request should not be sent.
+      });
+
+      wavesurfer.value.on('loading', (progress) => {
+        console.log(`Loading audio: ${progress}%`);
+        // TODO Show the progress to the user.
+      });
+
+      wavesurfer.value.on('finish', () => {
+        // TODO Load the next episode and play it.
+        console.log('Audio completely played');
+      });
+
+      wavesurfer.value.on('destroy', () => {
+        // TODO Stop calling the API to update progress.
+        console.log('Wavesurfer instance destroyed');
+      });
+
+      wavesurfer.value.on('error', (err) => {
+        console.error(err);
+      });
     });
 
     return { wavesurfer };
