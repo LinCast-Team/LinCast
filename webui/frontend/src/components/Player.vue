@@ -16,7 +16,7 @@
   <div class="bg-gray-50 text-black transition-colors duration-500 dark:bg-gray-900 dark:text-white py-4 px-1 sm:px-3 lg:px-1 xl:px-3 my-auto md:mx-20 grid grid-cols-5 items-center">
     <div class="cursor-pointer mx-auto w-6 h-6 md:w-10 md:h-10" data-feather="skip-back" stroke-width="1.5"/>
     <div @click="wavesurfer.skipBackward(15)" class="cursor-pointer mx-auto w-8 h-8 md:w-12 md:h-12" data-feather="rotate-ccw" stroke-width="1.5"/>
-    <div @click="wavesurfer.playPause()" class="cursor-pointer mx-auto w-16 h-16 md:w-20 md:h-20" data-feather="play-circle" stroke-width="1.2"/>
+    <div @click="wavesurfer.playPause()" class="cursor-pointer mx-auto w-16 h-16 md:w-20 md:h-20" data-feather="play-circle" stroke-width="0.8"/>
     <div @click="wavesurfer.skipForward(15)" class="cursor-pointer mx-auto w-8 h-8 md:w-12 md:h-12" data-feather="rotate-cw" stroke-width="1.5"/>
     <div class="cursor-pointer mx-auto w-6 h-6 md:w-10 md:h-10" data-feather="skip-forward" stroke-width="1.5"/>
   </div>
@@ -71,10 +71,9 @@ export default {
         container: '#waveform',
         waveColor: '#99F6E4',
         progressColor: '#14B8A6',
-        cursorColor: '#14B8A6',
         barWidth: 3,
         barRadius: 3,
-        cursorWidth: 1,
+        cursorWidth: 0,
         height: 100,
         barGap: 3,
       });
