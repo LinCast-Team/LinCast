@@ -90,15 +90,27 @@ export default {
 
       wavesurfer.value.load(props.audioSrc);
 
+      let updateIntervalID;
+      let previousProgress;
+
       wavesurfer.value.on('play', () => {
         // TODO Call the API to update progress using `wavesurfer.getCurrentTime()`.
         // If the current time remains the same, the request should not be sent.
         console.log('Playing');
+
+        updateIntervalID = setInterval(() => {
+          const progress = wavesurfer.value.getCurrentTime();
+          if (previousProgress !== progress) {
+            console.log('Updating progress:', progress);
+            previousProgress = progress;
+          }
+        }, 1000);
       });
 
       wavesurfer.value.on('pause', () => {
         // TODO Stop calling the API to update progress.
         console.log('Paused');
+        clearInterval(updateIntervalID);
       });
 
       wavesurfer.value.on('seek', (newPosition) => {
@@ -120,6 +132,7 @@ export default {
       wavesurfer.value.on('destroy', () => {
         // TODO Stop calling the API to update progress.
         console.log('Wavesurfer instance destroyed');
+        clearInterval(updateIntervalID);
       });
 
       wavesurfer.value.on('error', (err) => {
