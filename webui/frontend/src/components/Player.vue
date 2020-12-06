@@ -25,7 +25,7 @@
       'flex-grow': !expanded,
     }"
   >
-    <div v-show="expanded" class="flex-none justify-self-center self-center mx-6 md:mx-14" data-feather="share-2"></div>
+    <div v-show="expanded" v-html="share2Icon"></div>
     <div class="" :class="{ 'flex-grow text-center justify-self-center': expanded, 'text-left': !expanded }">
       <p
         class="truncate text-black dark:text-gray-100 uppercase "
@@ -41,7 +41,7 @@
         }"
       >{{ episodeTitle }}</p>
     </div>
-    <div v-show="expanded" class="flex-none justify-self-center self-center mx-6 md:mx-12" data-feather="more-vertical"></div>
+    <div v-show="expanded" v-html="moreVerticalIcon"></div>
   </div>
 
   <div v-show="expanded" id="waveform" class="bg-transparent mx-4"></div>
@@ -54,27 +54,34 @@
     }"
   >
     <button v-show="expanded" class="mx-auto rounded-full">
-      <span class="w-6 h-6 md:w-10 md:h-10" data-feather="skip-back" stroke-width="1.5"></span>
+      <div v-html="skipBackIcon"></div>
     </button>
     <button v-show="expanded" @click="wavesurfer.skipBackward(15)" class="mx-auto rounded-full">
-      <span class="w-8 h-8 md:w-12 md:h-12" data-feather="rotate-ccw" stroke-width="1.5"></span>
+      <div v-html="rotateCcwIcon"></div>
     </button>
     <button @click="wavesurfer.playPause()" class=" mx-4 rounded-full" :class="{ 'mx-auto': expanded, 'flex-none': !expanded }">
-      <span v-if="expanded" class="w-16 h-16 md:w-20 md:h-20" stroke-width="0.8" data-feather="play-circle"></span>
-      <span v-else class="w-9 h-9" stroke-width="1.0" data-feather="play"></span>
+      <!-- <span v-if="expanded" class="w-16 h-16 md:w-20 md:h-20" stroke-width="0.8" data-feather="play-circle"></span> -->
+      <div v-if="expanded">
+        <div v-if="!playing" v-html="playCirleIcon"></div>
+        <div v-else v-html="pauseCirleIcon"></div>
+      </div>
+      <div v-else>
+        <div v-if="!playing" v-html="playIcon"></div>
+        <div v-else v-html="pauseIcon"></div>
+      </div>
     </button>
     <button v-show="expanded" @click="wavesurfer.skipForward(15)" class="mx-auto rounded-full">
-      <span class="w-8 h-8 md:w-12 md:h-12" data-feather="rotate-cw" stroke-width="1.5"></span>
+      <div v-html="rotateCwIcon"></div>
     </button>
     <button v-show="expanded" class="mx-auto rounded-full">
-      <span class="w-6 h-6 md:w-10 md:h-10" data-feather="skip-forward" stroke-width="1.5"></span>
+      <div v-html="skipForwardIcon"></div>
     </button>
   </div>
 </div>
 </template>
 
 <script>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import WaveSurfer from 'wavesurfer.js';
 import feather from 'feather-icons';
 // import axios from 'axios';
@@ -116,8 +123,6 @@ export default {
     const playing = ref(false);
 
     onMounted(() => {
-      feather.replace();
-
       wavesurfer.value = WaveSurfer.create({
         container: '#waveform',
         waveColor: '#99F6E4',
@@ -186,7 +191,31 @@ export default {
       });
     });
 
-    return { wavesurfer, playing };
+    const playCirleIcon = computed(() => feather.icons['play-circle'].toSvg({ 'stroke-width': 0.8, class: 'w-16 h-16 md:w-20 md:h-20' }));
+    const pauseCirleIcon = computed(() => feather.icons['pause-circle'].toSvg({ 'stroke-width': 0.8, class: 'w-16 h-16 md:w-20 md:h-20' }));
+    const playIcon = computed(() => feather.icons['play'].toSvg({ 'stroke-width': 1.0, class: 'w-9 h-9' })); /* eslint-disable-line */
+    const pauseIcon = computed(() => feather.icons['pause'].toSvg({ 'stroke-width': 1.0, class: 'w-9 h-9' })); /* eslint-disable-line */
+    const rotateCwIcon = computed(() => feather.icons['rotate-cw'].toSvg({ 'stroke-width': 1.5, class: 'w-8 h-8 md:w-12 md:h-12' }));
+    const rotateCcwIcon = computed(() => feather.icons['rotate-ccw'].toSvg({ 'stroke-width': 1.5, class: 'w-8 h-8 md:w-12 md:h-12' }));
+    const skipBackIcon = computed(() => feather.icons['skip-back'].toSvg({ 'stroke-width': 1.5, class: 'w-6 h-6 md:w-10 md:h-10' }));
+    const skipForwardIcon = computed(() => feather.icons['skip-forward'].toSvg({ 'stroke-width': 1.5, class: 'w-6 h-6 md:w-10 md:h-10' }));
+    const share2Icon = computed(() => feather.icons['share-2'].toSvg({ class: 'flex-none justify-self-center self-center mx-6 md:mx-14' }));
+    const moreVerticalIcon = computed(() => feather.icons['more-vertical'].toSvg({ class: 'flex-none justify-self-center self-center mx-6 md:mx-12' }));
+
+    return {
+      wavesurfer,
+      playing,
+      playCirleIcon,
+      pauseCirleIcon,
+      playIcon,
+      pauseIcon,
+      rotateCwIcon,
+      rotateCcwIcon,
+      skipBackIcon,
+      skipForwardIcon,
+      share2Icon,
+      moreVerticalIcon,
+    };
   },
 };
 </script>
