@@ -9,15 +9,22 @@
     :artworkSrc="'http://static-2.ivoox.com/canales/1/5/3/4/7691470744351_XXL.jpg'"
     :podcastTitle="'La tortulia podcast'"
     :episodeTitle="'India vs China'"
+    :expanded="playerExpanded"
   />
 </template>
 
 <script>
+import { ref } from 'vue';
 import Player from '@/components/Player.vue';
 
 export default {
   components: {
     Player,
+  },
+  setup() {
+    const playerExpanded = ref(false);
+
+    return { playerExpanded };
   },
 };
 </script>
