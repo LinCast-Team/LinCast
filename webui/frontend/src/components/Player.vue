@@ -108,11 +108,12 @@ export default {
     expanded: {
       type: Boolean,
       required: false,
-      default: true,
+      default: false,
     },
   },
   setup(props) {
     const wavesurfer = ref();
+    const playing = ref(false);
 
     onMounted(() => {
       feather.replace();
@@ -123,9 +124,11 @@ export default {
         progressColor: '#14B8A6',
         barWidth: 3,
         barRadius: 3,
+        barMinHeight: 1,
         cursorWidth: 0,
         height: 100,
         barGap: 3,
+        responsive: true,
       });
 
       wavesurfer.value.load(props.audioSrc);
@@ -137,6 +140,7 @@ export default {
         // TODO Call the API to update progress using `wavesurfer.getCurrentTime()`.
         // If the current time remains the same, the request should not be sent.
         console.log('Playing');
+        playing.value = true;
 
         updateIntervalID = setInterval(() => {
           const progress = wavesurfer.value.getCurrentTime();
@@ -150,6 +154,7 @@ export default {
       wavesurfer.value.on('pause', () => {
         // TODO Stop calling the API to update progress.
         console.log('Paused');
+        playing.value = false;
         clearInterval(updateIntervalID);
       });
 
@@ -172,6 +177,7 @@ export default {
       wavesurfer.value.on('destroy', () => {
         // TODO Stop calling the API to update progress.
         console.log('Wavesurfer instance destroyed');
+        playing.value = false;
         clearInterval(updateIntervalID);
       });
 
@@ -180,7 +186,7 @@ export default {
       });
     });
 
-    return { wavesurfer };
+    return { wavesurfer, playing };
   },
 };
 </script>
