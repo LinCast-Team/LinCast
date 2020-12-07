@@ -21,7 +21,7 @@
   <div
     class=" text-center text-gray-100"
     :class="{
-      'flex flex-row justify-around mt-4 mb-6 sm:mx-14 md:mx-20': expanded,
+      'flex flex-row justify-around my-2 sm:mt-4 sm:mb-6 sm:mx-14 md:mx-20': expanded,
       'flex-grow': !expanded,
     }"
   >
