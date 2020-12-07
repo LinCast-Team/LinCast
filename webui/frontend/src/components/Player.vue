@@ -1,9 +1,9 @@
 <template>
 <div
-  class="flex border-2 border-solid transition-colors duration-500 border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-900 z-100 shadow-lg font-sans"
+  class="flex z-50 shadow-lg font-sans border-solid border-b-2 transition-colors duration-500 border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
   :class="{
-    'fixed bottom-0 right-0 left-0 rounded-t-sm flex-row items-center': !expanded,
-    'flex-col': expanded,
+    'rounded-t-md flex-row items-center border-t-2': !expanded,
+    'flex-col w-full h-full': expanded,
   }"
 >
   <h1 v-show="expanded" class="text-2xl my-8 dark:text-gray-300">Playing Now</h1>
@@ -13,7 +13,7 @@
     :alt="podcastTitle + '\'s artwork'"
     class="self-center rounded-md shadow-lg"
     :class="{
-      'w-60 h-60 md:w-80 md:h-80 mx-auto': expanded,
+      'w-60 h-60 md:w-64 md:h-64 mx-auto': expanded,
       'w-12 h-12 flex-none m-4': !expanded,
     }"
   >
@@ -21,7 +21,7 @@
   <div
     class=" text-center dark:text-gray-100"
     :class="{
-      'flex flex-row justify-around mt-4 mb-6 md:mt-6 md:mb-8 sm:mx-14 md:mx-20': expanded,
+      'flex flex-row justify-around mt-4 mb-6 sm:mx-14 md:mx-20': expanded,
       'flex-grow': !expanded,
     }"
   >
