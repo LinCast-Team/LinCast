@@ -3,7 +3,7 @@
     <router-link to="/">Home</router-link> |
     <router-link to="/about">About</router-link>
   </div> -->
-  <button @click="playerExpanded = !playerExpanded" class="fixed top-0 z-50">Expandir/Contraer</button>
+  <!-- <button @click="playerExpanded = !playerExpanded" class="fixed top-0 z-50">Expandir/Contraer</button> -->
   <router-view />
   <div class="fixed bottom-0 right-0 left-0 flex flex-col" :class="{ 'top-0': playerExpanded }">
     <player
@@ -28,7 +28,7 @@ export default {
     NavigationBar,
   },
   setup() {
-    const playerExpanded = ref(true);
+    const playerExpanded = ref(false);
 
     return { playerExpanded };
   },
@@ -36,24 +36,4 @@ export default {
 </script>
 
 <style lang="scss">
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-
-#nav {
-  padding: 30px;
-
-  a {
-    font-weight: bold;
-    color: #2c3e50;
-
-    &.router-link-exact-active {
-      color: #42b983;
-    }
-  }
-}
 </style>
