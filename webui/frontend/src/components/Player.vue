@@ -1,12 +1,12 @@
 <template>
 <div
-  class="flex z-50 shadow-lg font-sans border-solid border-b-2 transition-colors duration-500 border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
+  class="flex z-50 shadow-lg font-sans border-solid border-b-2 transition-colors duration-500 border-gray-800 bg-gradient-to-br from-gray-700 to-gray-900"
   :class="{
-    'rounded-t-md flex-row items-center border-t-2': !expanded,
+    'flex-row items-center border-t-2': !expanded,
     'flex-col w-full h-full': expanded,
   }"
 >
-  <h1 v-show="expanded" class="text-2xl my-8 dark:text-gray-300">Playing Now</h1>
+  <h1 v-show="expanded" class="text-2xl my-8 text-gray-300">Playing Now</h1>
 
   <img
     :src="artworkSrc"
@@ -19,7 +19,7 @@
   >
 
   <div
-    class=" text-center dark:text-gray-100"
+    class=" text-center text-gray-100"
     :class="{
       'flex flex-row justify-around mt-4 mb-6 sm:mx-14 md:mx-20': expanded,
       'flex-grow': !expanded,
@@ -28,14 +28,14 @@
     <div v-show="expanded" v-html="share2Icon"></div>
     <div class="" :class="{ 'flex-grow text-center justify-self-center': expanded, 'text-left': !expanded }">
       <p
-        class="truncate text-black dark:text-gray-100 uppercase "
+        class="truncate text-gray-100 uppercase"
         :class="{
           'font-extrabold text-xl': expanded,
           'font-bold text-base': !expanded,
         }"
       >{{ podcastTitle }}</p>
       <p
-        class="truncate text-gray-500 dark:text-gray-400"
+        class="truncate text-gray-400"
         :class="{
           'text-sm': !expanded
         }"
@@ -47,7 +47,7 @@
   <div v-show="expanded" id="waveform" class="bg-transparent mx-4"></div>
 
   <div
-    class="bg-transparent text-black transition-colors duration-500 dark:text-gray-100    "
+    class="bg-transparent transition-colors duration-500 text-gray-100"
     :class="{
       'grid grid-cols-5 items-center md:mx-20 py-4 px-1 sm:px-3 lg:px-1 xl:px-3 my-auto': expanded,
       'self-center': !expanded,
@@ -125,7 +125,7 @@ export default {
     onMounted(() => {
       wavesurfer.value = WaveSurfer.create({
         container: '#waveform',
-        waveColor: '#99F6E4',
+        waveColor: '#115E59',
         progressColor: '#14B8A6',
         barWidth: 3,
         barRadius: 3,

@@ -1,5 +1,5 @@
 <template>
-  <div class="grid grid-cols-3 z-50 justify-items-center p-4 transition-colors duration-500 text-gray-50 bg-gray-600 dark:bg-gray-800">
+  <div class="grid grid-cols-3 z-50 justify-items-center p-4 transition-colors duration-500 text-gray-50 bg-gradient-to-br from-gray-700 to-gray-900 ">
     <div v-html="homeIcon"></div>
     <div v-html="searchIcon"></div>
     <div v-html="bookmarkIcon"></div>
