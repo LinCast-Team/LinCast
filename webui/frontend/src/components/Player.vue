@@ -50,7 +50,10 @@
     <div class="flex-grow bg-gradient-to-r from-gray-500 to-gray-700 rounded-md h-2 shadow-inner">
       <div class="rounded-md h-full w-0 shadow-inner" :style="'background-color: #14B8A6; width: ' + calculatedProgress  + '%;'"></div>
     </div>
-    <p class="text-gray-400 font-bold text-sm bg-transparent mx-4">{{ currentTimeStr }} / {{ durationStr }}</p>
+    <div class="flex flex-row text-gray-400 font-bold text-sm bg-transparent mx-2 justify-between">
+      <p>{{ currentTimeStr }}</p>
+      <p>{{ remainingTimeStr }}</p>
+    </div>
   </div>
 
   <div
@@ -131,9 +134,10 @@ export default {
     const playing = ref(false);
     const audioElement = ref(null);
     const currentTime = ref(0);
-    const duration = ref(0);
+    const remainingTime = ref(0);
     const currentTimeStr = ref('00:00');
-    const durationStr = ref('00:00');
+    const remainingTimeStr = ref('00:00');
+    const duration = ref(0);
 
     const playCirleIcon = computed(() => feather.icons['play-circle'].toSvg({ 'stroke-width': 0.8, class: 'w-16 h-16 md:w-20 md:h-20' }));
     const pauseCirleIcon = computed(() => feather.icons['pause-circle'].toSvg({ 'stroke-width': 0.8, class: 'w-16 h-16 md:w-20 md:h-20' }));
@@ -161,6 +165,21 @@ export default {
     };
 
     const calculatedProgress = computed(() => (currentTime.value * 100) / duration.value);
+
+    const playPause = () => {
+      if (audioElement.value == null) {
+        console.log('AudioElement null');
+        return;
+      }
+
+      if (!playing.value) {
+        console.log('Play clicked');
+        audioElement.value.play();
+      } else {
+        console.log('Pause clicked');
+        audioElement.value.pause();
+      }
+    };
 
     const skipBackward = (secs) => {
       if (audioElement.value == null) {
@@ -190,48 +209,39 @@ export default {
       }
     };
 
-    const updateDuration = () => {
-      duration.value = audioElement.value.duration;
-      durationStr.value = secsToMMSS(duration.value);
+    const updateRemaining = () => {
+      remainingTime.value = Math.floor(duration.value) - Math.floor(currentTime.value);
+      remainingTimeStr.value = secsToMMSS(remainingTime.value);
     };
 
-    const updateCurrentTime = () => {
+    const updateDuration = () => {
+      duration.value = audioElement.value.duration;
+      updateRemaining();
+    };
+
+    const updateCurrentAndRemaining = () => {
       currentTime.value = audioElement.value.currentTime;
       currentTimeStr.value = secsToMMSS(currentTime.value);
+      updateRemaining();
     };
 
     const setPlaying = () => { playing.value = true; };
 
-    const setPaused = () => { playing.value = true; };
+    const setPaused = () => { playing.value = false; };
 
     onMounted(() => {
       audioElement.value.addEventListener('durationchange', updateDuration);
-      audioElement.value.addEventListener('timeupdate', updateCurrentTime);
+      audioElement.value.addEventListener('timeupdate', updateCurrentAndRemaining);
       audioElement.value.addEventListener('play', setPlaying);
       audioElement.value.addEventListener('pause', setPaused);
     });
 
     onBeforeUnmount(() => {
       audioElement.value.removeEventListener('durationchange', updateDuration);
-      audioElement.value.removeEventListener('timeupdate', updateCurrentTime);
+      audioElement.value.removeEventListener('timeupdate', updateCurrentAndRemaining);
       audioElement.value.removeEventListener('play', setPlaying);
       audioElement.value.removeEventListener('pause', setPaused);
     });
-
-    const playPause = () => {
-      if (audioElement.value == null) {
-        console.log('AudioElement null');
-        return;
-      }
-
-      if (!playing.value) {
-        console.log('Play clicked');
-        audioElement.value.play();
-      } else {
-        console.log('Pause clicked');
-        audioElement.value.pause();
-      }
-    };
 
     return {
       // Icons
@@ -250,9 +260,8 @@ export default {
       audioElement,
       playing,
       currentTime,
-      duration,
       currentTimeStr,
-      durationStr,
+      remainingTimeStr,
       calculatedProgress,
       playPause,
       skipForward,
