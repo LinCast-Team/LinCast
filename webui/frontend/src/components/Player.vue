@@ -214,8 +214,8 @@ export default {
     onBeforeUnmount(() => {
       audioElement.value.removeEventListener('durationchange', updateDuration);
       audioElement.value.removeEventListener('timeupdate', updateCurrentTime);
-      audioElement.value.removeEventListener('play', setPlaying(true));
-      audioElement.value.removeEventListener('pause', setPlaying(false));
+      audioElement.value.removeEventListener('play', setPlaying);
+      audioElement.value.removeEventListener('pause', setPaused);
     });
 
     const playPause = () => {
