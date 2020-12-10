@@ -1,6 +1,6 @@
 <template>
 <div
-  class="flex z-50 shadow-lg font-sans border-solid border-b-2 transition-colors duration-500 border-gray-800 bg-gradient-to-br from-gray-700 to-gray-900"
+  class="flex z-50 shadow-lg font-sans border-solid border-b-2 transition-colors duration-500 border-gray-800 bg-gradient-to-br from-gray-700 to-gray-900 text-center"
   :class="{
     'flex-row items-center border-t-2': !expanded,
     'flex-col w-full h-full': expanded,
@@ -44,7 +44,14 @@
     <div v-show="expanded" v-html="moreVerticalIcon"></div>
   </div>
 
-  <div v-show="expanded" id="waveform" class="bg-transparent mx-4"></div>
+  <audio ref="audioElement" :src="audioSrc" preload="auto"></audio>
+
+  <div v-show="expanded" class="flex flex-col gap-1 justify-items-start mx-6 my-6">
+    <div class="flex-grow bg-gradient-to-r from-gray-500 to-gray-700 rounded-md h-2 shadow-inner">
+      <div class="rounded-md h-full w-0 shadow-inner" :style="'background-color: #14B8A6; width: ' + calculatedProgress  + '%;'"></div>
+    </div>
+    <p class="text-gray-400 font-bold text-sm bg-transparent mx-4">{{ currentTimeStr }} / {{ durationStr }}</p>
+  </div>
 
   <div
     class="bg-transparent transition-colors duration-500 text-gray-100"
@@ -56,11 +63,10 @@
     <button v-show="expanded" class="mx-auto rounded-full">
       <div v-html="skipBackIcon"></div>
     </button>
-    <button v-show="expanded" @click="wavesurfer.skipBackward(15)" class="mx-auto rounded-full">
+    <button v-show="expanded" @click="skipBackward(15)" class="mx-auto rounded-full">
       <div v-html="rotateCcwIcon"></div>
     </button>
-    <button @click="wavesurfer.playPause()" class=" mx-4 rounded-full" :class="{ 'mx-auto': expanded, 'flex-none': !expanded }">
-      <!-- <span v-if="expanded" class="w-16 h-16 md:w-20 md:h-20" stroke-width="0.8" data-feather="play-circle"></span> -->
+    <button @click="playPause" class=" mx-4 rounded-full" :class="{ 'mx-auto': expanded, 'flex-none': !expanded }">
       <div v-if="expanded">
         <div v-if="!playing" v-html="playCirleIcon"></div>
         <div v-else v-html="pauseCirleIcon"></div>
@@ -70,7 +76,7 @@
         <div v-else v-html="pauseIcon"></div>
       </div>
     </button>
-    <button v-show="expanded" @click="wavesurfer.skipForward(15)" class="mx-auto rounded-full">
+    <button v-show="expanded" @click="skipForward(15)" class="mx-auto rounded-full">
       <div v-html="rotateCwIcon"></div>
     </button>
     <button v-show="expanded" class="mx-auto rounded-full">
@@ -81,10 +87,13 @@
 </template>
 
 <script>
-import { onMounted, ref, computed } from 'vue';
-import WaveSurfer from 'wavesurfer.js';
+import {
+  ref,
+  computed,
+  onMounted,
+  onBeforeUnmount,
+} from 'vue';
 import feather from 'feather-icons';
-// import axios from 'axios';
 
 // http://www.ivoox.com/tortulia-209-william-adams-parte-1_mf_60745571_feed_1.mp3
 
@@ -118,78 +127,13 @@ export default {
       default: false,
     },
   },
-  setup(props) {
-    const wavesurfer = ref();
+  setup() {
     const playing = ref(false);
-
-    onMounted(() => {
-      wavesurfer.value = WaveSurfer.create({
-        container: '#waveform',
-        waveColor: '#115E59',
-        progressColor: '#14B8A6',
-        barWidth: 3,
-        barRadius: 3,
-        barMinHeight: 1,
-        cursorWidth: 0,
-        height: 100,
-        barGap: 3,
-        responsive: true,
-      });
-
-      wavesurfer.value.load(props.audioSrc);
-
-      let updateIntervalID;
-      let previousProgress;
-
-      wavesurfer.value.on('play', () => {
-        // TODO Call the API to update progress using `wavesurfer.getCurrentTime()`.
-        // If the current time remains the same, the request should not be sent.
-        console.log('Playing');
-        playing.value = true;
-
-        updateIntervalID = setInterval(() => {
-          const progress = wavesurfer.value.getCurrentTime();
-          if (previousProgress !== progress) {
-            console.log('Updating progress:', progress);
-            previousProgress = progress;
-          }
-        }, 1000);
-      });
-
-      wavesurfer.value.on('pause', () => {
-        // TODO Stop calling the API to update progress.
-        console.log('Paused');
-        playing.value = false;
-        clearInterval(updateIntervalID);
-      });
-
-      wavesurfer.value.on('seek', (newPosition) => {
-        console.log('New position on player\'s cursor:', newPosition);
-        // TODO Call the API to update progress using `wavesurfer.getCurrentTime()`.
-        // If the current time remains the same, the request should not be sent.
-      });
-
-      wavesurfer.value.on('loading', (progress) => {
-        console.log(`Loading audio: ${progress}%`);
-        // TODO Show the progress to the user.
-      });
-
-      wavesurfer.value.on('finish', () => {
-        // TODO Load the next episode and play it.
-        console.log('Audio completely played');
-      });
-
-      wavesurfer.value.on('destroy', () => {
-        // TODO Stop calling the API to update progress.
-        console.log('Wavesurfer instance destroyed');
-        playing.value = false;
-        clearInterval(updateIntervalID);
-      });
-
-      wavesurfer.value.on('error', (err) => {
-        console.error(err);
-      });
-    });
+    const audioElement = ref(null);
+    const currentTime = ref(0);
+    const duration = ref(0);
+    const currentTimeStr = ref('00:00');
+    const durationStr = ref('00:00');
 
     const playCirleIcon = computed(() => feather.icons['play-circle'].toSvg({ 'stroke-width': 0.8, class: 'w-16 h-16 md:w-20 md:h-20' }));
     const pauseCirleIcon = computed(() => feather.icons['pause-circle'].toSvg({ 'stroke-width': 0.8, class: 'w-16 h-16 md:w-20 md:h-20' }));
@@ -202,9 +146,95 @@ export default {
     const share2Icon = computed(() => feather.icons['share-2'].toSvg({ class: 'flex-none justify-self-center self-center mx-6 md:mx-14' }));
     const moreVerticalIcon = computed(() => feather.icons['more-vertical'].toSvg({ class: 'flex-none justify-self-center self-center mx-6 md:mx-12' }));
 
+    const secsToMMSS = (secs) => {
+      let minutes = Math.floor(secs / 60);
+      let seconds = Math.floor(secs - (minutes * 60));
+
+      if (minutes < 10) {
+        minutes = `0${minutes}`;
+      }
+      if (seconds < 10) {
+        seconds = `0${seconds}`;
+      }
+
+      return `${minutes}:${seconds}`;
+    };
+
+    const calculatedProgress = computed(() => (currentTime.value * 100) / duration.value);
+
+    const skipBackward = (secs) => {
+      if (audioElement.value == null) {
+        return;
+      }
+
+      if (currentTime.value <= secs) {
+        audioElement.value.currentTime = 0;
+        currentTime.value = 0;
+      } else {
+        audioElement.value.currentTime -= secs;
+        currentTime.value -= secs;
+      }
+    };
+
+    const skipForward = (secs) => {
+      if (audioElement.value == null) {
+        return;
+      }
+
+      if ((currentTime.value + secs) >= duration.value) {
+        audioElement.value.currentTime = duration.value;
+        currentTime.value = duration.value;
+      } else {
+        audioElement.value.currentTime += secs;
+        currentTime.value += secs;
+      }
+    };
+
+    const updateDuration = () => {
+      duration.value = audioElement.value.duration;
+      durationStr.value = secsToMMSS(duration.value);
+    };
+
+    const updateCurrentTime = () => {
+      currentTime.value = audioElement.value.currentTime;
+      currentTimeStr.value = secsToMMSS(currentTime.value);
+    };
+
+    const setPlaying = () => { playing.value = true; };
+
+    const setPaused = () => { playing.value = true; };
+
+    onMounted(() => {
+      audioElement.value.addEventListener('durationchange', updateDuration);
+      audioElement.value.addEventListener('timeupdate', updateCurrentTime);
+      audioElement.value.addEventListener('play', setPlaying);
+      audioElement.value.addEventListener('pause', setPaused);
+    });
+
+    onBeforeUnmount(() => {
+      audioElement.value.removeEventListener('durationchange', updateDuration);
+      audioElement.value.removeEventListener('timeupdate', updateCurrentTime);
+      audioElement.value.removeEventListener('play', setPlaying(true));
+      audioElement.value.removeEventListener('pause', setPlaying(false));
+    });
+
+    const playPause = () => {
+      if (audioElement.value == null) {
+        console.log('AudioElement null');
+        return;
+      }
+
+      if (!playing.value) {
+        console.log('Play clicked');
+        audioElement.value.play();
+      } else {
+        console.log('Pause clicked');
+        audioElement.value.pause();
+      }
+    };
+
     return {
-      wavesurfer,
-      playing,
+      // Icons
       playCirleIcon,
       pauseCirleIcon,
       playIcon,
@@ -215,6 +245,18 @@ export default {
       skipForwardIcon,
       share2Icon,
       moreVerticalIcon,
+
+      // Player functionality
+      audioElement,
+      playing,
+      currentTime,
+      duration,
+      currentTimeStr,
+      durationStr,
+      calculatedProgress,
+      playPause,
+      skipForward,
+      skipBackward,
     };
   },
 };
