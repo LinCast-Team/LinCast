@@ -52,7 +52,7 @@
     </div>
     <div class="flex flex-row text-gray-400 font-bold text-sm bg-transparent mx-2 justify-between">
       <p>{{ currentTimeStr }}</p>
-      <p>{{ remainingTimeStr }}</p>
+      <p>-{{ remainingTimeStr }}</p>
     </div>
   </div>
 
