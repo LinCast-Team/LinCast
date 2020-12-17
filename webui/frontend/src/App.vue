@@ -14,7 +14,9 @@
       :expanded="playerExpanded"
       @openRequest="playerExpanded = true"
     />
-    <navigation-bar :hidden="playerExpanded"/>
+    <transition name="hide">
+      <navigation-bar :hidden="playerExpanded"/>
+    </transition>
   </div>
 </template>
 
@@ -37,4 +39,13 @@ export default {
 </script>
 
 <style lang="scss">
+.hide-enter-active,
+.hide-leave-active {
+  transition: all .5s ease;
+}
+
+.hide-enter-from,
+.hide-leave-to {
+  transform: translateY(50px);
+}
 </style>
