@@ -12,6 +12,7 @@
       :podcastTitle="'La tortulia podcast'"
       :episodeTitle="'India vs China'"
       :expanded="playerExpanded"
+      :episodeDescription="'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut mauris id felis ultricies dignissim a id arcu. Nam quis orci sed lectus pretium mollis ac quis quam. Quisque ultricies tempus auctor. Cras id urna varius, tincidunt magna non, venenatis magna. Pellentesque non aliquam mi, non congue ex. Nunc suscipit lacus non arcu euismod, et consectetur nunc vulputate. Aenean neque purus, scelerisque id placerat vel, sollicitudin ut enim. Donec mollis erat eget pretium gravida. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Nulla ullamcorper vitae arcu nec scelerisque. Aliquam gravida velit vitae elit mollis convallis. Nunc at odio nec justo semper tempus eget at quam. Proin eget nunc mattis, varius nunc vitae, accumsan turpis. Sed felis nunc, convallis at vehicula in, finibus eget turpis. Suspendisse id ante sem. '"
       @openRequest="playerExpanded = true"
     />
     <transition name="hide">
@@ -39,6 +40,14 @@ export default {
 </script>
 
 <style lang="scss">
+body {
+  @apply bg-black;
+}
+
+.bg-real-gray {
+  background-color: #222529;
+}
+
 .hide-enter-active,
 .hide-leave-active {
   transition: all .5s ease;

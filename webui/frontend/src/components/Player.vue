@@ -1,11 +1,11 @@
 <template>
 <div
-  class="flex z-50 shadow-lg font-sans border-solid border-b-2 transition-colors duration-500 border-gray-800 bg-gradient-to-br from-gray-700 to-gray-900 text-center"
+  class="flex z-50 shadow-lg font-sans transition-colors duration-500 text-center"
   :class="{
-    'flex-row items-center border-t-2': !expanded,
-    'flex-col w-full h-full': expanded,
+    'flex-row items-center bg-real-gray border-solid border-b border-black': !expanded,
+    'flex-col w-full h-full tea-gradient overflow-y-auto': expanded,
   }"
->
+> <!-- bg-gradient-to-br from-gray-700 to-gray-900 -->
   <h1 v-show="expanded" class="text-2xl my-8 text-gray-300">Playing Now</h1>
 
   <img
@@ -86,6 +86,9 @@
     <button v-show="expanded" class="mx-auto rounded-full">
       <div v-html="skipForwardIcon"></div>
     </button>
+  </div>
+  <div v-if="episodeDescription !== ''" v-show="expanded" class="m-4 p-2 rounded-xl text-gray-200 bg-real-gray">
+    {{ episodeDescription }}
   </div>
 </div>
 </template>
@@ -278,5 +281,8 @@ export default {
 };
 </script>
 
-<style>
+<style lang="scss" scoped>
+.tea-gradient {
+  background-image: linear-gradient(to bottom right, #004D40, #000, #000, #000);
+}
 </style>

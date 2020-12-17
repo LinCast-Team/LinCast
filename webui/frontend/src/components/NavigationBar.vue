@@ -1,5 +1,5 @@
 <template>
-  <div v-show="!hidden" id="nav" class="grid grid-cols-3 z-50 justify-items-center text-gray-50 bg-gradient-to-br from-gray-700 to-gray-900 px-4 md:px-16 lg:px-40">
+  <div v-show="!hidden" id="nav" class="grid grid-cols-3 z-50 justify-items-center text-gray-50 bg-real-gray px-4 md:px-16 lg:px-40">
     <router-link class="p-4 transition-colors duration-500 rounded-full" v-html="homeIcon" :to="{ name: 'Home' }"/>
     <router-link class="p-4 transition-colors duration-500 rounded-full" v-html="searchIcon" :to="{ name: 'Discover' }"/>
     <router-link class="p-4 transition-colors duration-500 rounded-full" v-html="bookmarkIcon" :to="{ name: 'Library' }"/>
