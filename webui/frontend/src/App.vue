@@ -12,8 +12,9 @@
       :podcastTitle="'La tortulia podcast'"
       :episodeTitle="'India vs China'"
       :expanded="playerExpanded"
+      @openRequest="playerExpanded = true"
     />
-    <navigation-bar/>
+    <navigation-bar :hidden="playerExpanded"/>
   </div>
 </template>
 
@@ -28,7 +29,7 @@ export default {
     NavigationBar,
   },
   setup() {
-    const playerExpanded = ref(true);
+    const playerExpanded = ref(false);
 
     return { playerExpanded };
   },

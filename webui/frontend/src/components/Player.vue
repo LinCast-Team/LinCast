@@ -22,8 +22,9 @@
     class=" text-center text-gray-100"
     :class="{
       'flex flex-row justify-around my-2 sm:mt-4 sm:mb-6 sm:mx-14 md:mx-20': expanded,
-      'flex-grow': !expanded,
+      'flex-grow cursor-pointer': !expanded,
     }"
+    @click="if (!expanded) emitOpenEvent();"
   >
     <div v-show="expanded" v-html="share2Icon"></div>
     <div class="" :class="{ 'flex-grow text-center justify-self-center': expanded, 'text-left': !expanded }">
@@ -130,7 +131,8 @@ export default {
       default: false,
     },
   },
-  setup() {
+  emits: ['open-request'],
+  setup(_, context) {
     const playing = ref(false);
     const audioElement = ref(null);
     const currentTime = ref(0);
@@ -229,6 +231,10 @@ export default {
 
     const setPaused = () => { playing.value = false; };
 
+    const emitOpenEvent = () => {
+      context.emit('open-request');
+    };
+
     onMounted(() => {
       audioElement.value.addEventListener('durationchange', updateDuration);
       audioElement.value.addEventListener('timeupdate', updateCurrentAndRemaining);
@@ -266,6 +272,7 @@ export default {
       playPause,
       skipForward,
       skipBackward,
+      emitOpenEvent,
     };
   },
 };
