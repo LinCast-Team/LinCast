@@ -46,8 +46,8 @@
 
   <audio ref="audioElement" :src="audioSrc" preload="auto"></audio>
 
-  <div v-show="expanded" class="flex flex-col gap-1 justify-items-start mx-6 my-6">
-    <div class="flex-grow bg-gradient-to-r from-gray-500 to-gray-700 rounded-md h-2 shadow-inner">
+  <div v-show="expanded" class="flex flex-col gap-2 justify-items-start mx-6 my-6">
+    <div class="flex-grow bg-gradient-to-r from-gray-500 to-gray-700 rounded-md h-1 shadow-inner">
       <div class="rounded-md h-full w-0 shadow-inner" :style="'background-color: #14B8A6; width: ' + calculatedProgress  + '%;'"></div>
     </div>
     <div class="flex flex-row text-gray-400 font-bold text-sm bg-transparent mx-2 justify-between">

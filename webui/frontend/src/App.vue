@@ -7,7 +7,7 @@
   <router-view />
   <div class="fixed bottom-0 right-0 left-0 flex flex-col" :class="{ 'top-0': playerExpanded }">
     <player
-      :audioSrc="'https://wavesurfer-js.org/example/media/demo.wav'"
+      :audioSrc="'http://www.ivoox.com/tortulia-209-william-adams-parte-1_mf_60745571_feed_1.mp3'"
       :artworkSrc="'http://static-2.ivoox.com/canales/1/5/3/4/7691470744351_XXL.jpg'"
       :podcastTitle="'La tortulia podcast'"
       :episodeTitle="'India vs China'"
@@ -28,7 +28,7 @@ export default {
     NavigationBar,
   },
   setup() {
-    const playerExpanded = ref(false);
+    const playerExpanded = ref(true);
 
     return { playerExpanded };
   },
