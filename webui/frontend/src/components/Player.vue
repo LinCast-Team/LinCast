@@ -9,6 +9,7 @@
   <h1 v-show="expanded" class="text-2xl my-8 text-gray-300">Playing Now</h1>
 
   <img
+    id="player__podcast-artwork"
     :src="artworkSrc"
     :alt="podcastTitle + '\'s artwork'"
     class="self-center rounded-md shadow-lg"
@@ -29,6 +30,7 @@
     <div v-show="expanded" v-html="share2Icon"></div>
     <div class="" :class="{ 'flex-grow text-center justify-self-center': expanded, 'text-left': !expanded }">
       <p
+        id="player__podcast-title"
         class="truncate text-gray-100 uppercase"
         :class="{
           'font-extrabold text-xl': expanded,
@@ -36,6 +38,7 @@
         }"
       >{{ podcastTitle }}</p>
       <p
+        id="player__episode-title"
         class="truncate text-gray-400"
         :class="{
           'text-sm': !expanded
@@ -58,6 +61,7 @@
   </div>
 
   <div
+    id="player__buttons"
     class="bg-transparent transition-colors duration-500 text-gray-100"
     :class="{
       'grid grid-cols-5 items-center md:mx-20 py-4 px-1 sm:px-3 lg:px-1 xl:px-3 my-auto': expanded,
@@ -87,7 +91,7 @@
       <div v-html="skipForwardIcon"></div>
     </button>
   </div>
-  <div v-if="episodeDescription !== ''" v-show="expanded" class="m-4 p-2 rounded-xl text-gray-200 bg-real-gray">
+  <div id="player__episode-description" v-if="episodeDescription !== ''" v-show="expanded" class="m-4 p-2 rounded-xl text-gray-200 bg-real-gray">
     {{ episodeDescription }}
   </div>
 </div>
