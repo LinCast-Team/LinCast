@@ -27,7 +27,7 @@
     }"
     @click="if (!expanded) emitOpenEvent();"
   >
-    <div v-show="expanded" v-html="share2Icon"></div>
+    <div v-show="expanded" v-html="share2Icon" class="self-center"></div>
     <div class="" :class="{ 'text-center justify-self-center w-3/5': expanded, 'text-left': !expanded }">
       <p
         id="player__podcast-title"
@@ -45,7 +45,7 @@
         }"
       >{{ episodeTitle }}</p>
     </div>
-    <div v-show="expanded" v-html="moreVerticalIcon"></div>
+    <div v-show="expanded" v-html="moreVerticalIcon" class="self-center"></div>
   </div>
 
   <audio ref="audioElement" :src="audioSrc" preload="auto"></audio>
@@ -156,8 +156,8 @@ export default {
     const rotateCcwIcon = computed(() => feather.icons['rotate-ccw'].toSvg({ 'stroke-width': 1.5, class: 'w-8 h-8 md:w-12 md:h-12' }));
     const skipBackIcon = computed(() => feather.icons['skip-back'].toSvg({ 'stroke-width': 1.5, class: 'w-6 h-6 md:w-10 md:h-10' }));
     const skipForwardIcon = computed(() => feather.icons['skip-forward'].toSvg({ 'stroke-width': 1.5, class: 'w-6 h-6 md:w-10 md:h-10' }));
-    const share2Icon = computed(() => feather.icons['share-2'].toSvg({ class: 'flex-none justify-self-center self-center mx-6 md:mx-14' }));
-    const moreVerticalIcon = computed(() => feather.icons['more-vertical'].toSvg({ class: 'flex-none justify-self-center self-center mx-6 md:mx-12' }));
+    const share2Icon = computed(() => feather.icons['share-2'].toSvg({ class: 'mx-6 md:mx-14' }));
+    const moreVerticalIcon = computed(() => feather.icons['more-vertical'].toSvg({ class: 'mx-6 md:mx-12' }));
 
     const secsToMMSS = (secs) => {
       let minutes = Math.floor(secs / 60);
