@@ -28,7 +28,7 @@
     @click="if (!expanded) emitOpenEvent();"
   >
     <div v-show="expanded" v-html="share2Icon"></div>
-    <div class="" :class="{ 'flex-grow text-center justify-self-center': expanded, 'text-left': !expanded }">
+    <div class="" :class="{ 'text-center justify-self-center w-3/5': expanded, 'text-left': !expanded }">
       <p
         id="player__podcast-title"
         class="truncate text-gray-100 uppercase"

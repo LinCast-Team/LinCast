@@ -12,7 +12,7 @@
       :podcastTitle="'La tortulia podcast'"
       :episodeTitle="'India vs China'"
       :expanded="playerExpanded"
-      :episodeDescription="'Hello world'"
+      :episodeDescription="'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam porttitor vitae velit ac rutrum. Etiam vitae ligula ac dui vestibulum dapibus. Sed fringilla nunc et volutpat euismod. Nullam suscipit, augue non mattis porttitor, magna mauris vehicula velit, ut tristique lacus arcu eu odio. Phasellus mauris nunc, ultricies sit amet leo at, suscipit sagittis metus. In condimentum nulla tristique, eleifend felis eget, dapibus tellus. Fusce tincidunt, turpis non euismod varius, nulla justo congue lectus, et vestibulum dolor purus tincidunt leo. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam iaculis vitae arcu sed rutrum. Donec elementum tempus cursus. Duis eu nisl pharetra, venenatis velit vitae, porttitor lectus. Nullam euismod imperdiet condimentum.'"
       @openRequest="openPlayer"
     />
     <navigation-bar v-show="!playerExpanded" id="nav"/>
