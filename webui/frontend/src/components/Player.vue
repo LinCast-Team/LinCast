@@ -51,8 +51,9 @@
   <audio ref="audioElement" :src="audioSrc" preload="auto"></audio>
 
   <div v-show="expanded" class="flex flex-col gap-2 justify-items-start mx-6 my-6">
-    <div class="flex-grow bg-gradient-to-r from-gray-500 to-gray-700 rounded-md h-1 shadow-inner">
+    <div class="flex-grow bg-gradient-to-r from-gray-500 to-gray-700 rounded-md h-1 shadow-inner flex">
       <div class="rounded-md h-full w-0 shadow-inner" :style="'background-color: #14B8A6; width: ' + calculatedProgress  + '%;'"></div>
+      <div class="h-4 w-4 rounded-full border border-black relative -left-2" style="background-color: #14B8A6; top: -6px;"></div>
     </div>
     <div class="flex flex-row text-gray-400 font-bold text-sm bg-transparent mx-2 justify-between">
       <p>{{ currentTimeStr }}</p>
