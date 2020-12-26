@@ -17,6 +17,7 @@ import (
 type HandlersTestSuite struct {
 	podcastsDBPath     string
 	podcastsDBFilename string
+	sampleFeeds        []string
 
 	suite.Suite
 }
@@ -36,6 +37,25 @@ func (s *HandlersTestSuite) SetupTest() {
 	}
 
 	_podcastsDB = db
+
+	// Prepare the database for tests.
+	s.sampleFeeds = []string{
+		"https://changelog.com/gotime/feed",
+		"https://feeds.emilcar.fm/daily",
+		"https://www.ivoox.com/podcast-despeja-x-by-xataka_fg_f1579492_filtro_1.xml",
+	}
+
+	for _, feed := range s.sampleFeeds {
+		p, err := podcasts.GetPodcast(feed)
+		if err != nil {
+			panic(err)
+		}
+
+		err = _podcastsDB.InsertPodcast(p)
+		if err != nil {
+			panic(err)
+		}
+	}
 }
 
 func (s *HandlersTestSuite) BeforeTest(_, _ string) {}
