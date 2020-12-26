@@ -6,7 +6,8 @@
     'flex-col w-full h-full tea-gradient overflow-y-auto': expanded,
   }"
 > <!-- bg-gradient-to-br from-gray-700 to-gray-900 -->
-  <h1 v-show="expanded" class="text-2xl my-8 text-gray-300">Playing Now</h1>
+  <div v-show="expanded" class="flex-none rounded-lg bg-gray-500 w-1/5 m-auto my-5 h-1 shadow-md"> </div>
+  <h1 v-show="expanded" class="text-2xl mb-8 mt-2 text-gray-300">Playing Now</h1>
 
   <img
     id="player__podcast-artwork"
