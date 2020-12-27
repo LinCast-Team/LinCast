@@ -38,9 +38,7 @@ func (s spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Check if the file exists.
 	_, err := pkger.Stat(path)
 	if err != nil {
-		log.WithField("requestedPath", r.RequestURI).Warnln("Unrecognized path requested, redirecting to root")
-		// If not, then redirect the request to the root path.
-		http.Redirect(w, r, "/", http.StatusPermanentRedirect)
+		w.WriteHeader(http.StatusNotFound)
 
 		return
 	}
