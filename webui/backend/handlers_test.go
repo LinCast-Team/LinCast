@@ -44,6 +44,10 @@ func (s *HandlersTestSuite) SetupTest() {
 		"https://changelog.com/gotime/feed", // Will be removed by TestUnSubscribeToPodcastHandler
 		"https://feeds.emilcar.fm/daily",
 		"https://www.ivoox.com/podcast-despeja-x-by-xataka_fg_f1579492_filtro_1.xml",
+		"https://anchor.fm/s/14d75a0/podcast/rss",
+		"http://feeds.feedburner.com/LaVinetaEnDiscoInferno",
+		"https://anchor.fm/s/564ad20/podcast/rss/",
+		"http://feeds.feedburner.com/StacktraceBy9to5mac",
 	}
 
 	for _, feed := range s.sampleFeeds {
@@ -67,8 +71,7 @@ func (s *HandlersTestSuite) TestSubscribeToPodcastHandler() {
 	}
 
 	assert := assert2.New(s.T())
-	res1 := httptest.NewRecorder()
-	res2 := httptest.NewRecorder()
+	res := httptest.NewRecorder()
 
 	r := reqBody{
 		URL: "https://www.ivoox.com/podcast-tortulia-podcast-episodios_fg_f1157653_filtro_1.xml",
@@ -80,9 +83,9 @@ func (s *HandlersTestSuite) TestSubscribeToPodcastHandler() {
 	}
 
 	req := httptest.NewRequest("POST", "/api/v0/feeds/subscribe", bytes.NewReader(c))
-	newRouter(false, false).ServeHTTP(res1, req)
+	newRouter(false, false).ServeHTTP(res, req)
 
-	assert.Equal(http.StatusOK, res1.Code, "if the body of the request has no issues, it should be"+
+	assert.Equal(http.StatusOK, res.Code, "if the body of the request has no issues, it should be"+
 		" responded with the HTTP status code 200 (OK)")
 
 	r.URL = "ivoox.asdfsadf/podcast-tortulia-podcast-episodios_fg_f1157653_filtro_1.xml"
@@ -93,9 +96,10 @@ func (s *HandlersTestSuite) TestSubscribeToPodcastHandler() {
 	}
 
 	req = httptest.NewRequest("POST", "/api/v0/feeds/subscribe", bytes.NewReader(c))
-	newRouter(false, false).ServeHTTP(res2, req)
+	res = httptest.NewRecorder()
+	newRouter(false, false).ServeHTTP(res, req)
 
-	assert.Equal(http.StatusBadRequest, res2.Code, "if the body of the request contains a not valid URL,"+
+	assert.Equal(http.StatusBadRequest, res.Code, "if the body of the request contains a not valid URL,"+
 		" it should be responded with the HTTP status code 400 (Bad Request)")
 }
 
@@ -104,21 +108,21 @@ func (s *HandlersTestSuite) TestUnSubscribeToPodcastHandler() {
 	res := httptest.NewRecorder()
 	id := 1
 
-	req := httptest.NewRequest("DELETE", "/api/v0/feeds/unsubscribe?id="+strconv.Itoa(id), nil)
+	req := httptest.NewRequest("PUT", "/api/v0/feeds/unsubscribe?id="+strconv.Itoa(id), nil)
 	newRouter(false, false).ServeHTTP(res, req)
 
 	assert.Equal(http.StatusOK, res.Code, "the request should be processed correctly, returning"+
 		" a 200 HTTP status code")
 
 	res = httptest.NewRecorder()
-	req = httptest.NewRequest("DELETE", "/api/v0/feeds/unsubscribe?id="+strconv.Itoa(100), nil)
+	req = httptest.NewRequest("PUT", "/api/v0/feeds/unsubscribe?id="+strconv.Itoa(100), nil)
 	newRouter(false, false).ServeHTTP(res, req)
 
 	assert.Equal(http.StatusBadRequest, res.Code, "the usage of a non existent ID should return"+
 		" a 400 HTTP status code")
 
 	res = httptest.NewRecorder()
-	req = httptest.NewRequest("DELETE", "/api/v0/feeds/unsubscribe", nil)
+	req = httptest.NewRequest("PUT", "/api/v0/feeds/unsubscribe", nil)
 	newRouter(false, false).ServeHTTP(res, req)
 
 	assert.Equal(http.StatusBadRequest, res.Code, "if the request does not contain an ID param,"+
