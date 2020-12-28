@@ -142,3 +142,119 @@ func unsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+func getUserPodcastsHandler(w http.ResponseWriter, r *http.Request) {
+	var subscribed bool
+	var unsubscribed bool
+
+	keys, ok := r.URL.Query()["subscribed"]
+	if !ok || len(keys[0]) < 1 {
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+		}).Warn("Parameter 'subscribed' is not present in the request")
+	} else {
+		s, err := strconv.ParseBool(keys[0])
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+
+			log.WithFields(log.Fields{
+				"remoteAddr":      r.RemoteAddr,
+				"requestURI":      r.RequestURI,
+				"method":          r.Method,
+				"error":           errorx.Decorate(err, "'subscribed' cannot be parsed"),
+				"subscribedValue": keys[0],
+			}).Error("Error when trying to parse the value of 'subscribed' param")
+
+			return
+		}
+
+		subscribed = s
+	}
+
+	keys, ok = r.URL.Query()["unsubscribed"]
+	if !ok || len(keys[0]) < 1 {
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+		}).Warn("Parameter 'unsubscribed' is not present in the request")
+	} else {
+		uns, err := strconv.ParseBool(keys[0])
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+
+			log.WithFields(log.Fields{
+				"remoteAddr":        r.RemoteAddr,
+				"requestURI":        r.RequestURI,
+				"method":            r.Method,
+				"error":             errorx.Decorate(err, "'unsubscribed' cannot be parsed"),
+				"unsubscribedValue": keys[0],
+			}).Error("Error when trying to parse the value of 'unsubscribed' param")
+
+			return
+		}
+
+		unsubscribed = uns
+	}
+
+	var subscribedPodcasts []podcasts.Podcast
+	if subscribed || (!subscribed && !unsubscribed) {
+		sp, err := _podcastsDB.GetPodcastsBySubscribedStatus(true)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+
+			log.WithFields(log.Fields{
+				"remoteAddr": r.RemoteAddr,
+				"requestURI": r.RequestURI,
+				"method":     r.Method,
+				"error":      errorx.EnsureStackTrace(err),
+			}).Error("Error when trying to get subscribed podcasts from db")
+
+			return
+		}
+
+		subscribedPodcasts = *sp
+	}
+
+	var unsubscribedPodcasts []podcasts.Podcast
+	if unsubscribed || (!subscribed && !unsubscribed) {
+		up, err := _podcastsDB.GetPodcastsBySubscribedStatus(false)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+
+			log.WithFields(log.Fields{
+				"remoteAddr": r.RemoteAddr,
+				"requestURI": r.RequestURI,
+				"method":     r.Method,
+				"error":      errorx.EnsureStackTrace(err),
+			}).Error("Error when trying to get unsubscribed podcasts from db")
+
+			return
+		}
+
+		unsubscribedPodcasts = *up
+	}
+
+	p := map[string][]podcasts.Podcast{
+		"subscribed":   subscribedPodcasts,
+		"unsubscribed": unsubscribedPodcasts,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err := json.NewEncoder(w).Encode(p)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"error":      errorx.EnsureStackTrace(err),
+		}).Error("Error when trying to encode the response to the request")
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
+}
