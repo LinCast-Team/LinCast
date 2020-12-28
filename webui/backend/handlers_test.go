@@ -82,7 +82,14 @@ func (s *HandlersTestSuite) TestSubscribeToPodcastHandler() {
 		panic(err)
 	}
 
-	req := httptest.NewRequest("POST", "/api/v0/feeds/subscribe", bytes.NewReader(c))
+	req := httptest.NewRequest("GET", "/api/v0/feeds/subscribe", bytes.NewReader(c))
+	newRouter(false, false).ServeHTTP(res, req)
+
+	assert.Equal(http.StatusNotFound, res.Code, "the usage of a incorrect method should return"+
+		" a 404 HTTP status code")
+
+	req = httptest.NewRequest("POST", "/api/v0/feeds/subscribe", bytes.NewReader(c))
+	res = httptest.NewRecorder()
 	newRouter(false, false).ServeHTTP(res, req)
 
 	assert.Equal(http.StatusOK, res.Code, "if the body of the request has no issues, it should be"+
@@ -108,7 +115,14 @@ func (s *HandlersTestSuite) TestUnSubscribeToPodcastHandler() {
 	res := httptest.NewRecorder()
 	id := 1
 
-	req := httptest.NewRequest("PUT", "/api/v0/feeds/unsubscribe?id="+strconv.Itoa(id), nil)
+	req := httptest.NewRequest("GET", "/api/v0/feeds/unsubscribe?id="+strconv.Itoa(id), nil)
+	newRouter(false, false).ServeHTTP(res, req)
+
+	assert.Equal(http.StatusNotFound, res.Code, "the usage of a incorrect method should return"+
+		" a 404 HTTP status code")
+
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest("PUT", "/api/v0/feeds/unsubscribe?id="+strconv.Itoa(id), nil)
 	newRouter(false, false).ServeHTTP(res, req)
 
 	assert.Equal(http.StatusOK, res.Code, "the request should be processed correctly, returning"+
