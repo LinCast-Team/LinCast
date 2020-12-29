@@ -8,10 +8,13 @@ import (
 	"net/http/httptest"
 	"os"
 	"strconv"
+	"sync"
 	"testing"
+	"time"
 
 	"lincast/podcasts"
 
+	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
 	assert2 "github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -22,6 +25,7 @@ type HandlersTestSuite struct {
 	podcastsDBFilename string
 	sampleFeeds        []string
 
+	mutex sync.Mutex
 	suite.Suite
 }
 
@@ -92,9 +96,11 @@ func (s *HandlersTestSuite) TestSubscribeToPodcastHandler() {
 	assert.Equal(http.StatusNotFound, res.Code, "the usage of a incorrect method should return"+
 		" a 404 HTTP status code")
 
+	s.mutex.Lock()
 	req = httptest.NewRequest("POST", "/api/v0/podcasts/subscribe", bytes.NewReader(c))
 	res = httptest.NewRecorder()
 	newRouter(false, false).ServeHTTP(res, req)
+	s.mutex.Unlock()
 
 	assert.Equal(http.StatusOK, res.Code, "if the body of the request has no issues, it should be"+
 		" responded with the HTTP status code 200 (OK)")
@@ -132,9 +138,11 @@ func (s *HandlersTestSuite) TestUnSubscribeToPodcastHandler() {
 	assert.Equal(http.StatusNotFound, res.Code, "the usage of a incorrect method should return"+
 		" a 404 HTTP status code")
 
+	s.mutex.Lock()
 	res = httptest.NewRecorder()
 	req = httptest.NewRequest("PUT", "/api/v0/podcasts/unsubscribe?id="+strconv.Itoa(id), nil)
 	newRouter(false, false).ServeHTTP(res, req)
+	s.mutex.Unlock()
 
 	assert.Equal(http.StatusOK, res.Code, "the request should be processed correctly, returning"+
 		" a 200 HTTP status code")
@@ -238,6 +246,58 @@ func (s *HandlersTestSuite) TestGetUserPodcastsHandler() {
 		" response's HTTP code should be 400 (Bad Request)")
 	assert.Equal("", res.Header().Get("Content-Type"), "the response should"+
 		" not contain the 'Content-Type' headers'")
+
+	s.mutex.Lock()
+	req = httptest.NewRequest("GET", "/api/v0/podcasts/user?subscribed=false&unsubscribed=true", nil)
+	res = httptest.NewRecorder()
+	newRouter(false, false).ServeHTTP(res, req)
+
+	if assert.Equal(http.StatusOK, res.Code, "the request should be responded with a 200 HTTP status"+
+		" code (OK)") {
+		assert.Equal("application/json", res.Header().Get("Content-Type"), "the response"+
+			" should contain the appropriate 'Content-Type' headers'")
+
+		dbUnsubscribedPodcasts, err := _podcastsDB.GetPodcastsBySubscribedStatus(false)
+		if err != nil {
+			panic(errorx.EnsureStackTrace(err))
+		}
+		s.mutex.Unlock()
+
+		var p map[string][]podcasts.Podcast
+
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			panic(err)
+		}
+
+		err = json.Unmarshal(body, &p)
+		if err != nil {
+			panic(err)
+		}
+
+		if assert.Len(p["unsubscribed"], len(*dbUnsubscribedPodcasts), "the length of returned"+
+			" podcasts should be the same as the length of podcasts stored in the database (with the required"+
+			" subscription status)") {
+			// The absence of metadata on fields of type time.Time will cause a false positive on the test, so we
+			// should overwrite them. Here, we're assuming that the time stored on those fields is correct
+			// something that can be incorrect. However, the correct storage and return of data must be checked
+			// on the package that manages it (lincast/podcasts).
+			for i := range *dbUnsubscribedPodcasts {
+				(*dbUnsubscribedPodcasts)[i].Added = time.Time{}
+				(*dbUnsubscribedPodcasts)[i].LastCheck = time.Time{}
+				(*dbUnsubscribedPodcasts)[i].Updated = time.Time{}
+
+				p["unsubscribed"][i].Added = time.Time{}
+				p["unsubscribed"][i].LastCheck = time.Time{}
+				p["unsubscribed"][i].Updated = time.Time{}
+			}
+
+			assert.Equal(*dbUnsubscribedPodcasts, p["unsubscribed"], "the returned unsubscribed podcasts"+
+				" should be the same as the ones stored in the database")
+		}
+	} else {
+		s.mutex.Unlock()
+	}
 }
 
 func (s *HandlersTestSuite) AfterTest(_, _ string) {}
