@@ -3,6 +3,7 @@ package backend
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
 
@@ -269,5 +270,80 @@ func getUserPodcastsHandler(w http.ResponseWriter, r *http.Request) {
 		}).Error("Error when trying to encode the response to the request")
 	} else {
 		w.WriteHeader(http.StatusOK)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+		}).Debug("Request of user podcasts processed correctly")
+	}
+}
+
+func getPodcastHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := mux.Vars(r)["id"]
+
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"error":      errorx.EnsureStackTrace(err),
+			"givenID":    idStr,
+		}).Error("The given ID cannot be parsed")
+
+		return
+	}
+
+	p, err := _podcastsDB.GetPodcastByID(int(id))
+	if err != nil {
+		if errorx.IsOfType(err, errorx.IllegalArgument) {
+			w.WriteHeader(http.StatusNotFound)
+
+			log.WithFields(log.Fields{
+				"remoteAddr": r.RemoteAddr,
+				"requestURI": r.RequestURI,
+				"method":     r.Method,
+				"error":      errorx.Decorate(err, "the podcast with the given ID does not exist"),
+				"givenID":    id,
+			}).Error("Error when trying to get the requested podcast")
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+
+			log.WithFields(log.Fields{
+				"remoteAddr": r.RemoteAddr,
+				"requestURI": r.RequestURI,
+				"method":     r.Method,
+				"error":      errorx.EnsureStackTrace(err),
+				"givenID":    id,
+			}).Error("Unexpected error when trying to get the requested podcast")
+		}
+
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(p)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"error":      errorx.EnsureStackTrace(err),
+		}).Error("Error when trying to encode the response to the request")
+	} else {
+		w.WriteHeader(http.StatusOK)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"podcastID":  id,
+		}).Debug("Request to get information about a podcast processed correctly")
 	}
 }

@@ -50,7 +50,7 @@ func (s *HandlersTestSuite) SetupTest() {
 	// Prepare the database for tests.
 	s.sampleFeeds = []string{
 		"https://changelog.com/gotime/feed", // Will be unsubscribed by TestUnSubscribeToPodcastHandler
-		"https://feeds.emilcar.fm/daily",
+		"https://feeds.emilcar.fm/daily",    // Will be used by TestGetPodcastHandler
 		"https://www.ivoox.com/podcast-despeja-x-by-xataka_fg_f1579492_filtro_1.xml",
 		"https://anchor.fm/s/14d75a0/podcast/rss",
 		"http://feeds.feedburner.com/LaVinetaEnDiscoInferno",
@@ -93,7 +93,7 @@ func (s *HandlersTestSuite) TestSubscribeToPodcastHandler() {
 	req := httptest.NewRequest("GET", "/api/v0/podcasts/subscribe", bytes.NewReader(c))
 	newRouter(false, false).ServeHTTP(res, req)
 
-	assert.Equal(http.StatusNotFound, res.Code, "the usage of a incorrect method should return"+
+	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
 		" a 404 HTTP status code")
 
 	s.mutex.Lock()
@@ -112,7 +112,7 @@ func (s *HandlersTestSuite) TestSubscribeToPodcastHandler() {
 	assert.Equal(http.StatusConflict, res.Code, "if the submitted feed already exists on the database"+
 		" the request should be responded with the HTTP status code 409 (Conflict)")
 
-	r.URL = "ivoox.asdfsadf/podcast-tortulia-podcast-episodios_fg_f1157653_filtro_1.xml"
+	r.URL = "ivoox.something-wrong/podcast-tortulia-podcast-episodios_fg_f1157653_filtro_1.xml"
 
 	c, err = json.Marshal(r)
 	if err != nil {
@@ -135,7 +135,7 @@ func (s *HandlersTestSuite) TestUnSubscribeToPodcastHandler() {
 	req := httptest.NewRequest("GET", "/api/v0/podcasts/unsubscribe?id="+strconv.Itoa(id), nil)
 	newRouter(false, false).ServeHTTP(res, req)
 
-	assert.Equal(http.StatusNotFound, res.Code, "the usage of a incorrect method should return"+
+	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
 		" a 404 HTTP status code")
 
 	s.mutex.Lock()
@@ -163,7 +163,62 @@ func (s *HandlersTestSuite) TestUnSubscribeToPodcastHandler() {
 }
 
 func (s *HandlersTestSuite) TestGetPodcastHandler() {
+	assert := assert2.New(s.T())
+	res := httptest.NewRecorder()
+	id := 2
 
+	req := httptest.NewRequest("POST", "/api/v0/podcasts/details/"+strconv.Itoa(id), nil)
+	newRouter(false, false).ServeHTTP(res, req)
+
+	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
+		" a 404 HTTP status code")
+	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
+		" the 'Content-Type' headers'")
+
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest("GET", "/api/v0/podcasts/details/"+strconv.Itoa(id), nil)
+	newRouter(false, false).ServeHTTP(res, req)
+
+	assert.Equal(http.StatusOK, res.Code, "the request should be processed correctly, returning"+
+		" a 200 HTTP status code")
+	assert.Equal("application/json", res.Header().Get("Content-Type"), "the response"+
+		" should contain the appropriate 'Content-Type' headers'")
+
+	var receivedPodcast podcasts.Podcast
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	err = json.Unmarshal(body, &receivedPodcast)
+	if err != nil {
+		panic(err)
+	}
+
+	p, err := _podcastsDB.GetPodcastByID(id)
+	if err != nil {
+		panic(err)
+	}
+
+	receivedPodcast.Updated = time.Time{}
+	receivedPodcast.LastCheck = time.Time{}
+	receivedPodcast.Added = time.Time{}
+	p.Updated = time.Time{}
+	p.LastCheck = time.Time{}
+	p.Added = time.Time{}
+
+	assert.Equal(*p, receivedPodcast, "the response should contain the same podcast as the one stored"+
+		" in the database")
+
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest("GET", "/api/v0/podcasts/details/"+strconv.Itoa(100), nil)
+	newRouter(false, false).ServeHTTP(res, req)
+
+	assert.Equal(http.StatusNotFound, res.Code, "if the used ID does not exist, the response should be"+
+		" with the HTTP status code 404 (Not Found)")
+	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
+		" the 'Content-Type' headers'")
 }
 
 func (s *HandlersTestSuite) TestGetUserPodcastsHandler() {
@@ -175,6 +230,8 @@ func (s *HandlersTestSuite) TestGetUserPodcastsHandler() {
 
 	assert.Equal(http.StatusNotFound, res.Code, "the usage of a incorrect method should return"+
 		" a 404 HTTP status code")
+	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
+		" the 'Content-Type' headers'")
 
 	req = httptest.NewRequest("GET", "/api/v0/podcasts/user?subscribed=true&unsubscribed=true", nil)
 	res = httptest.NewRecorder()
