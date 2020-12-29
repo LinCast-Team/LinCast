@@ -12,6 +12,7 @@ import (
 
 	"lincast/podcasts"
 
+	log "github.com/sirupsen/logrus"
 	assert2 "github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -25,6 +26,8 @@ type HandlersTestSuite struct {
 }
 
 func (s *HandlersTestSuite) SetupTest() {
+	log.SetOutput(ioutil.Discard)
+
 	s.podcastsDBPath = "./backend_test"
 	s.podcastsDBFilename = "handlers_podcastsDB_test.sqlite"
 
@@ -95,6 +98,13 @@ func (s *HandlersTestSuite) TestSubscribeToPodcastHandler() {
 
 	assert.Equal(http.StatusOK, res.Code, "if the body of the request has no issues, it should be"+
 		" responded with the HTTP status code 200 (OK)")
+
+	req = httptest.NewRequest("POST", "/api/v0/podcasts/subscribe", bytes.NewReader(c))
+	res = httptest.NewRecorder()
+	newRouter(false, false).ServeHTTP(res, req)
+
+	assert.Equal(http.StatusConflict, res.Code, "if the submitted feed already exists on the database"+
+		" the request should be responded with the HTTP status code 409 (Conflict)")
 
 	r.URL = "ivoox.asdfsadf/podcast-tortulia-podcast-episodios_fg_f1157653_filtro_1.xml"
 
@@ -167,10 +177,7 @@ func (s *HandlersTestSuite) TestGetUserPodcastsHandler() {
 		assert.Equal("application/json", res.Header().Get("Content-Type"), "the response"+
 			" should contain the appropriate 'Content-Type' headers'")
 
-		p := map[string][]podcasts.Podcast{
-			"subscribed":   {},
-			"unsubscribed": {},
-		}
+		var p map[string][]podcasts.Podcast
 
 		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {
@@ -201,10 +208,7 @@ func (s *HandlersTestSuite) TestGetUserPodcastsHandler() {
 		assert.Equal("application/json", res.Header().Get("Content-Type"), "the response"+
 			" should contain the appropriate 'Content-Type' headers'")
 
-		p := map[string][]podcasts.Podcast{
-			"subscribed":   {},
-			"unsubscribed": {},
-		}
+		var p map[string][]podcasts.Podcast
 
 		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {

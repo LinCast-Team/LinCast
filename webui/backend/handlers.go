@@ -52,6 +52,19 @@ func subscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = _podcastsDB.InsertPodcast(p)
 	if err != nil {
+		if errorx.IsOfType(err, errorx.RejectedOperation) {
+			w.WriteHeader(http.StatusConflict)
+
+			log.WithFields(log.Fields{
+				"remoteAddr":  r.RemoteAddr,
+				"requestURI":  r.RequestURI,
+				"method":      r.Method,
+				"request.url": u.URL,
+			}).Warn("The user has tried to subscribe to an already subscribed podcast")
+
+			return
+		}
+
 		w.WriteHeader(http.StatusInternalServerError)
 
 		log.WithFields(log.Fields{
