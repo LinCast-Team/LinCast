@@ -167,7 +167,7 @@ func (s *HandlersTestSuite) TestGetPodcastHandler() {
 	res := httptest.NewRecorder()
 	id := 2
 
-	req := httptest.NewRequest("POST", "/api/v0/podcasts/details/"+strconv.Itoa(id), nil)
+	req := httptest.NewRequest("POST", "/api/v0/podcasts/"+strconv.Itoa(id)+"/details", nil)
 	newRouter(false, false).ServeHTTP(res, req)
 
 	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
@@ -176,7 +176,7 @@ func (s *HandlersTestSuite) TestGetPodcastHandler() {
 		" the 'Content-Type' headers'")
 
 	res = httptest.NewRecorder()
-	req = httptest.NewRequest("GET", "/api/v0/podcasts/details/"+strconv.Itoa(id), nil)
+	req = httptest.NewRequest("GET", "/api/v0/podcasts/"+strconv.Itoa(id)+"/details", nil)
 	newRouter(false, false).ServeHTTP(res, req)
 
 	assert.Equal(http.StatusOK, res.Code, "the request should be processed correctly, returning"+
@@ -212,7 +212,7 @@ func (s *HandlersTestSuite) TestGetPodcastHandler() {
 		" in the database")
 
 	res = httptest.NewRecorder()
-	req = httptest.NewRequest("GET", "/api/v0/podcasts/details/"+strconv.Itoa(100), nil)
+	req = httptest.NewRequest("GET", "/api/v0/podcasts/"+strconv.Itoa(100)+"/details", nil)
 	newRouter(false, false).ServeHTTP(res, req)
 
 	assert.Equal(http.StatusNotFound, res.Code, "if the used ID does not exist, the response should be"+
