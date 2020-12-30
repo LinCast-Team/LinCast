@@ -688,6 +688,13 @@ CREATE TABLE IF NOT EXISTS episodes (
 	played 				BOOLEAN NOT NULL DEFAULT false,
 	current_progress 	TEXT NOT NULL DEFAULT '00:00:00'
 );
+
+CREATE TABLE IF NOT EXISTS player_progress (
+   progress 	REAL,
+   episode_id 	INTEGER,
+   podcast_id 	INTEGER,
+   user 		TEXT
+);
 `
 	_, err := db.Exec(query)
 	if err != nil {
