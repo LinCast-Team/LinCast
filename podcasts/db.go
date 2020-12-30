@@ -690,10 +690,10 @@ CREATE TABLE IF NOT EXISTS episodes (
 );
 
 CREATE TABLE IF NOT EXISTS player_progress (
-   progress 	REAL,
-   episode_id 	INTEGER,
-   podcast_id 	INTEGER,
-   user 		TEXT
+   progress 	 REAL,
+   episode_guid  TEXT,
+   podcast_id 	 INTEGER,
+   user 		 TEXT
 );
 `
 	_, err := db.Exec(query)
