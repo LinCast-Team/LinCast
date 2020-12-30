@@ -1,6 +1,8 @@
-package podcasts
+package queue
 
 import (
+	"lincast/database"
+	"lincast/podcasts"
 	"os"
 	"runtime"
 	"sync"
@@ -42,7 +44,7 @@ func (s *QueueTestSuite) BeforeTest(_, _ string) {}
 func (s *QueueTestSuite) TestNewUpdateQueue() {
 	assert := assert2.New(s.T())
 
-	db, err := NewDB(s.dbPath, "new_update_queue_"+s.dbFilename)
+	db, err := database.New(s.dbPath, "new_update_queue_"+s.dbFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -69,7 +71,7 @@ func (s *QueueTestSuite) TestNewUpdateQueue() {
 func (s *QueueTestSuite) TestWorker() {
 	assert := assert2.New(s.T())
 
-	db, err := NewDB(s.dbPath, "worker_"+s.dbFilename)
+	db, err := database.New(s.dbPath, "worker_"+s.dbFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -92,7 +94,7 @@ func (s *QueueTestSuite) TestWorker() {
 			defer wg.Done()
 
 			// Try to process a podcast
-			p, err := GetPodcast(feed)
+			p, err := podcasts.GetPodcast(feed)
 			if err != nil {
 				panic(errorx.Decorate(err, "error when trying to get podcast"))
 			}
@@ -133,7 +135,7 @@ func (s *QueueTestSuite) TestWorker() {
 func (s *QueueTestSuite) TestNewJob() {
 	assert := assert2.New(s.T())
 
-	db, err := NewDB(s.dbPath, "new_job_"+s.dbFilename)
+	db, err := database.New(s.dbPath, "new_job_"+s.dbFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -142,7 +144,7 @@ func (s *QueueTestSuite) TestNewJob() {
 		_ = db.Close()
 	}()
 
-	p, err := GetPodcast(s.sampleFeeds[0])
+	p, err := podcasts.GetPodcast(s.sampleFeeds[0])
 	if err != nil {
 		panic(errorx.Decorate(err, "error when trying to get the podcast"))
 	}
