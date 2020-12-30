@@ -538,6 +538,11 @@ func New(path, filename string) (*Database, error) {
 	return &db, nil
 }
 
+// GetInstance returns the actual instance of sql.DB. Useful when a custom query need to be executed manually.
+func (db *Database) GetInstance() *sql.DB {
+	return db.instance
+}
+
 func (db *Database) scanRowsToPodcasts(rows *sql.Rows) (*[]podcasts.Podcast, error) {
 	defer func() {
 		err := rows.Close()
