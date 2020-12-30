@@ -98,6 +98,7 @@ func newRouter(devMode, logRequests bool) *mux.Router {
 	router.HandleFunc("/api/v0/podcasts/unsubscribe", unsubscribeToPodcastHandler).Methods("PUT")
 	router.HandleFunc("/api/v0/podcasts/user", getUserPodcastsHandler).Methods("GET")
 	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}/details", getPodcastHandler).Methods("GET")
+	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}/episodes", getEpisodesHandler).Methods("GET")
 	router.PathPrefix("/").Handler(spa)
 
 	return router

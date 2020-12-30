@@ -50,7 +50,7 @@ func (s *HandlersTestSuite) SetupTest() {
 	// Prepare the database for tests.
 	s.sampleFeeds = []string{
 		"https://changelog.com/gotime/feed", // Will be unsubscribed by TestUnSubscribeToPodcastHandler
-		"https://feeds.emilcar.fm/daily",    // Will be used by TestGetPodcastHandler
+		"https://feeds.emilcar.fm/daily",    // Will be used by TestGetPodcastHandler & TestGetEpisodeHandler
 		"https://www.ivoox.com/podcast-despeja-x-by-xataka_fg_f1579492_filtro_1.xml",
 		"https://anchor.fm/s/14d75a0/podcast/rss",
 		"http://feeds.feedburner.com/LaVinetaEnDiscoInferno",
@@ -58,7 +58,7 @@ func (s *HandlersTestSuite) SetupTest() {
 		"http://feeds.feedburner.com/StacktraceBy9to5mac",
 	}
 
-	for _, feed := range s.sampleFeeds {
+	for i, feed := range s.sampleFeeds {
 		p, err := podcasts.GetPodcast(feed)
 		if err != nil {
 			panic(err)
@@ -68,7 +68,26 @@ func (s *HandlersTestSuite) SetupTest() {
 		if err != nil {
 			panic(err)
 		}
+
+		if i != 1 {
+			continue
+		}
+
+		p.ID = i
+
+		eps, err := p.GetEpisodes()
+		if err != nil {
+			panic(err)
+		}
+
+		for _, ep := range *eps {
+			err = _podcastsDB.InsertEpisode(&ep)
+			if err != nil {
+				panic(err)
+			}
+		}
 	}
+
 }
 
 func (s *HandlersTestSuite) BeforeTest(_, _ string) {}
@@ -184,13 +203,12 @@ func (s *HandlersTestSuite) TestGetPodcastHandler() {
 	assert.Equal("application/json", res.Header().Get("Content-Type"), "the response"+
 		" should contain the appropriate 'Content-Type' headers'")
 
-	var receivedPodcast podcasts.Podcast
-
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		panic(err)
 	}
 
+	var receivedPodcast podcasts.Podcast
 	err = json.Unmarshal(body, &receivedPodcast)
 	if err != nil {
 		panic(err)
@@ -355,6 +373,67 @@ func (s *HandlersTestSuite) TestGetUserPodcastsHandler() {
 	} else {
 		s.mutex.Unlock()
 	}
+}
+
+func (s *HandlersTestSuite) TestGetEpisodesHandler() {
+	assert := assert2.New(s.T())
+	res := httptest.NewRecorder()
+	id := 2
+
+	req := httptest.NewRequest("POST", "/api/v0/podcasts/"+strconv.Itoa(id)+"/episodes", nil)
+	newRouter(false, false).ServeHTTP(res, req)
+
+	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
+		" a 404 HTTP status code")
+	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
+		" the 'Content-Type' headers'")
+
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest("GET", "/api/v0/podcasts/"+strconv.Itoa(id)+"/episodes", nil)
+	newRouter(false, false).ServeHTTP(res, req)
+
+	assert.Equal(http.StatusOK, res.Code, "the request should be processed correctly, returning"+
+		" a 200 HTTP status code")
+	assert.Equal("application/json", res.Header().Get("Content-Type"), "the response"+
+		" should contain the appropriate 'Content-Type' headers'")
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	var receivedEps podcasts.Episodes
+	err = json.Unmarshal(body, &receivedEps)
+	if err != nil {
+		panic(err)
+	}
+
+	for i := range receivedEps {
+		receivedEps[i].Updated = time.Time{}
+		receivedEps[i].Published = time.Time{}
+	}
+
+	eps, err := _podcastsDB.GetEpisodesByPodcast(id)
+	if err != nil {
+		panic(err)
+	}
+
+	for i := range *eps {
+		(*eps)[i].Published = time.Time{}
+		(*eps)[i].Updated = time.Time{}
+	}
+
+	assert.Equal(*eps, receivedEps, "the response should contain the same episodes as the ones that"+
+		" are stored on the database")
+
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest("GET", "/api/v0/podcasts/"+strconv.Itoa(100)+"/episodes", nil)
+	newRouter(false, false).ServeHTTP(res, req)
+
+	assert.Equal(http.StatusNotFound, res.Code, "if the used ID does not exist, the response should be"+
+		" with the HTTP status code 404 (Not Found)")
+	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
+		" the 'Content-Type' headers'")
 }
 
 func (s *HandlersTestSuite) AfterTest(_, _ string) {}
