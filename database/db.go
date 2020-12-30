@@ -692,7 +692,8 @@ CREATE TABLE IF NOT EXISTS episodes (
 );
 
 CREATE TABLE IF NOT EXISTS player_progress (
-   progress 	 REAL,
+   id 			 INTEGER PRIMARY KEY CHECK (id = 0),
+   progress 	 INTEGER,
    episode_guid  TEXT,
    podcast_id 	 INTEGER,
    user 		 TEXT
