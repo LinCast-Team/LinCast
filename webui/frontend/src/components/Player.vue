@@ -78,8 +78,8 @@
     </button>
     <button @click="playPause" class=" mx-4 rounded-full" :class="{ 'mx-auto': expanded, 'flex-none': !expanded }">
       <div v-if="expanded">
-        <div v-if="!playing" v-html="playCirleIcon"></div>
-        <div v-else v-html="pauseCirleIcon"></div>
+        <div v-if="!playing" v-html="playCircleIcon"></div>
+        <div v-else v-html="pauseCircleIcon"></div>
       </div>
       <div v-else>
         <div v-if="!playing" v-html="playIcon"></div>
@@ -150,8 +150,8 @@ export default {
     const remainingTimeStr = ref('00:00');
     const duration = ref(0);
 
-    const playCirleIcon = computed(() => feather.icons['play-circle'].toSvg({ 'stroke-width': 0.8, class: 'w-16 h-16 md:w-20 md:h-20' }));
-    const pauseCirleIcon = computed(() => feather.icons['pause-circle'].toSvg({ 'stroke-width': 0.8, class: 'w-16 h-16 md:w-20 md:h-20' }));
+    const playCircleIcon = computed(() => feather.icons['play-circle'].toSvg({ 'stroke-width': 0.8, class: 'w-16 h-16 md:w-20 md:h-20' }));
+    const pauseCircleIcon = computed(() => feather.icons['pause-circle'].toSvg({ 'stroke-width': 0.8, class: 'w-16 h-16 md:w-20 md:h-20' }));
     const playIcon = computed(() => feather.icons['play'].toSvg({ 'stroke-width': 1.0, class: 'w-9 h-9' })); /* eslint-disable-line */
     const pauseIcon = computed(() => feather.icons['pause'].toSvg({ 'stroke-width': 1.0, class: 'w-9 h-9' })); /* eslint-disable-line */
     const rotateCwIcon = computed(() => feather.icons['rotate-cw'].toSvg({ 'stroke-width': 1.5, class: 'w-8 h-8 md:w-12 md:h-12' }));
@@ -260,8 +260,8 @@ export default {
 
     return {
       // Icons
-      playCirleIcon,
-      pauseCirleIcon,
+      playCircleIcon,
+      pauseCircleIcon,
       playIcon,
       pauseIcon,
       rotateCwIcon,
