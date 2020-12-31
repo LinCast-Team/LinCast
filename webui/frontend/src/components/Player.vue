@@ -78,12 +78,20 @@
     </button>
     <button @click="playPause" class=" mx-4 rounded-full" :class="{ 'mx-auto': expanded, 'flex-none': !expanded }">
       <div v-if="expanded">
-        <div v-if="!playing" v-html="playCircleIcon"></div>
-        <div v-else v-html="pauseCircleIcon"></div>
+        <div v-if="!playing">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round" class="w-16 h-16 md:w-20 md:h-20"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8" fill="black" stroke="black"></polygon></svg>
+        </div>
+        <div v-else>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round" class="w-16 h-16 md:w-20 md:h-20"><circle cx="12" cy="12" r="10"></circle><line x1="10" y1="15" x2="10" y2="9" stroke="black" stroke-width="2"></line><line x1="14" y1="15" x2="14" y2="9" stroke="black" stroke-width="2"></line></svg>
+        </div>
       </div>
       <div v-else>
-        <div v-if="!playing" v-html="playIcon"></div>
-        <div v-else v-html="pauseIcon"></div>
+        <div v-if="!playing">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-9 h-9"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        </div>
+        <div v-else>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="w-9 h-9"><rect x="6" y="4" width="4" height="16" stroke="currentColor" fill="currentColor"></rect><rect x="14" y="4" width="4" height="16" stroke="currentColor" fill="currentColor"></rect></svg>
+        </div>
       </div>
     </button>
     <button v-show="expanded" @click="skipForward(15)" class="mx-auto rounded-full">
@@ -150,10 +158,6 @@ export default {
     const remainingTimeStr = ref('00:00');
     const duration = ref(0);
 
-    const playCircleIcon = computed(() => feather.icons['play-circle'].toSvg({ 'stroke-width': 0.8, class: 'w-16 h-16 md:w-20 md:h-20' }));
-    const pauseCircleIcon = computed(() => feather.icons['pause-circle'].toSvg({ 'stroke-width': 0.8, class: 'w-16 h-16 md:w-20 md:h-20' }));
-    const playIcon = computed(() => feather.icons['play'].toSvg({ 'stroke-width': 1.0, class: 'w-9 h-9' })); /* eslint-disable-line */
-    const pauseIcon = computed(() => feather.icons['pause'].toSvg({ 'stroke-width': 1.0, class: 'w-9 h-9' })); /* eslint-disable-line */
     const rotateCwIcon = computed(() => feather.icons['rotate-cw'].toSvg({ 'stroke-width': 1.5, class: 'w-8 h-8 md:w-12 md:h-12' }));
     const rotateCcwIcon = computed(() => feather.icons['rotate-ccw'].toSvg({ 'stroke-width': 1.5, class: 'w-8 h-8 md:w-12 md:h-12' }));
     const skipBackIcon = computed(() => feather.icons['skip-back'].toSvg({ 'stroke-width': 1.5, class: 'w-6 h-6 md:w-10 md:h-10' }));
@@ -260,10 +264,6 @@ export default {
 
     return {
       // Icons
-      playCircleIcon,
-      pauseCircleIcon,
-      playIcon,
-      pauseIcon,
       rotateCwIcon,
       rotateCcwIcon,
       skipBackIcon,
