@@ -154,7 +154,7 @@ func (p *Player) initProgress() error {
 func (p *Player) isDBProgressInitialized() (bool, error) {
 	iDB := p.db.GetInstance()
 	query := `
-SELECT id FROM episodes
+SELECT id FROM player_progress
 WHERE id = 0;
 `
 	// Check if the row exists.
