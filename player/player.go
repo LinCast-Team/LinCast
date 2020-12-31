@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type Player struct {
+type Synchronizer struct {
 	currentProgress *CurrentProgress
 	queue           *Queue
 	db              *database.Database
@@ -27,50 +27,50 @@ type Queue struct {
 }
 
 // New returns a new Player synchronized with the given database.
-func New(db *database.Database) (*Player, error) {
-	p := Player{
+func New(db *database.Database) (*Synchronizer, error) {
+	s := Synchronizer{
 		currentProgress: new(CurrentProgress),
 		queue:           new(Queue),
 		db:              db,
 	}
 
-	err := p.initProgress()
+	err := s.initProgress()
 	if err != nil {
 		return nil, errorx.InitializationFailed.Wrap(err, "error when trying to initialize the progress"+
 			" on the database")
 	}
 
-	return &p, nil
+	return &s, nil
 }
 
 // UpdateProgress updates the progress in the database and caches it internally.
-func (p *Player) UpdateProgress(newProgress time.Duration, episodeGUID string, podcastID int) error {
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
+func (s *Synchronizer) UpdateProgress(newProgress time.Duration, episodeGUID string, podcastID int) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
-	p.currentProgress.Progress = newProgress
-	p.currentProgress.EpisodeGUID = episodeGUID
-	p.currentProgress.PodcastID = podcastID
+	s.currentProgress.Progress = newProgress
+	s.currentProgress.EpisodeGUID = episodeGUID
+	s.currentProgress.PodcastID = podcastID
 
-	return p.updateProgressOnDB()
+	return s.updateProgressOnDB()
 }
 
-func (p *Player) GetProgress() CurrentProgress {
-	p.mutex.RLock()
-	defer p.mutex.RUnlock()
+func (s *Synchronizer) GetProgress() CurrentProgress {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
-	return *p.currentProgress
+	return *s.currentProgress
 }
 
-func (p *Player) updateProgressOnDB() error {
-	iDB := p.db.GetInstance()
+func (s *Synchronizer) updateProgressOnDB() error {
+	iDB := s.db.GetInstance()
 	query := `
 UPDATE player_progress
 SET progress = ?, episode_guid = ?, podcast_id = ?, user = ?
 WHERE id = 0;
 `
 
-	r, err := iDB.Exec(query, p.currentProgress.Progress, p.currentProgress.EpisodeGUID, p.currentProgress.PodcastID, "")
+	r, err := iDB.Exec(query, s.currentProgress.Progress, s.currentProgress.EpisodeGUID, s.currentProgress.PodcastID, "")
 	if err != nil {
 		return err
 	}
@@ -88,13 +88,13 @@ WHERE id = 0;
 	return nil
 }
 
-func (p *Player) initProgress() error {
-	initialized, err := p.isDBProgressInitialized()
+func (s *Synchronizer) initProgress() error {
+	initialized, err := s.isDBProgressInitialized()
 	if err != nil {
 		return err
 	}
 
-	iDB := p.db.GetInstance()
+	iDB := s.db.GetInstance()
 
 	// If there is a row, we need to get those values to set the cache.
 	if initialized {
@@ -119,9 +119,9 @@ func (p *Player) initProgress() error {
 		var user string // Not used
 		err = row.Scan(
 			&id,
-			&p.currentProgress.Progress,
-			&p.currentProgress.EpisodeGUID,
-			&p.currentProgress.PodcastID,
+			&s.currentProgress.Progress,
+			&s.currentProgress.EpisodeGUID,
+			&s.currentProgress.PodcastID,
 			&user,
 		)
 		if err != nil {
@@ -134,7 +134,7 @@ func (p *Player) initProgress() error {
 	// If there isn't a row, we need to create one with empty values.
 	query := "INSERT INTO player_progress (id, progress, episode_guid, podcast_id, user) VALUES (0, ?, ?, ?, ?)"
 
-	r, err := iDB.Exec(query, p.currentProgress.Progress, p.currentProgress.EpisodeGUID, p.currentProgress.PodcastID, "")
+	r, err := iDB.Exec(query, s.currentProgress.Progress, s.currentProgress.EpisodeGUID, s.currentProgress.PodcastID, "")
 	if err != nil {
 		return err
 	}
@@ -151,8 +151,8 @@ func (p *Player) initProgress() error {
 	return nil
 }
 
-func (p *Player) isDBProgressInitialized() (bool, error) {
-	iDB := p.db.GetInstance()
+func (s *Synchronizer) isDBProgressInitialized() (bool, error) {
+	iDB := s.db.GetInstance()
 	query := `
 SELECT id FROM player_progress
 WHERE id = 0;
