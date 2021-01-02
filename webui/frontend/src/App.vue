@@ -14,6 +14,7 @@
       :expanded="playerExpanded"
       :episodeDescription="'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam porttitor vitae velit ac rutrum. Etiam vitae ligula ac dui vestibulum dapibus. Sed fringilla nunc et volutpat euismod. Nullam suscipit, augue non mattis porttitor, magna mauris vehicula velit, ut tristique lacus arcu eu odio. Phasellus mauris nunc, ultricies sit amet leo at, suscipit sagittis metus. In condimentum nulla tristique, eleifend felis eget, dapibus tellus. Fusce tincidunt, turpis non euismod varius, nulla justo congue lectus, et vestibulum dolor purus tincidunt leo. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam iaculis vitae arcu sed rutrum. Donec elementum tempus cursus. Duis eu nisl pharetra, venenatis velit vitae, porttitor lectus. Nullam euismod imperdiet condimentum.'"
       @openRequest="openPlayer"
+      @closeRequest="closePlayer"
     />
     <navigation-bar v-show="!playerExpanded" id="nav"/>
   </div>
@@ -49,14 +50,38 @@ export default {
           opacity: [0, 1],
           top: 0,
           translateY: 0,
-          // easing: 'spring(1, 80, 10, 0)',
           begin: () => {
             playerExpanded.value = true;
           },
         }, '-=300');
     };
 
-    return { playerExpanded, openPlayer };
+    const closePlayer = () => {
+      const tl = anime.timeline({
+        targets: '#player-container',
+        easing: 'easeOutExpo',
+        duration: 700,
+      });
+
+      tl
+        .add({
+          opacity: [1, 0],
+          translateY: 500,
+        })
+        .add({
+          opacity: [0, 1],
+          translateY: 0,
+          begin: () => {
+            playerExpanded.value = false;
+          },
+        }, '-=300');
+    };
+
+    return {
+      playerExpanded,
+      openPlayer,
+      closePlayer,
+    };
   },
 };
 </script>
