@@ -34,6 +34,10 @@ type Queue struct {
 
 // New returns a new Synchronizer.
 func New(db *database.Database) (*Synchronizer, error) {
+	if db == nil {
+		return nil, errorx.IllegalState.New("the db used can't be nil")
+	}
+
 	s := Synchronizer{
 		currentProgress: new(CurrentProgress),
 		queue:           new(Queue),
@@ -51,6 +55,10 @@ func New(db *database.Database) (*Synchronizer, error) {
 
 // UpdateProgress updates the progress of the player in the database and caches it internally.
 func (s *Synchronizer) UpdateProgress(newProgress time.Duration, episodeGUID string, podcastID int) error {
+	if episodeGUID == "" {
+		return errorx.IllegalArgument.New("the episodeGUID should not be empty")
+	}
+
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
