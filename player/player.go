@@ -10,6 +10,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Synchronizer has in charge the synchronization of the different capabilities of the player (current progress,
+// queue, etc) across the different clients.
 type Synchronizer struct {
 	currentProgress *CurrentProgress
 	queue           *Queue
@@ -17,16 +19,20 @@ type Synchronizer struct {
 	mutex           sync.RWMutex
 }
 
+// CurrentProgress is the structure used to store and parse the information related with the episode that is being
+// currently playing on the player.
 type CurrentProgress struct {
 	Progress    time.Duration
 	EpisodeGUID string
 	PodcastID   int
 }
 
+// Queue is the structure that represents the queue of the player (located on the client), and is used for its storage,
+// manipulation and synchronization across clients.
 type Queue struct {
 }
 
-// New returns a new Player synchronized with the given database.
+// New returns a new Synchronizer.
 func New(db *database.Database) (*Synchronizer, error) {
 	s := Synchronizer{
 		currentProgress: new(CurrentProgress),
@@ -43,7 +49,7 @@ func New(db *database.Database) (*Synchronizer, error) {
 	return &s, nil
 }
 
-// UpdateProgress updates the progress in the database and caches it internally.
+// UpdateProgress updates the progress of the player in the database and caches it internally.
 func (s *Synchronizer) UpdateProgress(newProgress time.Duration, episodeGUID string, podcastID int) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -55,6 +61,7 @@ func (s *Synchronizer) UpdateProgress(newProgress time.Duration, episodeGUID str
 	return s.updateProgressOnDB()
 }
 
+// GetProgress returns the current progress of the player.
 func (s *Synchronizer) GetProgress() CurrentProgress {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
