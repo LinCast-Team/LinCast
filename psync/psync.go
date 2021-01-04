@@ -1,4 +1,4 @@
-package player
+package psync
 
 import (
 	"sync"

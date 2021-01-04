@@ -1,7 +1,7 @@
 backend:
   - ./*.go
   - database/**/*
-  - player/**/*
+  - psync/**/*
   - podcasts/**/*
   - queue/**/*
   - server/**/*  
