@@ -39,10 +39,10 @@ jobs:
       
     - name: Compile frontend
       run: |
-        cd webui/frontend
+        cd webui
         npm install
         npm run build
-        cd ../..
+        cd ..
         
     - name: Run pkger
       run: pkger  
