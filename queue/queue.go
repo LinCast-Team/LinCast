@@ -1,7 +1,10 @@
-package podcasts
+package queue
 
 import (
 	"time"
+
+	"lincast/database"
+	"lincast/podcasts"
 
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
@@ -10,16 +13,16 @@ import (
 // Job returns a new job to be processed by a worker of an active UpdateQueue. The channel Job.Done can be used to know
 // when that job has been processed and it shouldn't be used to send something, just to receive.
 type Job struct {
-	Podcast *Podcast
+	Podcast *podcasts.Podcast
 	Done    chan struct{}
 }
 
 type UpdateQueue struct {
-	dbInstance *Database
+	dbInstance *database.Database
 	q          chan Job
 }
 
-func NewUpdateQueue(db *Database, length int) (*UpdateQueue, error) {
+func NewUpdateQueue(db *database.Database, length int) (*UpdateQueue, error) {
 	if length < 1 {
 		return nil, errorx.IllegalArgument.New("the length of the queue should be at least 1")
 	}
@@ -44,7 +47,7 @@ func (q *UpdateQueue) Send(job *Job) {
 	q.q <- *job
 }
 
-func NewJob(p *Podcast) *Job {
+func NewJob(p *podcasts.Podcast) *Job {
 	j := Job{
 		Podcast: p,
 		Done:    make(chan struct{}),

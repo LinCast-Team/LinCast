@@ -1,4 +1,4 @@
-package backend
+package server
 
 import (
 	"net/http"
@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"lincast/podcasts"
+	"lincast/database"
 
 	"github.com/gorilla/mux"
 	"github.com/markbates/pkger"
@@ -15,7 +15,7 @@ import (
 
 const (
 	// Frontend path ("/" is the root of the project).
-	frontendPath = "/webui/frontend/dist"
+	frontendPath = "/webui/dist"
 )
 
 type spaHandler struct {
@@ -48,7 +48,7 @@ func (s spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // New returns a new instance of the server. To execute it, the method `ListenAndServe` must be called.
-func New(port uint16, localServer bool, devMode bool, logRequests bool, podcastsDB *podcasts.Database) *http.Server {
+func New(port uint16, localServer bool, devMode bool, logRequests bool, podcastsDB *database.Database) *http.Server {
 	if podcastsDB == nil {
 		log.Panic("'podcastsDB' is nil")
 	}
@@ -82,6 +82,7 @@ func New(port uint16, localServer bool, devMode bool, logRequests bool, podcasts
 	return &s
 }
 
+// newRouter returns a new instance of the router with their paths already set.
 func newRouter(devMode, logRequests bool) *mux.Router {
 	router := mux.NewRouter()
 

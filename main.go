@@ -6,8 +6,9 @@ import (
 	"runtime"
 	"time"
 
-	"lincast/podcasts"
-	"lincast/webui/backend"
+	"lincast/database"
+	"lincast/queue"
+	"lincast/server"
 
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
@@ -51,7 +52,7 @@ func run(devMode bool) error {
 
 	log.WithFields(log.Fields{"dbPath": dbPath, "dbFilename": dbFilename}).
 		Debug("Creating a new instance of Database")
-	db, err := podcasts.NewDB(dbPath, dbFilename)
+	db, err := database.New(dbPath, dbFilename)
 	if err != nil {
 		return errorx.InternalError.Wrap(errorx.EnsureStackTrace(err), "error when trying to initialize"+
 			" the database in the path '%s'", filepath.Join(dbPath, dbFilename))
@@ -64,7 +65,7 @@ func run(devMode bool) error {
 
 	// Make a new instance of the server.
 	log.Debug("Instantiating backend")
-	sv := backend.New(8080, true, devMode, true, db)
+	sv := server.New(8080, true, devMode, true, db)
 	log.WithFields(log.Fields{
 		"port":        0,
 		"localServer": true,
@@ -81,7 +82,7 @@ func run(devMode bool) error {
 	return nil
 }
 
-func runUpdateQueue(db *podcasts.Database, updateInterval time.Duration) {
+func runUpdateQueue(db *database.Database, updateInterval time.Duration) {
 	log.WithField("updateInterval", updateInterval.String()).Debug("Starting podcasts update loop")
 
 	ticker := time.NewTicker(updateInterval)
@@ -89,7 +90,7 @@ func runUpdateQueue(db *podcasts.Database, updateInterval time.Duration) {
 	qLength := runtime.NumCPU()
 
 	log.WithField("length", qLength).Debug("Instantiating a new UpdateQueue")
-	updateQueue, err := podcasts.NewUpdateQueue(db, qLength)
+	updateQueue, err := queue.NewUpdateQueue(db, qLength)
 	if err != nil {
 		log.WithField("error", errorx.Decorate(errorx.EnsureStackTrace(err), "error when creating update queue")).
 			Panic("Cannot initialize the update queue")
@@ -114,7 +115,7 @@ func runUpdateQueue(db *podcasts.Database, updateInterval time.Duration) {
 	}
 }
 
-func updatePodcasts(db *podcasts.Database, updateQueue *podcasts.UpdateQueue) error {
+func updatePodcasts(db *database.Database, updateQueue *queue.UpdateQueue) error {
 	log.WithFields(log.Fields{
 		"dbIsNil":          db == nil,
 		"updateQueueIsNil": updateQueue == nil,
@@ -129,7 +130,7 @@ func updatePodcasts(db *podcasts.Database, updateQueue *podcasts.UpdateQueue) er
 
 	log.Debug("Starting loop to send subscribed podcasts to UpdateQueue")
 	for _, p := range *subscribedPodcasts {
-		j := podcasts.NewJob(&p)
+		j := queue.NewJob(&p)
 
 		log.WithFields(log.Fields{
 			"jobIsNil":          j == nil,

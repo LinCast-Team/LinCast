@@ -1,4 +1,4 @@
-package backend
+package server
 
 import (
 	"bytes"
@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"lincast/database"
 	"lincast/podcasts"
 
 	"github.com/joomcode/errorx"
@@ -40,7 +41,7 @@ func (s *HandlersTestSuite) SetupTest() {
 		panic(err)
 	}
 
-	db, err := podcasts.NewDB(s.podcastsDBPath, s.podcastsDBFilename)
+	db, err := database.New(s.podcastsDBPath, s.podcastsDBFilename)
 	if err != nil {
 		panic(err)
 	}

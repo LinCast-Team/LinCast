@@ -1,4 +1,4 @@
-package backend
+package server
 
 import (
 	"io/ioutil"
@@ -34,7 +34,7 @@ func (s *ServerTestSuite) TestIndex() {
 	}
 
 	// Get the absolute path of the frontend.
-	fd, err := filepath.Abs("../frontend/dist/index.html")
+	fd, err := filepath.Abs("../webui/dist/index.html")
 	if err != nil {
 		panic(err)
 	}

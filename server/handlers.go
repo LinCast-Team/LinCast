@@ -1,19 +1,20 @@
-package backend
+package server
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
 
+	"lincast/database"
 	"lincast/podcasts"
 
+	"github.com/gorilla/mux"
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
 )
 
-var _podcastsDB *podcasts.Database
+var _podcastsDB *database.Database
 
 func subscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 	u := struct {
