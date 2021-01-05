@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -14,8 +13,6 @@ import (
 	_ "github.com/mattn/go-sqlite3" // SQLite3 package
 	log "github.com/sirupsen/logrus"
 )
-
-var _progressRgx = regexp.MustCompile("^[0-9][0-9]:[0-5][0-9]:[0-5][0-9]$")
 
 type Database struct {
 	Path     string
@@ -449,11 +446,7 @@ WHERE guid = ?;
 	return nil
 }
 
-func (db *Database) UpdateEpisodeProgress(newProgress, guid string) error {
-	if !_progressRgx.MatchString(newProgress) {
-		return errorx.IllegalFormat.New("illegal format on argument newProgress ('%s')", newProgress)
-	}
-
+func (db *Database) UpdateEpisodeProgress(newProgress time.Duration, guid string) error {
 	query := `
 UPDATE episodes
 SET current_progress = ?
@@ -693,7 +686,7 @@ CREATE TABLE IF NOT EXISTS episodes (
 	published 			DATETIME NOT NULL,
 	updated 			DATETIME NOT NULL,
 	played 				BOOLEAN NOT NULL DEFAULT false,
-	current_progress 	TEXT NOT NULL DEFAULT '00:00:00'
+	current_progress 	INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS player_progress (

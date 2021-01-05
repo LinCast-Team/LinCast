@@ -49,7 +49,7 @@ type Episode struct {
 	Published       time.Time // Use the field gofeed.Item.PublishedParsed
 	Updated         time.Time // Use the field gofeed.Item.UpdatedParsed
 	Played          bool
-	CurrentProgress string
+	CurrentProgress time.Duration
 }
 
 // Episodes is a slice of structures of type Episode.
@@ -155,7 +155,7 @@ func (p *Podcast) GetEpisodes() (*Episodes, error) {
 			EnclosureType:   item.Enclosures[0].Type,
 			Season:          item.ITunesExt.Season,
 			Played:          false,
-			CurrentProgress: "00:00:00",
+			CurrentProgress: 0,
 		}
 
 		episodes = append(episodes, e)
