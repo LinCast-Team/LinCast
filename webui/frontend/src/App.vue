@@ -7,7 +7,7 @@
   <div id="player-container" class="fixed bottom-0 right-0 left-0 flex flex-col">
     <player
       id="player"
-      :audioSrc="'http://www.ivoox.com/tortulia-209-william-adams-parte-1_mf_60745571_feed_1.mp3'"
+      :audioSrc="['http://www.ivoox.com/tortulia-209-william-adams-parte-1_mf_60745571_feed_1.mp3']"
       :artworkSrc="'http://static-2.ivoox.com/canales/1/5/3/4/7691470744351_XXL.jpg'"
       :podcastTitle="'La tortulia podcast'"
       :episodeTitle="'India vs China'"
@@ -57,25 +57,29 @@ export default {
     };
 
     const closePlayer = () => {
-      const tl = anime.timeline({
-        targets: '#player-container',
-        easing: 'easeOutExpo',
-        duration: 700,
-      });
+      // const tl = anime.timeline({
+      //   targets: '#player-container',
+      //   easing: 'easeOutExpo',
+      //   duration: 700,
+      // });
 
-      tl
-        .add({
-          opacity: [1, 0],
-          translateY: 500,
-        })
-        .add({
-          opacity: [0, 1],
-          translateY: 0,
-          begin: () => {
-            playerExpanded.value = false;
-          },
-        }, '-=300');
+      // tl
+      //   .add({
+      //     opacity: [1, 0],
+      //     translateY: 500,
+      //   })
+      //   .add({
+      //     opacity: [0, 1],
+      //     translateY: 0,
+      //     begin: () => {
+      //       playerExpanded.value = false;
+      //     },
+      //   }, '-=300');
     };
+
+    // https://animejs.com/documentation/#finishedPromise
+    // another option animation
+    // funtion 700 delete top: ""
 
     return {
       playerExpanded,

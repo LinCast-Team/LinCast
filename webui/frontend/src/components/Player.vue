@@ -49,8 +49,6 @@
     <div v-show="expanded" v-html="moreVerticalIcon" class="self-center"></div>
   </div>
 
-  <audio ref="audioElement" :src="audioSrc" preload="auto"></audio>
-
   <div v-show="expanded" class="flex flex-col gap-2 justify-items-start mx-6 my-6">
     <div class="flex-grow bg-gradient-to-r from-gray-500 to-gray-700 rounded-md h-1 shadow-inner flex">
       <div class="rounded-md h-full w-0 shadow-inner" :style="'background-color: #14B8A6; width: ' + calculatedProgress  + '%;'"></div>
@@ -79,7 +77,11 @@
     <button @click="playPause" class=" mx-4 rounded-full" :class="{ 'mx-auto': expanded, 'flex-none': !expanded }">
       <div v-if="expanded">
         <div v-if="!playing">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round" class="w-16 h-16 md:w-20 md:h-20"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8" fill="black" stroke="black"></polygon></svg>
+          <svg v-if="!loading" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round" class="w-16 h-16 md:w-20 md:h-20"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8" fill="black" stroke="black"></polygon></svg>
+          <svg v-else class="animate-spin w-16 h-16 md:w-20 md:h-20" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
         </div>
         <div v-else>
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round" class="w-16 h-16 md:w-20 md:h-20"><circle cx="12" cy="12" r="10"></circle><line x1="10" y1="15" x2="10" y2="9" stroke="black" stroke-width="2"></line><line x1="14" y1="15" x2="14" y2="9" stroke="black" stroke-width="2"></line></svg>
@@ -87,7 +89,11 @@
       </div>
       <div v-else>
         <div v-if="!playing">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-9 h-9"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          <svg v-if="!loading" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-9 h-9"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          <svg v-else class="animate-spin w-9 h-9" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
         </div>
         <div v-else>
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="w-9 h-9"><rect x="6" y="4" width="4" height="16" stroke="currentColor" fill="currentColor"></rect><rect x="14" y="4" width="4" height="16" stroke="currentColor" fill="currentColor"></rect></svg>
@@ -115,13 +121,14 @@ import {
   onBeforeUnmount,
 } from 'vue';
 import feather from 'feather-icons';
+import { Howl } from 'howler';
 
 // http://www.ivoox.com/tortulia-209-william-adams-parte-1_mf_60745571_feed_1.mp3
 
 export default {
   props: {
     audioSrc: {
-      type: String,
+      type: Array,
       required: true,
     },
     artworkSrc: {
@@ -147,16 +154,38 @@ export default {
       required: false,
       default: false,
     },
+    autoplay: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   emits: ['open-request', 'close-request'],
-  setup(_, context) {
+  setup(props, context) {
     const playing = ref(false);
-    const audioElement = ref(null);
     const currentTime = ref(0);
     const remainingTime = ref(0);
     const currentTimeStr = ref('00:00');
     const remainingTimeStr = ref('00:00');
     const duration = ref(0);
+    const volume = ref(1.0);
+    const intervalID = ref(0);
+    const loading = ref(true);
+
+    const audio = ref(new Howl({
+      src: props.audioSrc,
+      autoplay: props.autoplay,
+      volume: volume.value,
+      loop: false,
+      html5: true,
+    }));
+
+    // const currentTime = computed({
+    //   get: () => audio.value.seek(),
+    //   set: (val) => audio.value.seek(val),
+    // });
+
+    // const duration = computed(() => audio.value.duration());
 
     const rotateCwIcon = computed(() => feather.icons['rotate-cw'].toSvg({ 'stroke-width': 1.5, class: 'w-8 h-8 md:w-12 md:h-12' }));
     const rotateCcwIcon = computed(() => feather.icons['rotate-ccw'].toSvg({ 'stroke-width': 1.5, class: 'w-8 h-8 md:w-12 md:h-12' }));
@@ -179,48 +208,19 @@ export default {
       return `${minutes}:${seconds}`;
     };
 
+    // const currentTimeStr = computed(() => secsToMMSS(currentTime.value));
+
     const calculatedProgress = computed(() => (currentTime.value * 100) / duration.value);
 
     const playPause = () => {
-      if (audioElement.value == null) {
-        console.log('AudioElement null');
+      if (!audio.value.state() === 'loaded') {
         return;
       }
 
       if (!playing.value) {
-        console.log('Play clicked');
-        audioElement.value.play();
+        audio.value.play();
       } else {
-        console.log('Pause clicked');
-        audioElement.value.pause();
-      }
-    };
-
-    const skipBackward = (secs) => {
-      if (audioElement.value == null) {
-        return;
-      }
-
-      if (currentTime.value <= secs) {
-        audioElement.value.currentTime = 0;
-        currentTime.value = 0;
-      } else {
-        audioElement.value.currentTime -= secs;
-        currentTime.value -= secs;
-      }
-    };
-
-    const skipForward = (secs) => {
-      if (audioElement.value == null) {
-        return;
-      }
-
-      if ((currentTime.value + secs) >= duration.value) {
-        audioElement.value.currentTime = duration.value;
-        currentTime.value = duration.value;
-      } else {
-        audioElement.value.currentTime += secs;
-        currentTime.value += secs;
+        audio.value.pause();
       }
     };
 
@@ -230,14 +230,36 @@ export default {
     };
 
     const updateDuration = () => {
-      duration.value = audioElement.value.duration;
+      duration.value = audio.value.duration();
       updateRemaining();
     };
 
     const updateCurrentAndRemaining = () => {
-      currentTime.value = audioElement.value.currentTime;
+      currentTime.value = audio.value.seek();
       currentTimeStr.value = secsToMMSS(currentTime.value);
       updateRemaining();
+    };
+
+    const skipBackward = (secs) => {
+      if (currentTime.value <= secs) {
+        // audioElement.value.currentTime = 0;
+        audio.value.seek(0);
+      } else {
+        // audioElement.value.currentTime -= secs;
+        audio.value.seek(currentTime.value - secs);
+      }
+      updateCurrentAndRemaining();
+    };
+
+    const skipForward = (secs) => {
+      if ((currentTime.value + secs) >= duration.value) {
+        // audioElement.value.currentTime = duration.value;
+        audio.value.seek(duration.value);
+      } else {
+        // audioElement.value.currentTime += secs;
+        audio.value.seek(currentTime.value + secs);
+      }
+      updateCurrentAndRemaining();
     };
 
     const setPlaying = () => { playing.value = true; };
@@ -253,17 +275,54 @@ export default {
     };
 
     onMounted(() => {
-      audioElement.value.addEventListener('durationchange', updateDuration);
-      audioElement.value.addEventListener('timeupdate', updateCurrentAndRemaining);
-      audioElement.value.addEventListener('play', setPlaying);
-      audioElement.value.addEventListener('pause', setPaused);
+      audio.value.on('load', () => {
+        updateDuration();
+        loading.value = false;
+      });
+
+      audio.value.on('loaderror', () => {
+        // todo
+      });
+
+      audio.value.on('play', () => {
+        setPlaying();
+        updateCurrentAndRemaining();
+        intervalID.value = setInterval(() => {
+          updateCurrentAndRemaining();
+        }, 500);
+      });
+
+      audio.value.on('playerror', () => {
+        setPaused();
+        clearInterval(intervalID.value);
+      });
+
+      audio.value.on('pause', () => {
+        setPaused();
+        clearInterval(intervalID.value);
+      });
+
+      audio.value.on('end', () => {
+        setPaused();
+        clearInterval(intervalID.value);
+      });
+
+      audio.value.on('stop', () => {
+        setPaused();
+        clearInterval(intervalID.value);
+      });
+
+      audio.value.on('seek', () => {
+        // todo
+      });
+
+      audio.value.on('unlock', () => {
+        // todo
+      });
     });
 
     onBeforeUnmount(() => {
-      audioElement.value.removeEventListener('durationchange', updateDuration);
-      audioElement.value.removeEventListener('timeupdate', updateCurrentAndRemaining);
-      audioElement.value.removeEventListener('play', setPlaying);
-      audioElement.value.removeEventListener('pause', setPaused);
+      audio.value.off();
     });
 
     return {
@@ -276,8 +335,9 @@ export default {
       moreVerticalIcon,
 
       // Player functionality
-      audioElement,
+      audio,
       playing,
+      loading,
       currentTime,
       currentTimeStr,
       remainingTimeStr,
