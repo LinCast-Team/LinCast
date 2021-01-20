@@ -48,10 +48,11 @@ export default {
         })
         .add({
           opacity: [0, 1],
-          top: 0,
+          // top: 0,
           translateY: 0,
           begin: () => {
             playerExpanded.value = true;
+            document.getElementById('player-container').style.top = '0px';
           },
         }, '-=300');
     };
@@ -73,13 +74,9 @@ export default {
           translateY: 0,
           begin: () => {
             playerExpanded.value = false;
-          },
-        }, '-=300')
-        .add({
-          complete: () => {
             document.getElementById('player-container').style.top = 'auto';
           },
-        }, 100);
+        }, '-=300');
     };
 
     return {
@@ -89,9 +86,6 @@ export default {
     };
   },
 };
-
-// const topZero = () => { document.getElementById('player-container').style.top = 'auto'; };
-
 </script>
 
 <style lang="scss">
