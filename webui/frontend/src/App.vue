@@ -74,7 +74,12 @@ export default {
           begin: () => {
             playerExpanded.value = false;
           },
-        }, '-=300');
+        }, '-=300')
+        .add({
+          complete: () => {
+            document.getElementById('player-container').style.top = 'auto';
+          },
+        }, 100);
     };
 
     return {
@@ -84,6 +89,9 @@ export default {
     };
   },
 };
+
+// const topZero = () => { document.getElementById('player-container').style.top = 'auto'; };
+
 </script>
 
 <style lang="scss">
@@ -94,14 +102,4 @@ body {
 .bg-real-gray {
   background-color: #222529;
 }
-
-// .hide-enter-active,
-// .hide-leave-active {
-//   transition: all 1s ease;
-// }
-
-// .hide-enter-from,
-// .hide-leave-to {
-//   transform: translateY(100px);
-// }
 </style>
