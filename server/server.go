@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"lincast/database"
+	"lincast/psync"
 
 	"github.com/gorilla/mux"
 	"github.com/markbates/pkger"
@@ -48,12 +49,17 @@ func (s spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // New returns a new instance of the server. To execute it, the method `ListenAndServe` must be called.
-func New(port uint16, localServer bool, devMode bool, logRequests bool, podcastsDB *database.Database) *http.Server {
+func New(port uint16, localServer bool, devMode bool, logRequests bool, podcastsDB *database.Database, playerSynchronizer *psync.Synchronizer) *http.Server {
 	if podcastsDB == nil {
 		log.Panic("'podcastsDB' is nil")
 	}
 
+	if playerSynchronizer == nil {
+		log.Panic("'playerSynchronizer' is nil")
+	}
+
 	_podcastsDB = podcastsDB
+	_pSynchronizer = playerSynchronizer
 
 	// Include the frontend inside the binary.
 	_ = pkger.Include(frontendPath)
@@ -100,6 +106,7 @@ func newRouter(devMode, logRequests bool) *mux.Router {
 	router.HandleFunc("/api/v0/podcasts/user", getUserPodcastsHandler).Methods("GET")
 	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}/details", getPodcastHandler).Methods("GET")
 	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}/episodes", getEpisodesHandler).Methods("GET")
+	router.HandleFunc("/api/v0/player/progress", playerProgressHandler).Methods("GET", "PUT")
 	router.PathPrefix("/").Handler(spa)
 
 	return router

@@ -14,6 +14,7 @@ import (
 
 	"lincast/database"
 	"lincast/podcasts"
+	"lincast/psync"
 
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
@@ -435,6 +436,85 @@ func (s *HandlersTestSuite) TestGetEpisodesHandler() {
 		" with the HTTP status code 404 (Not Found)")
 	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
 		" the 'Content-Type' headers'")
+}
+
+func (s *HandlersTestSuite) TestPlayerProgressHandler() {
+	assert := assert2.New(s.T())
+	res := httptest.NewRecorder()
+
+	ps, err := psync.New(_podcastsDB)
+	if err != nil {
+		assert.FailNowf("the player synchronizer can't be instantiated", "error when trying to"+
+			" instantiate the player synchronizer: %s", errorx.EnsureStackTrace(err))
+	}
+
+	_pSynchronizer = ps
+
+	req := httptest.NewRequest("DELETE", "/api/v0/player/progress", nil)
+	newRouter(false, false).ServeHTTP(res, req)
+
+	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
+		" a 404 HTTP status code")
+	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
+		" the 'Content-Type' headers'")
+
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest("GET", "/api/v0/player/progress", nil)
+	newRouter(false, false).ServeHTTP(res, req)
+
+	assert.Equal(http.StatusOK, res.Code, "the request should be processed correctly, returning"+
+		" a 200 HTTP status code")
+	assert.Equal("application/json", res.Header().Get("Content-Type"), "the response"+
+		" should contain the appropriate 'Content-Type' headers'")
+
+	var progress psync.CurrentProgress
+
+	assert.NoError(s.parseProgressReq(res.Body, &progress), "the body of the request should have the"+
+		" required format")
+
+	p := psync.CurrentProgress{
+		Progress:    time.Duration(16898),
+		EpisodeGUID: "1234",
+		PodcastID:   2,
+	}
+
+	b, err := json.Marshal(p)
+	if err != nil {
+		panic(err)
+	}
+
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest("PUT", "/api/v0/player/progress", bytes.NewReader(b))
+	newRouter(false, false).ServeHTTP(res, req)
+
+	assert.Equal(http.StatusOK, res.Code, "the request should be processed correctly, returning"+
+		" a 200 HTTP status code")
+	assert.Equal(p, _pSynchronizer.GetProgress(), "the progress should be correctly updated")
+
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest("GET", "/api/v0/player/progress", nil)
+	newRouter(false, false).ServeHTTP(res, req)
+
+	assert.Equal(http.StatusOK, res.Code, "the request should be processed correctly, returning"+
+		" a 200 HTTP status code")
+	assert.Equal("application/json", res.Header().Get("Content-Type"), "the response"+
+		" should contain the appropriate 'Content-Type' headers'")
+
+	var p1 psync.CurrentProgress
+
+	assert.NoError(s.parseProgressReq(res.Body, &p1), "the body of the request should have the"+
+		" required format")
+
+	assert.Equal(p, p1, "the returned progress should be the same as the one that we have")
+}
+
+func (s *HandlersTestSuite) parseProgressReq(body *bytes.Buffer, progressVar *psync.CurrentProgress) error {
+	b, err := ioutil.ReadAll(body)
+	if err != nil {
+		panic(err)
+	}
+
+	return json.Unmarshal(b, progressVar)
 }
 
 func (s *HandlersTestSuite) AfterTest(_, _ string) {}

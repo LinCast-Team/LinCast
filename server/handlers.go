@@ -8,6 +8,7 @@ import (
 
 	"lincast/database"
 	"lincast/podcasts"
+	"lincast/psync"
 
 	"github.com/gorilla/mux"
 	"github.com/joomcode/errorx"
@@ -15,6 +16,7 @@ import (
 )
 
 var _podcastsDB *database.Database
+var _pSynchronizer *psync.Synchronizer
 
 func subscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 	u := struct {
@@ -416,4 +418,34 @@ func getEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 			"podcastID":  id,
 		}).Debug("Request to get the episodes of a podcast processed correctly")
 	}
+}
+
+func playerProgressHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		w.Header().Set("Content-Type", "application/json")
+
+		p := _pSynchronizer.GetProgress()
+
+		err := json.NewEncoder(w).Encode(p)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
+
+		return
+	}
+
+	var p psync.CurrentProgress
+	err := json.NewDecoder(r.Body).Decode(&p)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+
+	err = _pSynchronizer.UpdateProgress(p.Progress, p.EpisodeGUID, p.PodcastID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
