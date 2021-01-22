@@ -22,9 +22,9 @@ type Synchronizer struct {
 // CurrentProgress is the structure used to store and parse the information related with the episode that is being
 // currently playing on the player.
 type CurrentProgress struct {
-	Progress    time.Duration
-	EpisodeGUID string
-	PodcastID   int
+	Progress    time.Duration `json:"progress"`
+	EpisodeGUID string        `json:"episode_id"`
+	PodcastID   int           `json:"podcast_id"`
 }
 
 // Queue is the structure that represents the queue of the player (located on the client), and is used for its storage,
