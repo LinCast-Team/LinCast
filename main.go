@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"lincast/database"
+	"lincast/psync"
 	"lincast/queue"
 	"lincast/server"
 
@@ -59,13 +60,21 @@ func run(devMode bool) error {
 	}
 	log.Info("Database instantiated correctly")
 
+	log.Debug("Creating a new instance of the Synchronizer")
+	playerSync, err := psync.New(db)
+	if err != nil {
+		return errorx.InternalError.Wrap(errorx.EnsureStackTrace(err), "error when trying to instantiate the"+
+			" synchronizer")
+	}
+	log.Info("Synchronizer instantiated correctly")
+
 	// Run the loop that updates the subscribed podcasts.
 	log.Debug("Running podcasts update loop")
 	go runUpdateQueue(db, time.Minute*30)
 
 	// Make a new instance of the server.
 	log.Debug("Instantiating backend")
-	sv := server.New(8080, true, devMode, true, db)
+	sv := server.New(8080, true, devMode, true, db, playerSync)
 	log.WithFields(log.Fields{
 		"port":        0,
 		"localServer": true,
