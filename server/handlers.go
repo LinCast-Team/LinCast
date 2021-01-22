@@ -426,11 +426,18 @@ func playerProgressHandler(w http.ResponseWriter, r *http.Request) {
 
 		p := _pSynchronizer.GetProgress()
 
+		w.WriteHeader(http.StatusOK)
+
 		err := json.NewEncoder(w).Encode(p)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-		} else {
-			w.WriteHeader(http.StatusOK)
+
+			log.WithFields(log.Fields{
+				"remoteAddr": r.RemoteAddr,
+				"requestURI": r.RequestURI,
+				"method":     r.Method,
+				"error":      errorx.EnsureStackTrace(err),
+			}).Error("Error when trying to decode the request's body")
 		}
 
 		return
@@ -440,11 +447,29 @@ func playerProgressHandler(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&p)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"error":      errorx.EnsureStackTrace(err),
+		}).Error("Error when trying to decode the request's body")
+
+		return
 	}
 
 	err = _pSynchronizer.UpdateProgress(p.Progress, p.EpisodeGUID, p.PodcastID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"error":      errorx.EnsureStackTrace(err),
+		}).Error("Error when trying to update the progress of the player")
+
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
