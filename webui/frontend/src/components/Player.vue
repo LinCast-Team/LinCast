@@ -3,7 +3,7 @@
   class="flex z-50 shadow-lg font-sans transition-colors duration-500 text-center"
   :class="{
     'flex-row items-center bg-real-gray border-solid border-b border-black': !expanded,
-    'flex-col w-full h-full tea-gradient overflow-y-auto': expanded,
+    'flex-col w-full h-full bg-gradient-to-b bg-local from-indigo-900 via-black to-black overflow-y-auto': expanded,
   }"
 > <!-- bg-gradient-to-br from-gray-700 to-gray-900 -->
   <div v-show="expanded" @click="emitCloseEvent" class="flex-none rounded-lg bg-gray-500 w-1/5 m-auto my-5 h-1 shadow-md"></div>
@@ -297,8 +297,5 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
-.tea-gradient {
-  background-image: linear-gradient(to bottom right, #004D40, #000, #000, #000);
-}
+<style lang="scss">
 </style>
