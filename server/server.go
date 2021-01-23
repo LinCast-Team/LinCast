@@ -1,10 +1,13 @@
-package backend
+package server
 
 import (
 	"net/http"
 	"path/filepath"
 	"strconv"
 	"time"
+
+	"lincast/database"
+	"lincast/psync"
 
 	"github.com/gorilla/mux"
 	"github.com/markbates/pkger"
@@ -13,7 +16,7 @@ import (
 
 const (
 	// Frontend path ("/" is the root of the project).
-	frontendPath = "/webui/frontend/dist"
+	frontendPath = "/webui/dist"
 )
 
 type spaHandler struct {
@@ -36,9 +39,7 @@ func (s spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Check if the file exists.
 	_, err := pkger.Stat(path)
 	if err != nil {
-		log.WithField("requestedPath", r.RequestURI).Warnln("Unrecognized path requested, redirecting to root")
-		// If not, then redirect the request to the root path.
-		http.Redirect(w, r, "/", http.StatusPermanentRedirect)
+		w.WriteHeader(http.StatusNotFound)
 
 		return
 	}
@@ -48,7 +49,18 @@ func (s spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // New returns a new instance of the server. To execute it, the method `ListenAndServe` must be called.
-func New(port uint16, localServer bool, devMode bool, logRequests bool) *http.Server {
+func New(port uint16, localServer bool, devMode bool, logRequests bool, podcastsDB *database.Database, playerSynchronizer *psync.Synchronizer) *http.Server {
+	if podcastsDB == nil {
+		log.Panic("'podcastsDB' is nil")
+	}
+
+	if playerSynchronizer == nil {
+		log.Panic("'playerSynchronizer' is nil")
+	}
+
+	_podcastsDB = podcastsDB
+	_pSynchronizer = playerSynchronizer
+
 	// Include the frontend inside the binary.
 	_ = pkger.Include(frontendPath)
 	router := newRouter(devMode, logRequests)
@@ -76,6 +88,7 @@ func New(port uint16, localServer bool, devMode bool, logRequests bool) *http.Se
 	return &s
 }
 
+// newRouter returns a new instance of the router with their paths already set.
 func newRouter(devMode, logRequests bool) *mux.Router {
 	router := mux.NewRouter()
 
@@ -88,8 +101,13 @@ func newRouter(devMode, logRequests bool) *mux.Router {
 		devMode:    devMode,
 	}
 
+	router.HandleFunc("/api/v0/podcasts/subscribe", subscribeToPodcastHandler).Methods("POST")
+	router.HandleFunc("/api/v0/podcasts/unsubscribe", unsubscribeToPodcastHandler).Methods("PUT")
+	router.HandleFunc("/api/v0/podcasts/user", getUserPodcastsHandler).Methods("GET")
+	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}/details", getPodcastHandler).Methods("GET")
+	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}/episodes", getEpisodesHandler).Methods("GET")
+	router.HandleFunc("/api/v0/player/progress", playerProgressHandler).Methods("GET", "PUT")
 	router.PathPrefix("/").Handler(spa)
-	// APIs here
 
 	return router
 }

@@ -1,26 +1,25 @@
-package podcasts
+package database
 
 import (
 	"database/sql"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
+
+	"lincast/podcasts"
 
 	"github.com/joomcode/errorx"
 	_ "github.com/mattn/go-sqlite3" // SQLite3 package
 	log "github.com/sirupsen/logrus"
 )
 
-var _progressRgx = regexp.MustCompile("^[0-9][0-9]:[0-5][0-9]:[0-5][0-9]$")
-
 type Database struct {
 	Path     string
 	instance *sql.DB
 }
 
-func (db *Database) InsertPodcast(p *Podcast) error {
+func (db *Database) InsertPodcast(p *podcasts.Podcast) error {
 	exists, err := db.PodcastExists(p.FeedLink)
 	if err != nil {
 		return err
@@ -121,7 +120,7 @@ WHERE id = ?;
 	return nil
 }
 
-func (db *Database) GetPodcastByID(id int) (*Podcast, error) {
+func (db *Database) GetPodcastByID(id int) (*podcasts.Podcast, error) {
 	query := `
 SELECT * FROM podcasts
 WHERE id = ?;
@@ -144,7 +143,7 @@ WHERE id = ?;
 	}
 
 	var categories string
-	var p Podcast
+	var p podcasts.Podcast
 
 	err = row.Scan(
 		&p.ID,
@@ -174,7 +173,7 @@ WHERE id = ?;
 	return &p, nil
 }
 
-func (db *Database) GetAllPodcasts() (*[]Podcast, error) {
+func (db *Database) GetAllPodcasts() (*[]podcasts.Podcast, error) {
 	query := "SELECT * FROM podcasts;"
 
 	rows, err := db.instance.Query(query)
@@ -185,7 +184,7 @@ func (db *Database) GetAllPodcasts() (*[]Podcast, error) {
 	return db.scanRowsToPodcasts(rows)
 }
 
-func (db *Database) GetPodcastsBySubscribedStatus(subscribed bool) (*[]Podcast, error) {
+func (db *Database) GetPodcastsBySubscribedStatus(subscribed bool) (*[]podcasts.Podcast, error) {
 	query := `
 SELECT * FROM podcasts
 WHERE subscribed = ?;
@@ -312,7 +311,7 @@ WHERE guid = ?;
 	return row.Next(), nil
 }
 
-func (db *Database) InsertEpisode(e *Episode) error {
+func (db *Database) InsertEpisode(e *podcasts.Episode) error {
 	exists, err := db.EpisodeExists(e.GUID)
 	if err != nil {
 		return err
@@ -402,7 +401,7 @@ INSERT INTO episodes (
 	return nil
 }
 
-func (db *Database) GetEpisodesByPodcast(id int) (*Episodes, error) {
+func (db *Database) GetEpisodesByPodcast(id int) (*podcasts.Episodes, error) {
 	exists, err := db.PodcastExistsByID(id)
 	if err != nil {
 		return nil, err
@@ -447,11 +446,7 @@ WHERE guid = ?;
 	return nil
 }
 
-func (db *Database) UpdateEpisodeProgress(newProgress, guid string) error {
-	if !_progressRgx.MatchString(newProgress) {
-		return errorx.IllegalFormat.New("illegal format on argument newProgress ('%s')", newProgress)
-	}
-
+func (db *Database) UpdateEpisodeProgress(newProgress time.Duration, guid string) error {
 	query := `
 UPDATE episodes
 SET current_progress = ?
@@ -511,7 +506,7 @@ func (db *Database) Close() error {
 	return db.instance.Close()
 }
 
-func NewDB(path, filename string) (*Database, error) {
+func New(path, filename string) (*Database, error) {
 	if filename == "" {
 		return nil, errorx.IllegalArgument.New("filename argument can't be an empty string")
 	}
@@ -536,7 +531,12 @@ func NewDB(path, filename string) (*Database, error) {
 	return &db, nil
 }
 
-func (db *Database) scanRowsToPodcasts(rows *sql.Rows) (*[]Podcast, error) {
+// GetInstance returns the actual instance of sql.DB. Useful when a custom query need to be executed manually.
+func (db *Database) GetInstance() *sql.DB {
+	return db.instance
+}
+
+func (db *Database) scanRowsToPodcasts(rows *sql.Rows) (*[]podcasts.Podcast, error) {
 	defer func() {
 		err := rows.Close()
 		if err != nil {
@@ -544,10 +544,10 @@ func (db *Database) scanRowsToPodcasts(rows *sql.Rows) (*[]Podcast, error) {
 		}
 	}()
 
-	var podcasts []Podcast
+	var ps []podcasts.Podcast
 
 	for rows.Next() {
-		var p Podcast
+		var p podcasts.Podcast
 		var categories string
 
 		err := rows.Scan(
@@ -575,13 +575,13 @@ func (db *Database) scanRowsToPodcasts(rows *sql.Rows) (*[]Podcast, error) {
 
 		p.Categories = strings.Split(categories, ",")
 
-		podcasts = append(podcasts, p)
+		ps = append(ps, p)
 	}
 
-	return &podcasts, nil
+	return &ps, nil
 }
 
-func (db *Database) scanRowsToEpisodes(rows *sql.Rows) (*Episodes, error) {
+func (db *Database) scanRowsToEpisodes(rows *sql.Rows) (*podcasts.Episodes, error) {
 	defer func() {
 		err := rows.Close()
 		if err != nil {
@@ -589,10 +589,10 @@ func (db *Database) scanRowsToEpisodes(rows *sql.Rows) (*Episodes, error) {
 		}
 	}()
 
-	var episodes Episodes
+	var episodes podcasts.Episodes
 
 	for rows.Next() {
-		var e Episode
+		var e podcasts.Episode
 		var categories string
 
 		err := rows.Scan(
@@ -686,7 +686,15 @@ CREATE TABLE IF NOT EXISTS episodes (
 	published 			DATETIME NOT NULL,
 	updated 			DATETIME NOT NULL,
 	played 				BOOLEAN NOT NULL DEFAULT false,
-	current_progress 	TEXT NOT NULL DEFAULT '00:00:00'
+	current_progress 	INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS player_progress (
+   id 			 INTEGER PRIMARY KEY CHECK (id = 0),
+   progress 	 INTEGER,
+   episode_guid  TEXT,
+   podcast_id 	 INTEGER,
+   user 		 TEXT
 );
 `
 	_, err := db.Exec(query)

@@ -1,25 +1,28 @@
-package podcasts
+package database
 
 import (
-	"github.com/joomcode/errorx"
-	assert2 "github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 	"os"
 	"testing"
 	"time"
+
+	podcasts2 "lincast/podcasts"
+
+	"github.com/joomcode/errorx"
+	assert2 "github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 type DBTestSuite struct {
 	dbPath     string
 	dbFilename string
-	podcasts   []Podcast
-	episodes   Episodes
+	podcasts   []podcasts2.Podcast
+	episodes   podcasts2.Episodes
 
 	suite.Suite
 }
 
 func (s *DBTestSuite) SetupTest() {
-	s.dbPath = "./test"
+	s.dbPath = "./test_db"
 	s.dbFilename = "test.sqlite"
 
 	err := os.Mkdir(s.dbPath, os.ModePerm)
@@ -27,7 +30,7 @@ func (s *DBTestSuite) SetupTest() {
 		panic(err)
 	}
 
-	s.podcasts = []Podcast{
+	s.podcasts = []podcasts2.Podcast{
 		{
 			ID:          1,
 			Subscribed:  true,
@@ -68,7 +71,7 @@ func (s *DBTestSuite) SetupTest() {
 		},
 	}
 
-	s.episodes = Episodes{
+	s.episodes = podcasts2.Episodes{
 		{
 			ID:              1,
 			ParentPodcastID: s.podcasts[0].ID,
@@ -87,7 +90,7 @@ func (s *DBTestSuite) SetupTest() {
 			Published:       time.Time{},
 			Updated:         time.Time{},
 			Played:          false,
-			CurrentProgress: "",
+			CurrentProgress: 0,
 		},
 		{
 			ID:              2,
@@ -106,7 +109,7 @@ func (s *DBTestSuite) SetupTest() {
 			Season:          "1",
 			Published:       time.Time{},
 			Played:          false,
-			CurrentProgress: "",
+			CurrentProgress: 0,
 		},
 		{
 			ID:              3,
@@ -125,7 +128,7 @@ func (s *DBTestSuite) SetupTest() {
 			Season:          "1",
 			Published:       time.Time{},
 			Played:          false,
-			CurrentProgress: "",
+			CurrentProgress: 0,
 		},
 	}
 }
@@ -135,7 +138,7 @@ func (s *DBTestSuite) BeforeTest(_, _ string) {}
 func (s *DBTestSuite) TestNewDB() {
 	assert := assert2.New(s.T())
 
-	db, err := NewDB(s.dbPath, s.dbFilename)
+	db, err := New(s.dbPath, s.dbFilename)
 
 	assert.NoError(err, "a new instance of the database should be returned without errors")
 	if !assert.NotNil(db, "the returned instance of *sql.DB should not be nil") {
@@ -147,7 +150,7 @@ func (s *DBTestSuite) TestNewDB() {
 
 	assert.NoError(err, "the database should be closed without errors")
 
-	db, err = NewDB(s.dbPath, "")
+	db, err = New(s.dbPath, "")
 
 	if assert.Error(err, "if the argument 'filename' is empty, an error should be returned") {
 		assert.True(errorx.IsOfType(err, errorx.IllegalArgument), "the type of the error returned "+
@@ -159,7 +162,7 @@ func (s *DBTestSuite) TestNewDB() {
 func (s *DBTestSuite) TestInsertPodcast() {
 	assert := assert2.New(s.T())
 
-	db, err := NewDB(s.dbPath, "insert_podcast_"+s.dbFilename)
+	db, err := New(s.dbPath, "insert_podcast_"+s.dbFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -168,7 +171,7 @@ func (s *DBTestSuite) TestInsertPodcast() {
 		_ = db.Close()
 	}()
 
-	p := Podcast{
+	p := podcasts2.Podcast{
 		Subscribed:  false,
 		AuthorName:  "Martin Diaz",
 		AuthorEmail: "something@myemail.com",
@@ -202,7 +205,7 @@ func (s *DBTestSuite) TestInsertPodcast() {
 func (s *DBTestSuite) TestDeletePodcast() {
 	assert := assert2.New(s.T())
 
-	db, err := NewDB(s.dbPath, "delete_podcast_"+s.dbFilename)
+	db, err := New(s.dbPath, "delete_podcast_"+s.dbFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -211,7 +214,7 @@ func (s *DBTestSuite) TestDeletePodcast() {
 		_ = db.Close()
 	}()
 
-	p := Podcast{
+	p := podcasts2.Podcast{
 		ID:          1,
 		Subscribed:  false,
 		AuthorName:  "Martin Diaz",
@@ -252,7 +255,7 @@ func (s *DBTestSuite) TestDeletePodcast() {
 func (s *DBTestSuite) TestGetPodcastByID() {
 	assert := assert2.New(s.T())
 
-	db, err := NewDB(s.dbPath, "get_podcast_by_ID_"+s.dbFilename)
+	db, err := New(s.dbPath, "get_podcast_by_ID_"+s.dbFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -261,7 +264,7 @@ func (s *DBTestSuite) TestGetPodcastByID() {
 		_ = db.Close()
 	}()
 
-	p := Podcast{
+	p := podcasts2.Podcast{
 		ID:          1,
 		Subscribed:  false,
 		AuthorName:  "Martin Diaz",
@@ -324,7 +327,7 @@ func (s *DBTestSuite) TestGetPodcastByID() {
 func (s *DBTestSuite) TestGetAllPodcasts() {
 	assert := assert2.New(s.T())
 
-	db, err := NewDB(s.dbPath, "get_all_podcasts_"+s.dbFilename)
+	db, err := New(s.dbPath, "get_all_podcasts_"+s.dbFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -349,7 +352,7 @@ func (s *DBTestSuite) TestGetAllPodcasts() {
 func (s *DBTestSuite) TestGetPodcastsBySubscribedStatus() {
 	assert := assert2.New(s.T())
 
-	db, err := NewDB(s.dbPath, "get_podcasts_by_subscribed_status"+s.dbFilename)
+	db, err := New(s.dbPath, "get_podcasts_by_subscribed_status"+s.dbFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -358,7 +361,7 @@ func (s *DBTestSuite) TestGetPodcastsBySubscribedStatus() {
 		_ = db.Close()
 	}()
 
-	podcastsSubscribed := []Podcast{
+	podcastsSubscribed := []podcasts2.Podcast{
 		{
 			ID:          1,
 			Subscribed:  true,
@@ -418,7 +421,7 @@ func (s *DBTestSuite) TestGetPodcastsBySubscribedStatus() {
 		},
 	}
 
-	podcastsNotSubscribed := []Podcast{
+	podcastsNotSubscribed := []podcasts2.Podcast{
 		{
 			ID:          4,
 			Subscribed:  false,
@@ -579,7 +582,7 @@ func (s *DBTestSuite) TestGetPodcastsBySubscribedStatus() {
 func (s *DBTestSuite) TestPodcastExists() {
 	assert := assert2.New(s.T())
 
-	db, err := NewDB(s.dbPath, "podcast_exists_"+s.dbFilename)
+	db, err := New(s.dbPath, "podcast_exists_"+s.dbFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -588,7 +591,7 @@ func (s *DBTestSuite) TestPodcastExists() {
 		_ = db.Close()
 	}()
 
-	p := Podcast{
+	p := podcasts2.Podcast{
 		Subscribed:  false,
 		AuthorName:  "Martin Diaz",
 		AuthorEmail: "something@myemail.com",
@@ -627,7 +630,7 @@ func (s *DBTestSuite) TestPodcastExists() {
 func (s *DBTestSuite) TestPodcastExistsByID() {
 	assert := assert2.New(s.T())
 
-	db, err := NewDB(s.dbPath, "podcast_exists_by_id_"+s.dbFilename)
+	db, err := New(s.dbPath, "podcast_exists_by_id_"+s.dbFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -656,7 +659,7 @@ func (s *DBTestSuite) TestPodcastExistsByID() {
 func (s *DBTestSuite) TestSetPodcastSubscription() {
 	assert := assert2.New(s.T())
 
-	db, err := NewDB(s.dbPath, "set_podcast_subscription_"+s.dbFilename)
+	db, err := New(s.dbPath, "set_podcast_subscription_"+s.dbFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -695,7 +698,7 @@ func (s *DBTestSuite) TestUpdatePodcastLastCheck() {
 	assert := assert2.New(s.T())
 	ltTime := time.Now()
 
-	db, err := NewDB(s.dbPath, "update_podcast_last_check_"+s.dbFilename)
+	db, err := New(s.dbPath, "update_podcast_last_check_"+s.dbFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -731,7 +734,7 @@ func (s *DBTestSuite) TestUpdatePodcastLastCheck() {
 func (s *DBTestSuite) TestEpisodeExists() {
 	assert := assert2.New(s.T())
 
-	db, err := NewDB(s.dbPath, "episode_exists_"+s.dbFilename)
+	db, err := New(s.dbPath, "episode_exists_"+s.dbFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -764,7 +767,7 @@ func (s *DBTestSuite) TestEpisodeExists() {
 func (s *DBTestSuite) TestInsertEpisode() {
 	assert := assert2.New(s.T())
 
-	db, err := NewDB(s.dbPath, "insert_episode_"+s.dbFilename)
+	db, err := New(s.dbPath, "insert_episode_"+s.dbFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -804,7 +807,7 @@ func (s *DBTestSuite) TestInsertEpisode() {
 func (s *DBTestSuite) TestGetEpisodesByPodcast() {
 	assert := assert2.New(s.T())
 
-	db, err := NewDB(s.dbPath, "get_episodes_by_podcast_"+s.dbFilename)
+	db, err := New(s.dbPath, "get_episodes_by_podcast_"+s.dbFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -845,7 +848,7 @@ func (s *DBTestSuite) TestGetEpisodesByPodcast() {
 func (s *DBTestSuite) TestSetEpisodePlayed() {
 	assert := assert2.New(s.T())
 
-	db, err := NewDB(s.dbPath, "set_episode_played_"+s.dbFilename)
+	db, err := New(s.dbPath, "set_episode_played_"+s.dbFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -888,7 +891,7 @@ func (s *DBTestSuite) TestSetEpisodePlayed() {
 func (s *DBTestSuite) TestUpdateEpisodeProgress() {
 	assert := assert2.New(s.T())
 
-	db, err := NewDB(s.dbPath, "update_episode_progress_"+s.dbFilename)
+	db, err := New(s.dbPath, "update_episode_progress_"+s.dbFilename)
 	if err != nil {
 		panic(err)
 	}
@@ -907,8 +910,7 @@ func (s *DBTestSuite) TestUpdateEpisodeProgress() {
 		panic(err)
 	}
 
-	//              hh:mm:ss
-	newProgress := "00:10:50"
+	newProgress := time.Second * 102
 	err = db.UpdateEpisodeProgress(newProgress, s.episodes[0].GUID)
 
 	assert.NoError(err, "the episode of the podcast should be updated without problems")
@@ -919,31 +921,12 @@ func (s *DBTestSuite) TestUpdateEpisodeProgress() {
 	}
 
 	assert.Equal(newProgress, (*eps)[0].CurrentProgress)
-
-	cases := []string{
-		"00:15",
-		"16",
-		"00:21:50:09",
-		"00:15:90",
-		"00:80:10",
-		"-80:15:10",
-		"This is not supposed to be here",
-	}
-
-	for _, c := range cases {
-		err = db.UpdateEpisodeProgress(c, s.episodes[0].GUID)
-
-		if assert.Errorf(err, "the usage of a wrong format ('%s') should return an error", c) {
-			assert.True(errorx.IsOfType(err, errorx.IllegalFormat), "the returned error should be of"+
-				" type errorx.IllegalFormat")
-		}
-	}
 }
 
 func (s *DBTestSuite) TestGetEpisodeUpdated() {
 	assert := assert2.New(s.T())
 
-	db, err := NewDB(s.dbPath, "get_episode_updated_"+s.dbFilename)
+	db, err := New(s.dbPath, "get_episode_updated_"+s.dbFilename)
 	if err != nil {
 		panic(err)
 	}

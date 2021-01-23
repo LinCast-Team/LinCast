@@ -1,4 +1,4 @@
-package backend
+package server
 
 import (
 	"net/http"
@@ -14,7 +14,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 			"remoteAddr":    r.RemoteAddr,
 			"tls":           r.TLS != nil,
 			"contentLength": r.ContentLength,
-		}).Infoln("New request")
+		}).Debug("New request")
 		next.ServeHTTP(w, r)
 	})
 }

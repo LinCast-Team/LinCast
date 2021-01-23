@@ -1,12 +1,13 @@
-package backend
+package server
 
 import (
-	assert2 "github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 	"io/ioutil"
 	"net/http/httptest"
 	"path/filepath"
 	"testing"
+
+	assert2 "github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 type ServerTestSuite struct {
@@ -33,7 +34,7 @@ func (s *ServerTestSuite) TestIndex() {
 	}
 
 	// Get the absolute path of the frontend.
-	fd, err := filepath.Abs("../frontend/dist/index.html")
+	fd, err := filepath.Abs("../webui/dist/index.html")
 	if err != nil {
 		panic(err)
 	}

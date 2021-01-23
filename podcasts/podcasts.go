@@ -1,7 +1,6 @@
 package podcasts
 
 import (
-	"net/url"
 	"time"
 
 	"github.com/joomcode/errorx"
@@ -50,7 +49,7 @@ type Episode struct {
 	Published       time.Time // Use the field gofeed.Item.PublishedParsed
 	Updated         time.Time // Use the field gofeed.Item.UpdatedParsed
 	Played          bool
-	CurrentProgress string
+	CurrentProgress time.Duration
 }
 
 // Episodes is a slice of structures of type Episode.
@@ -59,16 +58,10 @@ type Episodes []Episode
 // GetPodcast returns information of a podcast parsed into a struct of type *gofeed.Feed. The information will be
 // obtained from the feed's URL.
 // Possible errors:
-// 	- errorx.IllegalFormat: if the format of the URL is incorrect.
 // 	- errorx.ExternalError: if the request to `feedURL` or the parsing of the response fails.
 func GetPodcast(feedURL string) (*Podcast, error) {
-	valid, parsedURL := isValidURL(feedURL)
-	if !valid {
-		return nil, errorx.IllegalFormat.New("the url '%s' is not correctly formatted", feedURL)
-	}
-
 	parser := gofeed.NewParser()
-	feed, err := parser.ParseURL(parsedURL.String())
+	feed, err := parser.ParseURL(feedURL)
 	if err != nil {
 		return nil, errorx.ExternalError.New("the feed can't be obtained/parsed")
 	}
@@ -162,7 +155,7 @@ func (p *Podcast) GetEpisodes() (*Episodes, error) {
 			EnclosureType:   item.Enclosures[0].Type,
 			Season:          item.ITunesExt.Season,
 			Played:          false,
-			CurrentProgress: "00:00:00",
+			CurrentProgress: 0,
 		}
 
 		episodes = append(episodes, e)
@@ -176,6 +169,7 @@ func (p *Podcast) GetEpisodes() (*Episodes, error) {
 	return &episodes, nil
 }
 
+/*
 func isValidURL(url1 string) (bool, url.URL) {
 	if _, err := url.ParseRequestURI(url1); err != nil {
 		return false, url.URL{}
@@ -188,3 +182,4 @@ func isValidURL(url1 string) (bool, url.URL) {
 
 	return true, *u
 }
+*/
