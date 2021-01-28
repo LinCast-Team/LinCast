@@ -698,9 +698,10 @@ CREATE TABLE IF NOT EXISTS player_progress (
 );
 
 CREATE TABLE IF NOT EXISTS player_queue (
-    id 			INTEGER PRIMARY KEY AUTOINCREMENT,
-    podcast_id 	INTEGER NOT NULL,
-    episode_id 	TEXT NOT NULL
+    id 				INTEGER PRIMARY KEY AUTOINCREMENT,
+    podcast_id 		INTEGER NOT NULL,
+    episode_id 		TEXT NOT NULL,
+    position 		INTEGER NOT NULL
 );
 `
 	_, err := db.Exec(query)
