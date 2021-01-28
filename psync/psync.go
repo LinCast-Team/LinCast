@@ -90,6 +90,26 @@ func (s *Synchronizer) GetProgress() CurrentProgress {
 	return *s.currentProgress
 }
 
+func (s *Synchronizer) GetQueue() (*Queue, error) {
+	return nil, nil
+}
+
+func (s *Synchronizer) SetQueue(eps *[]QueueEpisode) (*Queue, error) {
+	return nil, nil
+}
+
+func (s *Synchronizer) CleanQueue() error {
+	return nil
+}
+
+func (s *Synchronizer) AddToQueue(e QueueEpisode, atBeginning bool) (id int, err error) {
+	return 0, nil
+}
+
+func (s *Synchronizer) RemoveFromQueue(id int) error {
+	return nil
+}
+
 func (s *Synchronizer) updateProgressOnDB() error {
 	iDB := s.db.GetInstance()
 	query := `
