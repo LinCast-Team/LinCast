@@ -30,6 +30,14 @@ type CurrentProgress struct {
 // Queue is the structure that represents the queue of the player (located on the client), and is used for its storage,
 // manipulation and synchronization across clients.
 type Queue struct {
+	Content []QueueEpisode
+}
+
+type QueueEpisode struct {
+	ID        int    `json:"id"`
+	PodcastID int    `json:"podcast_id"`
+	EpisodeID string `json:"episode_id"`
+	Position  int    `json:"position"`
 }
 
 // New returns a new Synchronizer.
@@ -48,6 +56,11 @@ func New(db *database.Database) (*Synchronizer, error) {
 	if err != nil {
 		return nil, errorx.InitializationFailed.Wrap(err, "error when trying to initialize the progress"+
 			" on the database")
+	}
+
+	err = s.initQueue()
+	if err != nil {
+		return nil, errorx.InitializationFailed.Wrap(err, "error when trying to get the queue from the database")
 	}
 
 	return &s, nil
@@ -186,4 +199,38 @@ WHERE id = 0;
 	}()
 
 	return row.Next(), nil
+}
+
+func (s *Synchronizer) initQueue() error {
+	query := "SELECT * FROM player_queue"
+
+	db := s.db.GetInstance()
+
+	row, err := db.Query(query)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		err = row.Close()
+		if err != nil {
+			log.Error(errorx.Decorate(err, "error when trying to close rows"))
+		}
+	}()
+
+	var q Queue
+
+	for row.Next() {
+		var e QueueEpisode
+		err = row.Scan(&e.ID, &e.PodcastID, &e.EpisodeID)
+		if err != nil {
+			return err
+		}
+
+		q.Content = append(q.Content, e)
+	}
+
+	s.queue = &q
+
+	return nil
 }
