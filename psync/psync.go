@@ -242,7 +242,7 @@ func (s *Synchronizer) initQueue() error {
 
 	for row.Next() {
 		var e QueueEpisode
-		err = row.Scan(&e.ID, &e.PodcastID, &e.EpisodeID)
+		err = row.Scan(&e.ID, &e.PodcastID, &e.EpisodeID, &e.Position)
 		if err != nil {
 			return err
 		}
