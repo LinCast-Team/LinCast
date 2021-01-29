@@ -395,7 +395,7 @@ INSERT INTO episodes (
 	}
 
 	if rowsAffected == 0 {
-		return errorx.InternalError.New("no rows has been affected")
+		return errorx.InternalError.New("no rows have been affected")
 	}
 
 	return nil
