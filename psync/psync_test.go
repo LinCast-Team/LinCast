@@ -356,7 +356,8 @@ func (s *SynchronizerTestSuite) insertRandomQueueEps(db *database.Database) (*[]
 	sqlDB := db.GetInstance()
 
 	for _, e := range *eps {
-		r, err := sqlDB.Exec("INSERT INTO player_queue VALUES (?, ?, ?);", e.PodcastID, e.EpisodeID, e.Position)
+		r, err := sqlDB.Exec("INSERT INTO player_queue (podcast_id, episode_id, position) VALUES (?, ?, ?);",
+			e.PodcastID, e.EpisodeID, e.Position)
 		if err != nil {
 			panic(err)
 		}
