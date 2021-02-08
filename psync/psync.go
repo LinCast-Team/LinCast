@@ -147,6 +147,20 @@ func (s *Synchronizer) SetQueue(eps *[]QueueEpisode) error {
 
 // CleanQueue removes the entire queue of the player, deleting the contents from memory and database.
 func (s *Synchronizer) CleanQueue() error {
+	query := "DELETE FROM player_queue;"
+
+	sqlDB := s.db.GetInstance()
+
+	_, err := sqlDB.Exec(query)
+	if err != nil {
+		return err
+	}
+
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	s.queue.Content = []QueueEpisode{}
+
 	return nil
 }
 
