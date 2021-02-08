@@ -98,18 +98,65 @@ func (s *Synchronizer) GetQueue() Queue {
 	return *s.queue
 }
 
-func (s *Synchronizer) SetQueue(eps *[]QueueEpisode) (*Queue, error) {
-	return nil, nil
+// SetQueue overwrites the entire player's queue with the given content.
+func (s *Synchronizer) SetQueue(eps *[]QueueEpisode) error {
+	// Clean the queue to later add the new episodes.
+	err := s.CleanQueue()
+	if err != nil {
+		return err
+	}
+
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	// Get the real instance of the database (*sql.DB) to execute queries directly on it.
+	sqlDB := s.db.GetInstance()
+
+	// Store each episode on the table `player_queue`.
+	for _, ep := range *eps {
+		query := "INSERT INTO player_queue (podcast_id, episode_id, position) VALUES (?, ?, ?);"
+
+		result, err := sqlDB.Exec(query, ep.PodcastID, ep.EpisodeID, ep.Position)
+		if err != nil {
+			return err
+		}
+
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+
+		// If there are no rows affected, then, for some reason, the query has made no effect.
+		if rowsAffected == 0 {
+			return errorx.InternalError.New("no rows have been affected")
+		}
+	}
+
+	// Get the newly stored queue.
+	epsFromDB, err := s.getQueueEpsFromDB()
+	if err != nil {
+		return err
+	}
+
+	// Finally, update the queue in memory with the values that are in the database. This will give us the ID of each
+	// episode.
+	s.queue.Content = *epsFromDB
+
+	return nil
 }
 
+// CleanQueue removes the entire queue of the player, deleting the contents from memory and database.
 func (s *Synchronizer) CleanQueue() error {
 	return nil
 }
 
+// AddToQueue adds the given QueueEpisode to the actual queue. The parameter `atBeginning` defines if that QueueEpisode
+// should be added with the first position or the last one.
 func (s *Synchronizer) AddToQueue(e QueueEpisode, atBeginning bool) (id int, err error) {
 	return 0, nil
 }
 
+// RemoveFromQueue removes the episode with the passed `id` from the queue.
 func (s *Synchronizer) RemoveFromQueue(id int) error {
 	return nil
 }
@@ -257,4 +304,37 @@ func (s *Synchronizer) initQueue() error {
 	s.queue = &q
 
 	return nil
+}
+
+func (s *Synchronizer) getQueueEpsFromDB() (*[]QueueEpisode, error) {
+	query := "SELECT * FROM player_queue;"
+
+	sqlDB := s.db.GetInstance()
+
+	rows, err := sqlDB.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.WithError(err).Error("error when trying to close rows")
+		}
+	}()
+
+	var eps []QueueEpisode
+
+	for rows.Next() {
+		var ep QueueEpisode
+
+		err = rows.Scan(&ep.ID, &ep.PodcastID, &ep.EpisodeID, &ep.Position)
+		if err != nil {
+			return nil, err
+		}
+
+		eps = append(eps, ep)
+	}
+
+	return &eps, nil
 }
