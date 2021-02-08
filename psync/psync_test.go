@@ -287,6 +287,9 @@ func (s *SynchronizerTestSuite) TestAddToQueue() {
 	assert.True(id1 > 0, "the ID given by the database to the new episode should be returned")
 
 	anotherEp1DB, err := s.getQueueEpByEpisodeID(s.dbInstanceQ4, anotherEp1.EpisodeID)
+	if err != nil {
+		panic(err)
+	}
 
 	// position of the last element in the queue + 1 == len(*eps)
 	assert.Equal(len(*eps), anotherEp1DB.Position, "the position of the inserted episode should be the"+
