@@ -184,9 +184,8 @@ func (s *SynchronizerTestSuite) TestGetQueue() {
 		panic(err)
 	}
 
-	q, err := pSync.GetQueue()
+	q := pSync.GetQueue()
 
-	assert.NoError(err, "the queue should be returned without errors")
 	if assert.NotNil(q, "the queue returned should not be nil") {
 		assert.Equal(*eps, q.Content, "the returned queue should be the same as the inserted one")
 	}

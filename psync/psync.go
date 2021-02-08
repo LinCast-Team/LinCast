@@ -90,8 +90,12 @@ func (s *Synchronizer) GetProgress() CurrentProgress {
 	return *s.currentProgress
 }
 
-func (s *Synchronizer) GetQueue() (*Queue, error) {
-	return nil, nil
+// GetQueue returns the actual queue of the player.
+func (s *Synchronizer) GetQueue() Queue {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	return *s.queue
 }
 
 func (s *Synchronizer) SetQueue(eps *[]QueueEpisode) (*Queue, error) {
