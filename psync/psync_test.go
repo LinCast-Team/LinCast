@@ -255,7 +255,7 @@ func (s *SynchronizerTestSuite) TestCleanQueue() {
 func (s *SynchronizerTestSuite) TestAddToQueue() {
 	assert := assert2.New(s.T())
 
-	eps, err := s.insertRandomQueueEps(s.dbInstanceQ4)
+	_, err := s.insertRandomQueueEps(s.dbInstanceQ4)
 	if err != nil {
 		panic(err)
 	}
@@ -269,16 +269,16 @@ func (s *SynchronizerTestSuite) TestAddToQueue() {
 		ID:        0,
 		PodcastID: int(lTesting.RandomInt63(100)),
 		EpisodeID: lTesting.RandomString(5),
-		// The position should be managed by the method, so this random value should not have any effect.
-		Position: int(lTesting.RandomInt63(75)),
+		// The position should be managed by the method, so this value should not have any effect.
+		Position: 0,
 	}
 
 	anotherEp2 := QueueEpisode{
 		ID:        0,
 		PodcastID: int(lTesting.RandomInt63(100)),
 		EpisodeID: lTesting.RandomString(5),
-		// The position should be managed by the method, so this random value should not have any effect.
-		Position: int(lTesting.RandomInt63(75)),
+		// The position should be managed by the method, so this value should not have any effect.
+		Position: 0,
 	}
 
 	id1, err := pSync.AddToQueue(anotherEp1, false)
@@ -291,16 +291,18 @@ func (s *SynchronizerTestSuite) TestAddToQueue() {
 		panic(err)
 	}
 
-	// position of the last element in the queue + 1 == len(*eps)
-	assert.Equal(len(*eps), anotherEp1DB.Position, "the position of the inserted episode should be the"+
-		" position of the last element in the queue + 1. Note: 'last element in the queue' refers to the episode that"+
+	assert.Equal(anotherEp1DB.ID, id1, "the ID returned by the method 'AddToQueue' should be correct")
+	// The length of the queue is: the length of the slice `eps` + 1 (the one that we added) - 1 (because positions start at 0), so
+	// it should be 10.
+	assert.Equal(10, anotherEp1DB.Position, "the position of the inserted episode should equal to the"+
+		" length of the queue - 1. Note: 'last element in the queue' refers to the episode that"+
 		" is literally at the end of the queue, no the episode stored in the last row of the table 'player_queue'.")
 	assert.Equal(anotherEp1.PodcastID, anotherEp1DB.PodcastID, "the 'PodcastID' of the episode returned"+
 		" should be the same as the inserted one")
 	assert.Equal(anotherEp1.EpisodeID, anotherEp1DB.EpisodeID, "the 'EpisodeID' of the episode returned"+
 		" should be the same as the inserted one")
 
-	id2, err := pSync.AddToQueue(anotherEp1, true)
+	id2, err := pSync.AddToQueue(anotherEp2, true)
 
 	assert.NoError(err, "the episode should be added to the queue without errors")
 	assert.True(id2 > 0, "the ID given by the database to the new episode should be returned")
@@ -310,6 +312,8 @@ func (s *SynchronizerTestSuite) TestAddToQueue() {
 		panic(err)
 	}
 
+	assert.Equal(anotherEp2DB.ID, id2, "the ID returned by the method 'AddToQueue' should be correct")
+	// Positions start at 0
 	assert.Equal(0, anotherEp2DB.Position, "the position of the inserted episode should be the"+
 		" position of the last element in the queue + 1. Note: 'last element in the queue' refers to the episode that"+
 		" is literally at the end of the queue, no the episode stored in the last row of the table 'player_queue'.")
