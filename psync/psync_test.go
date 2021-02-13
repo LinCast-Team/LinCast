@@ -344,6 +344,12 @@ func (s *SynchronizerTestSuite) TestRemoveFromQueue() {
 
 	assert.True(errorx.IsOfType(err, errorx.IllegalArgument), "the row should be removed from the table"+
 		" 'player_queue'")
+
+	err = pSync.RemoveFromQueue(9999)
+
+	if assert.Error(err, "if a non-existent ID is used, an error should be returned") {
+		assert.True(errorx.IsOfType(err, errorx.IllegalArgument), "the returned error should be of type errorx.IllegalArgument")
+	}
 }
 
 func (s *SynchronizerTestSuite) AfterTest(_, _ string) {}

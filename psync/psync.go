@@ -251,23 +251,23 @@ func (s *Synchronizer) AddToQueue(e QueueEpisode, atBeginning bool) (id int, err
 	idQuery := "SELECT id FROM player_queue ORDER BY id DESC LIMIT 1;"
 	rows, err := sqlDB.Query(idQuery)
 	if err != nil {
-		log.WithError(err).Panic("error when tring to get the ID of the last row in the table 'player_queue'")
+		log.WithError(err).Panic("Error when tring to get the ID of the last row in the table 'player_queue'")
 	}
 
 	defer func() {
 		err := rows.Close()
 		if err != nil {
-			log.WithError(err).Error("error when trying to close rows")
+			log.WithError(err).Error("Error when trying to close rows")
 		}
 	}()
 
 	if !rows.Next() {
-		log.WithField("addedEp", e).Panic("there should be at least one row to scan")
+		log.WithField("addedEp", e).Panic("There should be at least one row to scan")
 	}
 
 	err = rows.Scan(&id)
 	if err != nil {
-		log.WithError(err).Panic("error when trying to scan the returned ID")
+		log.WithError(err).Panic("Error when trying to scan the returned ID")
 	}
 
 	// Set the obtained ID
@@ -282,29 +282,50 @@ func (s *Synchronizer) AddToQueue(e QueueEpisode, atBeginning bool) (id int, err
 	return id, nil
 }
 
-func (s *Synchronizer) insertEpInQueue(e QueueEpisode) error {
-	sqlDB := s.db.GetInstance()
-	insertQuery := "INSERT INTO player_queue (podcast_id, episode_id, position) VALUES (?, ?, ?);"
-
-	result, err := sqlDB.Exec(insertQuery, e.PodcastID, e.EpisodeID, e.Position)
-	if err != nil {
-		return err
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rowsAffected == 0 {
-		return errorx.InternalError.New("no rows have been affected")
-	}
-
-	return nil
-}
-
 // RemoveFromQueue removes the episode with the passed `id` from the queue.
 func (s *Synchronizer) RemoveFromQueue(id int) error {
+	sqlDB := s.db.GetInstance()
+	query := "DELETE FROM player_queue WHERE id = ?;"
+
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	// Remove the episode from the queue stored in the database.
+	r, err := sqlDB.Exec(query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := r.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	// If no rows has been affected, then the ID does not exist.
+	if rowsAffected == 0 {
+		return errorx.IllegalArgument.New("the ID '%d' does not exist", id)
+	}
+
+	var exists bool
+	var index int
+	for i, e := range s.queue.Content {
+		if e.ID == id {
+			exists = true
+			index = i
+
+			break
+		}
+	}
+
+	if !exists {
+		log.WithField("id", id).Panic("The requested ID does not exist on the cached queue, but exists on the database, which means that the queue is not correctly synchronized")
+	}
+
+	// First, overwrite the element that we want to remove with the last element of the slice.
+	s.queue.Content[index] = s.queue.Content[len(s.queue.Content)-1]
+	// After that, we just need to re-assign our variable without the last element.
+	s.queue.Content = s.queue.Content[:len(s.queue.Content)-1]
+
 	return nil
 }
 
@@ -486,4 +507,25 @@ func (s *Synchronizer) getQueueEpsFromDB() (*[]QueueEpisode, error) {
 	}
 
 	return &eps, nil
+}
+
+func (s *Synchronizer) insertEpInQueue(e QueueEpisode) error {
+	sqlDB := s.db.GetInstance()
+	insertQuery := "INSERT INTO player_queue (podcast_id, episode_id, position) VALUES (?, ?, ?);"
+
+	result, err := sqlDB.Exec(insertQuery, e.PodcastID, e.EpisodeID, e.Position)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errorx.InternalError.New("no rows have been affected")
+	}
+
+	return nil
 }
