@@ -326,6 +326,9 @@ func (s *Synchronizer) RemoveFromQueue(id int) error {
 	// After that, we just need to re-assign our variable without the last element.
 	s.queue.Content = s.queue.Content[:len(s.queue.Content)-1]
 
+	// Update the variable that contains the length.
+	s.queue.len--
+
 	return nil
 }
 
