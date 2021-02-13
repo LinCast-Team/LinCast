@@ -395,7 +395,7 @@ INSERT INTO episodes (
 	}
 
 	if rowsAffected == 0 {
-		return errorx.InternalError.New("no rows has been affected")
+		return errorx.InternalError.New("no rows have been affected")
 	}
 
 	return nil
@@ -690,11 +690,18 @@ CREATE TABLE IF NOT EXISTS episodes (
 );
 
 CREATE TABLE IF NOT EXISTS player_progress (
-   id 			 INTEGER PRIMARY KEY CHECK (id = 0),
-   progress 	 INTEGER,
-   episode_guid  TEXT,
-   podcast_id 	 INTEGER,
-   user 		 TEXT
+	id 			 	INTEGER PRIMARY KEY CHECK (id = 0),
+   	progress 	  	INTEGER,
+   	episode_guid  	TEXT,
+   	podcast_id 	 	INTEGER,
+   	user 		 	TEXT
+);
+
+CREATE TABLE IF NOT EXISTS player_queue (
+    id 				INTEGER PRIMARY KEY AUTOINCREMENT,
+    podcast_id 		INTEGER NOT NULL,
+    episode_id 		TEXT NOT NULL,
+    position 		INTEGER NOT NULL
 );
 `
 	_, err := db.Exec(query)
