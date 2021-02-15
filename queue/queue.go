@@ -59,6 +59,9 @@ func NewJob(p *podcasts.Podcast) *Job {
 func (q *UpdateQueue) worker(id int) {
 	log.WithField("worker", id).Debug("Starting worker")
 
+	// Limit the frequency by which each episode is processed.
+	rateLimiter := time.Tick(time.Millisecond * 300)
+
 	for {
 		job := <-q.q
 		receivedTime := time.Now()
@@ -92,7 +95,7 @@ func (q *UpdateQueue) worker(id int) {
 		}).Info("Episodes obtained")
 
 		for _, e := range *eps {
-			startTime := time.Now()
+			<- rateLimiter
 
 			log.WithFields(log.Fields{
 				"worker":      id,
@@ -100,6 +103,7 @@ func (q *UpdateQueue) worker(id int) {
 				"podcastFeed": job.Podcast.FeedLink,
 				"episodeGUID": e.GUID,
 			}).Debug("Checking if the episode is already on the database")
+
 			exists, err := q.dbInstance.EpisodeExists(e.GUID)
 			if err != nil {
 				log.WithFields(log.Fields{
@@ -130,6 +134,7 @@ func (q *UpdateQueue) worker(id int) {
 				"podcastFeed": job.Podcast.FeedLink,
 				"episodeGUID": e.GUID,
 			}).Debug("Episode is not in the database, storing")
+
 			err = q.dbInstance.InsertEpisode(&e)
 			if err != nil {
 				log.WithFields(log.Fields{
@@ -148,7 +153,6 @@ func (q *UpdateQueue) worker(id int) {
 				"podcastID":                 job.Podcast.ID,
 				"podcastFeed":               job.Podcast.FeedLink,
 				"episodeGUID":               e.GUID,
-				"episodeProcessingDuration": time.Since(startTime).String(),
 			}).Debug("Episode processed")
 		}
 
@@ -157,6 +161,7 @@ func (q *UpdateQueue) worker(id int) {
 			"podcastID":   job.Podcast.ID,
 			"podcastFeed": job.Podcast.FeedLink,
 		}).Debug("Updating last_check column in the database")
+
 		err = q.dbInstance.UpdatePodcastLastCheck(job.Podcast.ID, time.Now())
 		if err != nil {
 			log.WithFields(log.Fields{
@@ -169,6 +174,7 @@ func (q *UpdateQueue) worker(id int) {
 
 			continue
 		}
+
 		log.WithFields(log.Fields{
 			"worker":      id,
 			"podcastID":   job.Podcast.ID,
