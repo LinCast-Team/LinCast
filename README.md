@@ -1,5 +1,5 @@
 <p align="center">
-  <img src=".github/logo.svg" width="180" height="180" alt="LinCast logo">
+  <img src=".github/resources/logo.svg" width="180" height="180" alt="LinCast logo">
 </p>
 
 
