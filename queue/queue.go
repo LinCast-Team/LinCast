@@ -60,7 +60,8 @@ func (q *UpdateQueue) worker(id int) {
 	log.WithField("worker", id).Debug("Starting worker")
 
 	// Limit the frequency by which each episode is processed.
-	rateLimiter := time.Tick(time.Millisecond * 300)
+	rateLimiter := time.NewTicker(time.Millisecond * 300)
+	defer rateLimiter.Stop()
 
 	for {
 		job := <-q.q
@@ -95,7 +96,7 @@ func (q *UpdateQueue) worker(id int) {
 		}).Info("Episodes obtained")
 
 		for _, e := range *eps {
-			<- rateLimiter
+			<- rateLimiter.C
 
 			log.WithFields(log.Fields{
 				"worker":      id,
