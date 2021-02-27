@@ -1,8 +1,10 @@
-package server
+package webui
 
 import (
+	"embed"
+	"io/fs"
 	"net/http"
-	"path/filepath"
+	"os"
 	"strconv"
 	"time"
 
@@ -10,42 +12,26 @@ import (
 	"lincast/psync"
 
 	"github.com/gorilla/mux"
-	"github.com/markbates/pkger"
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	// Frontend path ("/" is the root of the project).
-	frontendPath = "/webui/dist"
-)
+const frontendPath = "frontend/dist"
 
-type spaHandler struct {
-	staticPath string
-	devMode    bool
-}
+//go:embed frontend/dist
+var embededFrontend embed.FS
 
-func (s spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	path := filepath.Join(s.staticPath, r.URL.Path)
-
-	if s.devMode {
-		log.Debugln("Dev mode enabled, adding cache prevention headers")
-
-		// Avoid cache if we are on development mode.
-		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
-		w.Header().Set("Pragma", "no-cache")
-		w.Header().Set("Expires", "0")
+func getFileSystem(devMode bool) http.FileSystem {
+	if devMode {
+		return http.FS(os.DirFS(frontendPath))
 	}
 
-	// Check if the file exists.
-	_, err := pkger.Stat(path)
+	// // Esto es necesario (creo)
+	fsys, err := fs.Sub(embededFrontend, frontendPath)
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-
-		return
+		panic(err)
 	}
 
-	// If there are no errors, serve the requested file from pkger.
-	http.FileServer(pkger.Dir(s.staticPath)).ServeHTTP(w, r)
+	return http.FS(fsys)
 }
 
 // New returns a new instance of the server. To execute it, the method `ListenAndServe` must be called.
@@ -61,8 +47,6 @@ func New(port uint16, localServer bool, devMode bool, logRequests bool, podcasts
 	_podcastsDB = podcastsDB
 	_pSynchronizer = playerSynchronizer
 
-	// Include the frontend inside the binary.
-	_ = pkger.Include(frontendPath)
 	router := newRouter(devMode, logRequests)
 
 	var addr string
@@ -96,18 +80,13 @@ func newRouter(devMode, logRequests bool) *mux.Router {
 		router.Use(loggingMiddleware)
 	}
 
-	spa := spaHandler{
-		staticPath: frontendPath,
-		devMode:    devMode,
-	}
-
 	router.HandleFunc("/api/v0/podcasts/subscribe", subscribeToPodcastHandler).Methods("POST")
 	router.HandleFunc("/api/v0/podcasts/unsubscribe", unsubscribeToPodcastHandler).Methods("PUT")
 	router.HandleFunc("/api/v0/podcasts/user", getUserPodcastsHandler).Methods("GET")
 	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}/details", getPodcastHandler).Methods("GET")
 	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}/episodes", getEpisodesHandler).Methods("GET")
 	router.HandleFunc("/api/v0/player/progress", playerProgressHandler).Methods("GET", "PUT")
-	router.PathPrefix("/").Handler(spa)
+	router.PathPrefix("/").Handler(http.FileServer(getFileSystem(devMode)))
 
 	return router
 }
