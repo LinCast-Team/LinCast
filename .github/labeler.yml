@@ -4,7 +4,7 @@ backend:
   - psync/**/*
   - podcasts/**/*
   - queue/**/*
-  - server/**/*  
+  - webui/*.go  
 
 frontend:
-  - webui/**/*
+  - webui/frontend/**/*
