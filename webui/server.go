@@ -18,17 +18,16 @@ import (
 const frontendPath = "frontend/dist"
 
 //go:embed frontend/dist
-var embededFrontend embed.FS
+var _embededFrontend embed.FS
 
 func getFileSystem(devMode bool) http.FileSystem {
 	if devMode {
 		return http.FS(os.DirFS(frontendPath))
 	}
 
-	// // Esto es necesario (creo)
-	fsys, err := fs.Sub(embededFrontend, frontendPath)
+	fsys, err := fs.Sub(_embededFrontend, frontendPath)
 	if err != nil {
-		panic(err)
+		log.WithError(err).Panic("Error when trying to get a subfs of the embedded frontend")
 	}
 
 	return http.FS(fsys)
