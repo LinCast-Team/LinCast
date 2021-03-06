@@ -16,15 +16,34 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
+/* -------------------------------- Constants ------------------------------- */
+
+// Default filenames (should be read of the configurations in the future).
 const (
 	dbFilename   = "podcasts.sqlite"
 	logsFilename = "lincast.log"
 )
 
+// Default settings of the server (should be read of the configurations in the future).
+const (
+	serverPort  = 8080
+	serverLocal = true
+	serverLogs  = true
+)
+
+// Default settings related with feeds' refresh (should be read of the configurations in the future).
+const (
+	updateFreq = time.Minute * 30
+)
+
+/* -------------------------------------------------------------------------- */
+
 func main() {
 	devMode := os.Getenv("DEV_MODE") != ""
 
 	setupLogger(logsFilename, devMode)
+
+	log.Info("Starting LinCast")
 
 	if r := run(devMode); r != nil {
 		log.Panicln("Error on run:", errorx.Decorate(r, "error on run"))
@@ -32,57 +51,43 @@ func main() {
 }
 
 func run(devMode bool) error {
-	log.Info("Starting LinCast")
-
-	log.Debug("Getting working directory")
 	wd, err := os.Getwd()
 	if err != nil {
 		return errorx.InternalError.Wrap(err, "error when trying to get the working directory")
 	}
-	log.WithField("wd", wd).Debug("Working directory obtained")
 
 	dbPath := filepath.Join(wd, "data/")
-
-	log.WithField("dbPath", dbPath).Debug("Ensuring that the path of the database exists")
 	err = os.MkdirAll(dbPath, os.ModePerm)
 	if err != nil {
 		return errorx.InternalError.Wrap(err, "error when trying to make the directory where the database"+
 			" will be stored")
 	}
-	log.Info("Path of the database checked (or created) correctly")
 
-	log.WithFields(log.Fields{"dbPath": dbPath, "dbFilename": dbFilename}).
-		Debug("Creating a new instance of Database")
 	db, err := database.New(dbPath, dbFilename)
 	if err != nil {
 		return errorx.InternalError.Wrap(errorx.EnsureStackTrace(err), "error when trying to initialize"+
 			" the database in the path '%s'", filepath.Join(dbPath, dbFilename))
 	}
-	log.Info("Database instantiated correctly")
 
-	log.Debug("Creating a new instance of the Synchronizer")
 	playerSync, err := psync.New(db)
 	if err != nil {
 		return errorx.InternalError.Wrap(errorx.EnsureStackTrace(err), "error when trying to instantiate the"+
 			" synchronizer")
 	}
-	log.Info("Synchronizer instantiated correctly")
 
 	// Run the loop that updates the subscribed podcasts.
-	log.Debug("Running podcasts update loop")
-	go runUpdateQueue(db, time.Minute*30)
+	go runUpdateQueue(db, updateFreq)
 
 	// Make a new instance of the server.
-	log.Debug("Instantiating backend")
-	sv := webui.New(8080, true, devMode, true, db, playerSync)
-	log.WithFields(log.Fields{
-		"port":        0,
-		"localServer": true,
-		"devMode":     false,
-		"logRequests": true,
-	}).Info("Backend instantiated")
+	sv := webui.New(serverPort, serverLocal, devMode, serverLogs, db, playerSync)
 
-	log.Debug("Executing server's ListenAndServe method")
+	log.WithFields(log.Fields{
+		"port":        serverPort,
+		"localServer": serverLocal,
+		"devMode":     devMode,
+		"logRequests": serverLogs,
+	}).Info("Starting server")
+
 	err = sv.ListenAndServe()
 	if err != nil {
 		return errorx.InternalError.Wrap(err, "error on server ListenAndServe")
@@ -92,70 +97,52 @@ func run(devMode bool) error {
 }
 
 func runUpdateQueue(db *database.Database, updateInterval time.Duration) {
-	log.WithField("updateInterval", updateInterval.String()).Debug("Starting podcasts update loop")
+	log.WithField("updateInterval", updateInterval.String()).Debug("Starting feeds' update loop")
 
 	ticker := time.NewTicker(updateInterval)
 	defer ticker.Stop()
 	qLength := runtime.NumCPU()
 
-	log.WithField("length", qLength).Debug("Instantiating a new UpdateQueue")
 	updateQueue, err := queue.NewUpdateQueue(db, qLength)
 	if err != nil {
 		log.WithField("error", errorx.Decorate(errorx.EnsureStackTrace(err), "error when creating update queue")).
 			Panic("Cannot initialize the update queue")
 	}
-	log.Debug("UpdateQueue initialized correctly")
 
-	log.Info("Updating podcasts on boot")
+	log.Info("Updating feeds for first time since LinCast is running")
 	err = updatePodcasts(db, updateQueue)
 	if err != nil {
 		log.WithField("error", errorx.Decorate(err, "Error when trying to update podcasts"))
 	}
-	log.Info("Podcasts updated for first time correctly")
 
 	for range ticker.C {
-		log.Debug("Tick received, executing podcasts update")
+		log.Info("Updating podcasts' feeds")
 		err := updatePodcasts(db, updateQueue)
 		if err != nil {
-			log.WithField("error", errorx.Decorate(err, "Error when trying to update podcasts"))
+			log.WithField("error", errorx.EnsureStackTrace(err)).Error("Error when trying to update podcasts' feeds")
 		} else {
-			log.Info("Podcasts update executed correctly, waiting for next signal")
+			log.Info("Podcasts' feeds updated correctly")
 		}
 	}
 }
 
 func updatePodcasts(db *database.Database, updateQueue *queue.UpdateQueue) error {
-	log.WithFields(log.Fields{
-		"dbIsNil":          db == nil,
-		"updateQueueIsNil": updateQueue == nil,
-	}).Debug("Starting the update of podcasts...")
-
-	log.Debug("Getting subscribed podcasts from the database")
 	subscribedPodcasts, err := db.GetPodcastsBySubscribedStatus(true)
 	if err != nil {
 		return errorx.InternalError.Wrap(err, "error trying to get subscribed podcasts")
 	}
-	log.WithField("subscribedPodcastsN", len(*subscribedPodcasts)).Info("Subscribed podcasts obtained")
 
-	log.Debug("Starting loop to send subscribed podcasts to UpdateQueue")
+	log.Debug("Starting loop to send podcasts to the update queue")
 	for _, p := range *subscribedPodcasts {
 		j := queue.NewJob(&p)
 
 		log.WithFields(log.Fields{
-			"jobIsNil":          j == nil,
 			"podcastFeed":       p.FeedLink,
 			"podcastID":         p.ID,
 			"podcastSubscribed": p.Subscribed,
-		}).Debug("Sending podcast to UpdateQueue as a new Job")
+		}).Info("Sending podcast to the update queue")
 
 		updateQueue.Send(j)
-
-		log.WithFields(log.Fields{
-			"jobIsNil":          j == nil,
-			"podcastFeed":       p.FeedLink,
-			"podcastID":         p.ID,
-			"podcastSubscribed": p.Subscribed,
-		}).Debug("Podcast sent to UpdateQueue, worker in action")
 	}
 
 	return nil

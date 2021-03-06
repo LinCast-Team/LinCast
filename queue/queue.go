@@ -57,7 +57,7 @@ func NewJob(p *podcasts.Podcast) *Job {
 }
 
 func (q *UpdateQueue) worker(id int) {
-	log.WithField("worker", id).Debug("Starting worker")
+	log.WithField("worker", id).Debug("Worker started")
 
 	// Limit the frequency by which each episode is processed.
 	rateLimiter := time.NewTicker(time.Millisecond * 300)
@@ -71,39 +71,22 @@ func (q *UpdateQueue) worker(id int) {
 			"worker":      id,
 			"podcastID":   job.Podcast.ID,
 			"podcastFeed": job.Podcast.FeedLink,
-		}).Info("New job received. Updating podcast")
+		}).Info("New job received")
 
-		log.WithFields(log.Fields{
-			"worker":      id,
-			"podcastID":   job.Podcast.ID,
-			"podcastFeed": job.Podcast.FeedLink,
-		}).Debug("Getting episodes")
 		eps, err := job.Podcast.GetEpisodes()
 		if err != nil {
 			log.WithFields(log.Fields{
 				"worker":      id,
 				"podcastID":   job.Podcast.ID,
 				"podcastFeed": job.Podcast.FeedLink,
-				"error": errorx.Decorate(errorx.EnsureStackTrace(err), "error when getting episodes"+
-					" of the podcast")}).Error("Can't get the episodes of the podcast")
+				"error":       errorx.EnsureStackTrace(err),
+			}).Error("Can't get the episodes of the podcast")
 
 			continue
 		}
-		log.WithFields(log.Fields{
-			"worker":      id,
-			"podcastID":   job.Podcast.ID,
-			"podcastFeed": job.Podcast.FeedLink,
-		}).Info("Episodes obtained")
 
 		for _, e := range *eps {
 			<-rateLimiter.C
-
-			log.WithFields(log.Fields{
-				"worker":      id,
-				"podcastID":   job.Podcast.ID,
-				"podcastFeed": job.Podcast.FeedLink,
-				"episodeGUID": e.GUID,
-			}).Debug("Checking if the episode is already on the database")
 
 			exists, err := q.dbInstance.EpisodeExists(e.GUID)
 			if err != nil {
@@ -112,20 +95,13 @@ func (q *UpdateQueue) worker(id int) {
 					"podcastID":   job.Podcast.ID,
 					"podcastFeed": job.Podcast.FeedLink,
 					"episodeGUID": e.GUID,
-					"error":       errorx.Decorate(err, "error when trying to check if an episode exists"),
+					"error":       errorx.EnsureStackTrace(err),
 				}).Error("Can't check if the episode already exists")
 
 				continue
 			}
 
 			if exists {
-				log.WithFields(log.Fields{
-					"worker":      id,
-					"podcastID":   job.Podcast.ID,
-					"podcastFeed": job.Podcast.FeedLink,
-					"episodeGUID": e.GUID,
-				}).Debug("Episode already on the database, skipping")
-
 				continue
 			}
 
@@ -143,25 +119,12 @@ func (q *UpdateQueue) worker(id int) {
 					"podcastID":   job.Podcast.ID,
 					"podcastFeed": job.Podcast.FeedLink,
 					"episodeGUID": e.GUID,
-					"error":       errorx.Decorate(err, "error when trying to save the episode on the database"),
+					"error":       errorx.EnsureStackTrace(err),
 				}).Error("Can't save the episode on the database")
 
 				continue
 			}
-
-			log.WithFields(log.Fields{
-				"worker":      id,
-				"podcastID":   job.Podcast.ID,
-				"podcastFeed": job.Podcast.FeedLink,
-				"episodeGUID": e.GUID,
-			}).Debug("Episode processed")
 		}
-
-		log.WithFields(log.Fields{
-			"worker":      id,
-			"podcastID":   job.Podcast.ID,
-			"podcastFeed": job.Podcast.FeedLink,
-		}).Debug("Updating last_check column in the database")
 
 		err = q.dbInstance.UpdatePodcastLastCheck(job.Podcast.ID, time.Now())
 		if err != nil {
@@ -169,8 +132,7 @@ func (q *UpdateQueue) worker(id int) {
 				"worker":      id,
 				"podcastID":   job.Podcast.ID,
 				"podcastFeed": job.Podcast.FeedLink,
-				"error": errorx.Decorate(err, "error when trying to update the column "+
-					"'last_check' in the database"),
+				"error":       errorx.EnsureStackTrace(err),
 			}).Error("Can't update the LastCheck time in the database")
 
 			continue
@@ -180,14 +142,7 @@ func (q *UpdateQueue) worker(id int) {
 			"worker":      id,
 			"podcastID":   job.Podcast.ID,
 			"podcastFeed": job.Podcast.FeedLink,
-		}).Debug("last_check column updated")
-
-		log.WithFields(log.Fields{
-			"worker":         id,
-			"podcastID":      job.Podcast.ID,
-			"podcastFeed":    job.Podcast.FeedLink,
-			"doneChannelNil": job.Done == nil,
-		}).Debug("Sending notification through the channel Job.Done before finish the job")
+		}).Debug("Job finished, sending notification through the channel Job.Done")
 
 		// Notify that the job has been processed without blocking.
 		select {
@@ -200,6 +155,6 @@ func (q *UpdateQueue) worker(id int) {
 			"podcastID":      job.Podcast.ID,
 			"podcastFeed":    job.Podcast.FeedLink,
 			"updateDuration": time.Since(receivedTime).String(),
-		}).Info("Job finished. Podcast updated correctly")
+		}).Info("Podcast updated correctly")
 	}
 }
