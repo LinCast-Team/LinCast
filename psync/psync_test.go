@@ -1,4 +1,4 @@
-	package psync
+package psync
 
 import (
 	"os"
