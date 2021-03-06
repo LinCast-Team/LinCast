@@ -520,6 +520,8 @@ func (s *HandlersTestSuite) parseProgressReq(body *bytes.Buffer, progressVar *ps
 func (s *HandlersTestSuite) AfterTest(_, _ string) {}
 
 func (s *HandlersTestSuite) TearDownTest() {
+	_ = _podcastsDB.Close()
+
 	err := os.RemoveAll(s.podcastsDBPath)
 	if err != nil {
 		panic(err)
