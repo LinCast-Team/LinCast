@@ -96,7 +96,7 @@ func (q *UpdateQueue) worker(id int) {
 		}).Info("Episodes obtained")
 
 		for _, e := range *eps {
-			<- rateLimiter.C
+			<-rateLimiter.C
 
 			log.WithFields(log.Fields{
 				"worker":      id,
@@ -150,10 +150,10 @@ func (q *UpdateQueue) worker(id int) {
 			}
 
 			log.WithFields(log.Fields{
-				"worker":                    id,
-				"podcastID":                 job.Podcast.ID,
-				"podcastFeed":               job.Podcast.FeedLink,
-				"episodeGUID":               e.GUID,
+				"worker":      id,
+				"podcastID":   job.Podcast.ID,
+				"podcastFeed": job.Podcast.FeedLink,
+				"episodeGUID": e.GUID,
 			}).Debug("Episode processed")
 		}
 

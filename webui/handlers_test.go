@@ -1,4 +1,4 @@
-package server
+package webui
 
 import (
 	"bytes"
@@ -193,8 +193,8 @@ func (s *HandlersTestSuite) TestGetPodcastHandler() {
 
 	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
 		" a 404 HTTP status code")
-	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
-		" the 'Content-Type' headers'")
+	assert.Equal("text/plain; charset=utf-8", res.Header().Get("Content-Type"), "the response should contain"+
+		" the appropriate 'Content-Type' headers'")
 
 	res = httptest.NewRecorder()
 	req = httptest.NewRequest("GET", "/api/v0/podcasts/"+strconv.Itoa(id)+"/details", nil)
@@ -250,8 +250,8 @@ func (s *HandlersTestSuite) TestGetUserPodcastsHandler() {
 
 	assert.Equal(http.StatusNotFound, res.Code, "the usage of a incorrect method should return"+
 		" a 404 HTTP status code")
-	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
-		" the 'Content-Type' headers'")
+	assert.Equal("text/plain; charset=utf-8", res.Header().Get("Content-Type"), "the response should contain"+
+		" the appropriate 'Content-Type' headers'")
 
 	req = httptest.NewRequest("GET", "/api/v0/podcasts/user?subscribed=true&unsubscribed=true", nil)
 	res = httptest.NewRecorder()
@@ -387,8 +387,8 @@ func (s *HandlersTestSuite) TestGetEpisodesHandler() {
 
 	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
 		" a 404 HTTP status code")
-	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
-		" the 'Content-Type' headers'")
+	assert.Equal("text/plain; charset=utf-8", res.Header().Get("Content-Type"), "the response should contain"+
+		" the appropriate 'Content-Type' headers'")
 
 	res = httptest.NewRecorder()
 	req = httptest.NewRequest("GET", "/api/v0/podcasts/"+strconv.Itoa(id)+"/episodes", nil)
@@ -455,8 +455,8 @@ func (s *HandlersTestSuite) TestPlayerProgressHandler() {
 
 	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
 		" a 404 HTTP status code")
-	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
-		" the 'Content-Type' headers'")
+	assert.Equal("text/plain; charset=utf-8", res.Header().Get("Content-Type"), "the response should contain"+
+		" the appropriate 'Content-Type' headers'")
 
 	res = httptest.NewRecorder()
 	req = httptest.NewRequest("GET", "/api/v0/player/progress", nil)
@@ -520,6 +520,8 @@ func (s *HandlersTestSuite) parseProgressReq(body *bytes.Buffer, progressVar *ps
 func (s *HandlersTestSuite) AfterTest(_, _ string) {}
 
 func (s *HandlersTestSuite) TearDownTest() {
+	_ = _podcastsDB.Close()
+
 	err := os.RemoveAll(s.podcastsDBPath)
 	if err != nil {
 		panic(err)

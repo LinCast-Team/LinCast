@@ -9,7 +9,7 @@ import (
 	"lincast/database"
 	"lincast/psync"
 	"lincast/queue"
-	"lincast/server"
+	"lincast/webui"
 
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
@@ -74,7 +74,7 @@ func run(devMode bool) error {
 
 	// Make a new instance of the server.
 	log.Debug("Instantiating backend")
-	sv := server.New(8080, true, devMode, true, db, playerSync)
+	sv := webui.New(8080, true, devMode, true, db, playerSync)
 	log.WithFields(log.Fields{
 		"port":        0,
 		"localServer": true,

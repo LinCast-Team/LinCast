@@ -34,18 +34,12 @@ jobs:
             dep ensure
         fi
       
-    - name: Install pkger
-      run: go get -v github.com/markbates/pkger/cmd/pkger
-      
     - name: Compile frontend
       run: |
-        cd webui
+        cd webui/frontend
         npm install
         npm run build
-        cd ..
-        
-    - name: Run pkger
-      run: pkger  
+        cd ../..
 
     - name: Build
       run: go build -v .
