@@ -3,7 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -32,7 +32,7 @@ type HandlersTestSuite struct {
 }
 
 func (s *HandlersTestSuite) SetupTest() {
-	log.SetOutput(ioutil.Discard)
+	log.SetOutput(io.Discard)
 
 	s.podcastsDBPath = "./backend_test"
 	s.podcastsDBFilename = "handlers_podcastsDB_test.sqlite"
@@ -90,6 +90,13 @@ func (s *HandlersTestSuite) SetupTest() {
 		}
 	}
 
+	ps, err := psync.New(_podcastsDB)
+	if err != nil {
+		assert2.FailNowf(s.T(), "the player synchronizer can't be instantiated", "error when trying to"+
+			" instantiate the player synchronizer: %s", errorx.EnsureStackTrace(err))
+	}
+
+	_pSynchronizer = ps
 }
 
 func (s *HandlersTestSuite) BeforeTest(_, _ string) {}
@@ -123,8 +130,8 @@ func (s *HandlersTestSuite) TestSubscribeToPodcastHandler() {
 	newRouter(false, false).ServeHTTP(res, req)
 	s.mutex.Unlock()
 
-	assert.Equal(http.StatusOK, res.Code, "if the body of the request has no issues, it should be"+
-		" responded with the HTTP status code 200 (OK)")
+	assert.Equal(http.StatusCreated, res.Code, "if the body of the request has no issues, it should be"+
+		" responded with the HTTP status code 201 (Created)")
 
 	req = httptest.NewRequest("POST", "/api/v0/podcasts/subscribe", bytes.NewReader(c))
 	res = httptest.NewRecorder()
@@ -165,8 +172,8 @@ func (s *HandlersTestSuite) TestUnSubscribeToPodcastHandler() {
 	newRouter(false, false).ServeHTTP(res, req)
 	s.mutex.Unlock()
 
-	assert.Equal(http.StatusOK, res.Code, "the request should be processed correctly, returning"+
-		" a 200 HTTP status code")
+	assert.Equal(http.StatusNoContent, res.Code, "the request should be processed correctly, returning"+
+		" a 204 HTTP status code")
 
 	res = httptest.NewRecorder()
 	req = httptest.NewRequest("PUT", "/api/v0/podcasts/unsubscribe?id="+strconv.Itoa(100), nil)
@@ -205,7 +212,7 @@ func (s *HandlersTestSuite) TestGetPodcastHandler() {
 	assert.Equal("application/json", res.Header().Get("Content-Type"), "the response"+
 		" should contain the appropriate 'Content-Type' headers'")
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -264,7 +271,7 @@ func (s *HandlersTestSuite) TestGetUserPodcastsHandler() {
 
 		var p map[string][]podcasts.Podcast
 
-		body, err := ioutil.ReadAll(res.Body)
+		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			panic(err)
 		}
@@ -295,7 +302,7 @@ func (s *HandlersTestSuite) TestGetUserPodcastsHandler() {
 
 		var p map[string][]podcasts.Podcast
 
-		body, err := ioutil.ReadAll(res.Body)
+		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			panic(err)
 		}
@@ -342,7 +349,7 @@ func (s *HandlersTestSuite) TestGetUserPodcastsHandler() {
 
 		var p map[string][]podcasts.Podcast
 
-		body, err := ioutil.ReadAll(res.Body)
+		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			panic(err)
 		}
@@ -399,7 +406,7 @@ func (s *HandlersTestSuite) TestGetEpisodesHandler() {
 	assert.Equal("application/json", res.Header().Get("Content-Type"), "the response"+
 		" should contain the appropriate 'Content-Type' headers'")
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -442,14 +449,6 @@ func (s *HandlersTestSuite) TestPlayerProgressHandler() {
 	assert := assert2.New(s.T())
 	res := httptest.NewRecorder()
 
-	ps, err := psync.New(_podcastsDB)
-	if err != nil {
-		assert.FailNowf("the player synchronizer can't be instantiated", "error when trying to"+
-			" instantiate the player synchronizer: %s", errorx.EnsureStackTrace(err))
-	}
-
-	_pSynchronizer = ps
-
 	req := httptest.NewRequest("DELETE", "/api/v0/player/progress", nil)
 	newRouter(false, false).ServeHTTP(res, req)
 
@@ -487,8 +486,8 @@ func (s *HandlersTestSuite) TestPlayerProgressHandler() {
 	req = httptest.NewRequest("PUT", "/api/v0/player/progress", bytes.NewReader(b))
 	newRouter(false, false).ServeHTTP(res, req)
 
-	assert.Equal(http.StatusOK, res.Code, "the request should be processed correctly, returning"+
-		" a 200 HTTP status code")
+	assert.Equal(http.StatusCreated, res.Code, "the request should be processed correctly, returning"+
+		" a 201 HTTP status code")
 	assert.Equal(p, _pSynchronizer.GetProgress(), "the progress should be correctly updated")
 
 	res = httptest.NewRecorder()
@@ -508,8 +507,132 @@ func (s *HandlersTestSuite) TestPlayerProgressHandler() {
 	assert.Equal(p, p1, "the returned progress should be the same as the one that we have")
 }
 
+func (s *HandlersTestSuite) TestQueueHandler() {
+	assert := assert2.New(s.T())
+	res := httptest.NewRecorder()
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v0/player/queue", nil)
+	newRouter(false, false).ServeHTTP(res, req)
+
+	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
+		" a 404 HTTP status code")
+	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
+		" the 'Content-Type' headers'")
+
+	/* ---------------------------- Test PUT requests --------------------------- */
+	q := []psync.QueueEpisode{
+		{
+			ID:        1,
+			PodcastID: 10,
+			EpisodeID: "10d981dd-20dd-4bc8-9999-e12586a561d8",
+			Position:  0,
+		},
+		{
+			ID:        2,
+			PodcastID: 8,
+			EpisodeID: "5f069078-eb21-480d-9e8e-be92742d90f5",
+			Position:  2, // the position is repeated on purpose
+		},
+		{
+			ID:        3,
+			PodcastID: 1,
+			EpisodeID: "1c547723-43a5-46fe-91ae-4d410b0ebc79",
+			Position:  2,
+		},
+		{
+			ID:        4,
+			PodcastID: 24,
+			EpisodeID: "e0bab9d0-bad6-4b4f-afa4-4af40939b5c5",
+			Position:  3,
+		},
+	}
+
+	c, err := json.Marshal(q)
+	if err != nil {
+		panic(err)
+	}
+
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPut, "/api/v0/player/queue", bytes.NewReader(c))
+	newRouter(false, false).ServeHTTP(res, req)
+
+	assert.Equal(http.StatusBadRequest, res.Code, "the request should be rejected because one position"+
+		" is repeated, returning a 400 HTTP status code")
+	assert.Equal("", res.Header().Get("Content-Type"), "the response"+
+		" should not contain 'Content-Type' headers'")
+
+	// Set the correct position
+	q[1].Position = 1
+
+	c, err = json.Marshal(q)
+	if err != nil {
+		panic(err)
+	}
+
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPut, "/api/v0/player/queue", bytes.NewReader(c))
+	newRouter(false, false).ServeHTTP(res, req)
+
+	assert.Equal(http.StatusCreated, res.Code, "the request should be processed correctly, returning"+
+		" a 201 HTTP status code")
+	assert.Equal("", res.Header().Get("Content-Type"), "if the response is successful"+
+		" should not contain 'Content-Type' headers'")
+
+	localQ := _pSynchronizer.GetQueue()
+
+	assert.Equal(q, localQ.Content, "the queue should be inserted correctly")
+	/* -------------------------------------------------------------------------- */
+
+	/* -------------------------- Test GET requests -------------------------- */
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodGet, "/api/v0/player/queue", nil)
+	newRouter(false, false).ServeHTTP(res, req)
+
+	assert.Equal(http.StatusOK, res.Code, "the request should be processed correctly, returning"+
+		" a 200 HTTP status code")
+	assert.Equal("application/json", res.Header().Get("Content-Type"), "if the response is successful"+
+		" should contain 'Content-Type' headers'")
+
+	returnedQBytes, err := io.ReadAll(res.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	var returnedQ []psync.QueueEpisode
+	err = json.Unmarshal(returnedQBytes, &returnedQ)
+	if err != nil {
+		panic(err)
+	}
+
+	assert.Equal(q, returnedQ, "the returned queue should be the same as the original")
+	/* -------------------------------------------------------------------------- */
+
+	/* -------------------------- Test DELETE requests -------------------------- */
+	res = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodDelete, "/api/v0/player/queue", nil)
+	newRouter(false, false).ServeHTTP(res, req)
+
+	assert.Equal(http.StatusNoContent, res.Code, "the request should be processed correctly, returning"+
+		" a 204 HTTP status code")
+	assert.Equal("", res.Header().Get("Content-Type"), "if the response is successful"+
+		" should not contain 'Content-Type' headers'")
+
+	localQ = _pSynchronizer.GetQueue()
+
+	assert.Equal([]psync.QueueEpisode{}, localQ.Content, "the queue should be removed correctly")
+	/* -------------------------------------------------------------------------- */
+}
+
+func (s *HandlersTestSuite) TestAddToQueueHandler() {
+
+}
+
+func (s *HandlersTestSuite) TestDelFromQueueHandler() {
+
+}
+
 func (s *HandlersTestSuite) parseProgressReq(body *bytes.Buffer, progressVar *psync.CurrentProgress) error {
-	b, err := ioutil.ReadAll(body)
+	b, err := io.ReadAll(body)
 	if err != nil {
 		panic(err)
 	}
@@ -520,6 +643,7 @@ func (s *HandlersTestSuite) parseProgressReq(body *bytes.Buffer, progressVar *ps
 func (s *HandlersTestSuite) AfterTest(_, _ string) {}
 
 func (s *HandlersTestSuite) TearDownTest() {
+	_ = _podcastsDB.Close()
 	err := os.RemoveAll(s.podcastsDBPath)
 	if err != nil {
 		panic(err)

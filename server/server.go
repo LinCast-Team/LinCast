@@ -107,6 +107,9 @@ func newRouter(devMode, logRequests bool) *mux.Router {
 	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}/details", getPodcastHandler).Methods("GET")
 	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}/episodes", getEpisodesHandler).Methods("GET")
 	router.HandleFunc("/api/v0/player/progress", playerProgressHandler).Methods("GET", "PUT")
+	router.HandleFunc("/api/v0/player/queue", queueHandler).Methods("GET", "PUT", "DELETE")
+	router.HandleFunc("/api/v0/player/queue/add", addToQueueHandler).Methods("POST")
+	router.HandleFunc("/api/v0/player/queue/remove", delFromQueueHandler).Methods("DELETE")
 	router.PathPrefix("/").Handler(spa)
 
 	return router

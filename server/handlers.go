@@ -83,14 +83,7 @@ func subscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.WithFields(log.Fields{
-		"remoteAddr":  r.RemoteAddr,
-		"requestURI":  r.RequestURI,
-		"method":      r.Method,
-		"request.url": u.URL,
-	}).Debug("Request to add a new subscription (and a podcast to the database) processed correctly")
-
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 }
 
 func unsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
@@ -150,14 +143,7 @@ func unsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.WithFields(log.Fields{
-		"remoteAddr": r.RemoteAddr,
-		"requestURI": r.RequestURI,
-		"method":     r.Method,
-		"podcastID":  id,
-	}).Debug("Request to unsubscribe from a podcast processed correctly")
-
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func getUserPodcastsHandler(w http.ResponseWriter, r *http.Request) {
@@ -271,15 +257,11 @@ func getUserPodcastsHandler(w http.ResponseWriter, r *http.Request) {
 			"method":     r.Method,
 			"error":      errorx.EnsureStackTrace(err),
 		}).Error("Error when trying to encode the response to the request")
-	} else {
-		w.WriteHeader(http.StatusOK)
 
-		log.WithFields(log.Fields{
-			"remoteAddr": r.RemoteAddr,
-			"requestURI": r.RequestURI,
-			"method":     r.Method,
-		}).Debug("Request of user podcasts processed correctly")
+		return
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func getPodcastHandler(w http.ResponseWriter, r *http.Request) {
@@ -339,16 +321,11 @@ func getPodcastHandler(w http.ResponseWriter, r *http.Request) {
 			"method":     r.Method,
 			"error":      errorx.EnsureStackTrace(err),
 		}).Error("Error when trying to encode the response to the request")
-	} else {
-		w.WriteHeader(http.StatusOK)
 
-		log.WithFields(log.Fields{
-			"remoteAddr": r.RemoteAddr,
-			"requestURI": r.RequestURI,
-			"method":     r.Method,
-			"podcastID":  id,
-		}).Debug("Request to get information about a podcast processed correctly")
+		return
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func getEpisodesHandler(w http.ResponseWriter, r *http.Request) {
@@ -408,20 +385,15 @@ func getEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 			"method":     r.Method,
 			"error":      errorx.EnsureStackTrace(err),
 		}).Error("Error when trying to encode the response to the request")
-	} else {
-		w.WriteHeader(http.StatusOK)
 
-		log.WithFields(log.Fields{
-			"remoteAddr": r.RemoteAddr,
-			"requestURI": r.RequestURI,
-			"method":     r.Method,
-			"podcastID":  id,
-		}).Debug("Request to get the episodes of a podcast processed correctly")
+		return
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func playerProgressHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
+	if r.Method == http.MethodGet {
 		w.Header().Set("Content-Type", "application/json")
 
 		p := _pSynchronizer.GetProgress()
@@ -472,5 +444,113 @@ func playerProgressHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
+}
+
+func queueHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPut:
+		{
+			// REVIEW maybe can be better the usage of io.LimitReader().
+			var q []psync.QueueEpisode
+
+			err := json.NewDecoder(r.Body).Decode(&q)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+
+				log.WithFields(log.Fields{
+					"remoteAddr": r.RemoteAddr,
+					"requestURI": r.RequestURI,
+					"method":     r.Method,
+					"error":      errorx.EnsureStackTrace(err),
+				}).Error("Error when trying to decode the request's body")
+
+				return
+			}
+
+			// Check if the position is repeated before set the new queue.
+			var positions []int
+			for _, ep := range q {
+				for _, p := range positions {
+					if ep.Position == p {
+						w.WriteHeader(http.StatusBadRequest)
+
+						log.WithFields(log.Fields{
+							"remoteAddr": r.RemoteAddr,
+							"requestURI": r.RequestURI,
+							"method":     r.Method,
+						}).Error("The user tried to use a repeated position. Request rejected")
+
+						return
+					}
+				}
+
+				positions = append(positions, ep.Position)
+			}
+
+			err = _pSynchronizer.SetQueue(&q)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+
+				log.WithFields(log.Fields{
+					"remoteAddr": r.RemoteAddr,
+					"requestURI": r.RequestURI,
+					"method":     r.Method,
+					"error":      errorx.EnsureStackTrace(err),
+				}).Error("Error when trying to set the queue")
+
+				return
+			}
+
+			w.WriteHeader(http.StatusCreated)
+		}
+
+	case http.MethodDelete:
+		{
+			err := _pSynchronizer.CleanQueue()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+
+				log.WithFields(log.Fields{
+					"remoteAddr": r.RemoteAddr,
+					"requestURI": r.RequestURI,
+					"method":     r.Method,
+					"error":      errorx.EnsureStackTrace(err),
+				}).Error("Error when trying to clean the queue")
+
+				return
+			}
+
+			w.WriteHeader(http.StatusNoContent)
+		}
+
+	default:
+		{
+			q := _pSynchronizer.GetQueue()
+
+			w.Header().Set("Content-Type", "application/json")
+
+			err := json.NewEncoder(w).Encode(q.Content)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+
+				log.WithFields(log.Fields{
+					"remoteAddr": r.RemoteAddr,
+					"requestURI": r.RequestURI,
+					"method":     r.Method,
+					"error":      errorx.EnsureStackTrace(err),
+				}).Error("Error when trying to encode the response")
+
+				return
+			}
+
+			w.WriteHeader(http.StatusOK)
+		}
+	}
+}
+
+func addToQueueHandler(w http.ResponseWriter, r *http.Request) {
+}
+
+func delFromQueueHandler(w http.ResponseWriter, r *http.Request) {
 }
