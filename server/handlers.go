@@ -16,7 +16,7 @@ import (
 )
 
 var _podcastsDB *database.Database
-var _pSynchronizer *psync.Synchronizer
+var _playerSync *psync.Synchronizer
 
 func subscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 	u := struct {
@@ -396,7 +396,7 @@ func playerProgressHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		w.Header().Set("Content-Type", "application/json")
 
-		p := _pSynchronizer.GetProgress()
+		p := _playerSync.GetProgress()
 
 		w.WriteHeader(http.StatusOK)
 
@@ -430,7 +430,7 @@ func playerProgressHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = _pSynchronizer.UpdateProgress(p.Progress, p.EpisodeGUID, p.PodcastID)
+	err = _playerSync.UpdateProgress(p.Progress, p.EpisodeGUID, p.PodcastID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
@@ -488,7 +488,7 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 				positions = append(positions, ep.Position)
 			}
 
-			err = _pSynchronizer.SetQueue(&q)
+			err = _playerSync.SetQueue(&q)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 
@@ -508,7 +508,7 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodDelete:
 		{
-			err := _pSynchronizer.CleanQueue()
+			err := _playerSync.CleanQueue()
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 
@@ -527,7 +527,7 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 
 	default:
 		{
-			q := _pSynchronizer.GetQueue()
+			q := _playerSync.GetQueue()
 
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
@@ -598,7 +598,7 @@ func addToQueueHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	epID, err := _pSynchronizer.AddToQueue(ep, !append)
+	epID, err := _playerSync.AddToQueue(ep, !append)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 

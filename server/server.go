@@ -59,7 +59,7 @@ func New(port uint16, localServer bool, devMode bool, logRequests bool, podcasts
 	}
 
 	_podcastsDB = podcastsDB
-	_pSynchronizer = playerSynchronizer
+	_playerSync = playerSynchronizer
 
 	// Include the frontend inside the binary.
 	_ = pkger.Include(frontendPath)

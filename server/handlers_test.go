@@ -97,7 +97,7 @@ func (s *HandlersTestSuite) SetupTest() {
 			" instantiate the player synchronizer: %s", errorx.EnsureStackTrace(err))
 	}
 
-	_pSynchronizer = ps
+	_playerSync = ps
 }
 
 func (s *HandlersTestSuite) BeforeTest(_, _ string) {}
@@ -450,7 +450,7 @@ func (s *HandlersTestSuite) TestPlayerProgressHandler() {
 
 	assert.Equal(http.StatusCreated, res.Code, "the request should be processed correctly, returning"+
 		" a 201 HTTP status code")
-	assert.Equal(p, _pSynchronizer.GetProgress(), "the progress should be correctly updated")
+	assert.Equal(p, _playerSync.GetProgress(), "the progress should be correctly updated")
 
 	res = s.newRequest(http.MethodGet, "/api/v0/player/progress", nil)
 
@@ -536,7 +536,7 @@ func (s *HandlersTestSuite) TestQueueHandler() {
 	assert.Equal("/api/v0/player/queue", res.Header().Get("Location"), "the response should return"+
 		" a Location header with the respective value indicating the location of the recently added resource")
 
-	localQ := _pSynchronizer.GetQueue()
+	localQ := _playerSync.GetQueue()
 
 	// Overwrite the IDs to avoid a false positive.
 	for i := range localQ.Content {
@@ -581,7 +581,7 @@ func (s *HandlersTestSuite) TestQueueHandler() {
 	assert.Equal("", res.Header().Get("Content-Type"), "if the response is successful"+
 		" should not contain 'Content-Type' headers'")
 
-	localQ = _pSynchronizer.GetQueue()
+	localQ = _playerSync.GetQueue()
 
 	assert.Equal([]psync.QueueEpisode{}, localQ.Content, "the queue should be removed correctly")
 	/* -------------------------------------------------------------------------- */
@@ -637,7 +637,7 @@ func (s *HandlersTestSuite) TestAddToQueueHandler() {
 
 	assert.NotEmpty(body, "the body must not be empty and should contain the ID of the recently added episode")
 
-	storedQ := _pSynchronizer.GetQueue().Content
+	storedQ := _playerSync.GetQueue().Content
 
 	var qEp psync.QueueEpisode
 	for _, e := range storedQ {
