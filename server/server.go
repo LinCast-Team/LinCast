@@ -49,17 +49,17 @@ func (s spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // New returns a new instance of the server. To execute it, the method `ListenAndServe` must be called.
-func New(port uint16, localServer bool, devMode bool, logRequests bool, podcastsDB *database.Database, playerSynchronizer *psync.Synchronizer) *http.Server {
+func New(port uint16, localServer bool, devMode bool, logRequests bool, podcastsDB *database.Database, playerSync *psync.PlayerSync) *http.Server {
 	if podcastsDB == nil {
 		log.Panic("'podcastsDB' is nil")
 	}
 
-	if playerSynchronizer == nil {
-		log.Panic("'playerSynchronizer' is nil")
+	if playerSync == nil {
+		log.Panic("'playerSync' is nil")
 	}
 
 	_podcastsDB = podcastsDB
-	_playerSync = playerSynchronizer
+	_playerSync = playerSync
 
 	// Include the frontend inside the binary.
 	_ = pkger.Include(frontendPath)

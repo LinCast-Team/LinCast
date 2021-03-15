@@ -16,7 +16,7 @@ import (
 )
 
 var _podcastsDB *database.Database
-var _playerSync *psync.Synchronizer
+var _playerSync *psync.PlayerSync
 
 func subscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 	u := struct {

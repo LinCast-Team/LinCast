@@ -10,9 +10,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Synchronizer has in charge the synchronization of the different capabilities of the player (current progress,
+// PlayerSync has in charge the synchronization of the different capabilities of the player (current progress,
 // queue, etc) across the different clients.
-type Synchronizer struct {
+type PlayerSync struct {
 	currentProgress *CurrentProgress
 	queue           *Queue
 	db              *database.Database
@@ -43,12 +43,12 @@ type QueueEpisode struct {
 }
 
 // New returns a new Synchronizer.
-func New(db *database.Database) (*Synchronizer, error) {
+func New(db *database.Database) (*PlayerSync, error) {
 	if db == nil {
 		return nil, errorx.IllegalState.New("the db used can't be nil")
 	}
 
-	s := Synchronizer{
+	s := PlayerSync{
 		currentProgress: new(CurrentProgress),
 		queue:           new(Queue),
 		db:              db,
@@ -69,7 +69,7 @@ func New(db *database.Database) (*Synchronizer, error) {
 }
 
 // UpdateProgress updates the progress of the player in the database and caches it internally.
-func (s *Synchronizer) UpdateProgress(newProgress time.Duration, episodeGUID string, podcastID int) error {
+func (s *PlayerSync) UpdateProgress(newProgress time.Duration, episodeGUID string, podcastID int) error {
 	if episodeGUID == "" {
 		return errorx.IllegalArgument.New("the episodeGUID should not be empty")
 	}
@@ -85,7 +85,7 @@ func (s *Synchronizer) UpdateProgress(newProgress time.Duration, episodeGUID str
 }
 
 // GetProgress returns the current progress of the player.
-func (s *Synchronizer) GetProgress() CurrentProgress {
+func (s *PlayerSync) GetProgress() CurrentProgress {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -93,7 +93,7 @@ func (s *Synchronizer) GetProgress() CurrentProgress {
 }
 
 // GetQueue returns the actual queue of the player.
-func (s *Synchronizer) GetQueue() Queue {
+func (s *PlayerSync) GetQueue() Queue {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -101,7 +101,7 @@ func (s *Synchronizer) GetQueue() Queue {
 }
 
 // SetQueue overwrites the entire player's queue with the given content.
-func (s *Synchronizer) SetQueue(eps *[]QueueEpisode) error {
+func (s *PlayerSync) SetQueue(eps *[]QueueEpisode) error {
 	// Clean the queue to later add the new episodes.
 	err := s.CleanQueue()
 	if err != nil {
@@ -150,7 +150,7 @@ func (s *Synchronizer) SetQueue(eps *[]QueueEpisode) error {
 }
 
 // CleanQueue removes the entire queue of the player, deleting the contents from memory and database.
-func (s *Synchronizer) CleanQueue() error {
+func (s *PlayerSync) CleanQueue() error {
 	query := "DELETE FROM player_queue;"
 
 	sqlDB := s.db.GetInstance()
@@ -172,7 +172,7 @@ func (s *Synchronizer) CleanQueue() error {
 
 // AddToQueue adds the given QueueEpisode to the actual queue. The parameter `atBeginning` defines if that QueueEpisode
 // should be added with the first position or the last one. If there is an error, the ID returned will be -1.
-func (s *Synchronizer) AddToQueue(e QueueEpisode, atBeginning bool) (id int, err error) {
+func (s *PlayerSync) AddToQueue(e QueueEpisode, atBeginning bool) (id int, err error) {
 	sqlDB := s.db.GetInstance()
 
 	s.mutex.Lock()
@@ -283,7 +283,7 @@ func (s *Synchronizer) AddToQueue(e QueueEpisode, atBeginning bool) (id int, err
 }
 
 // RemoveFromQueue removes the episode with the passed `id` from the queue.
-func (s *Synchronizer) RemoveFromQueue(id int) error {
+func (s *PlayerSync) RemoveFromQueue(id int) error {
 	sqlDB := s.db.GetInstance()
 	query := "DELETE FROM player_queue WHERE id = ?;"
 
@@ -332,7 +332,7 @@ func (s *Synchronizer) RemoveFromQueue(id int) error {
 	return nil
 }
 
-func (s *Synchronizer) updateProgressOnDB() error {
+func (s *PlayerSync) updateProgressOnDB() error {
 	iDB := s.db.GetInstance()
 	query := `
 UPDATE player_progress
@@ -358,7 +358,7 @@ WHERE id = 0;
 	return nil
 }
 
-func (s *Synchronizer) initProgress() error {
+func (s *PlayerSync) initProgress() error {
 	initialized, err := s.isDBProgressInitialized()
 	if err != nil {
 		return err
@@ -421,7 +421,7 @@ func (s *Synchronizer) initProgress() error {
 	return nil
 }
 
-func (s *Synchronizer) isDBProgressInitialized() (bool, error) {
+func (s *PlayerSync) isDBProgressInitialized() (bool, error) {
 	iDB := s.db.GetInstance()
 	query := `
 SELECT id FROM player_progress
@@ -443,7 +443,7 @@ WHERE id = 0;
 	return row.Next(), nil
 }
 
-func (s *Synchronizer) initQueue() error {
+func (s *PlayerSync) initQueue() error {
 	query := "SELECT * FROM player_queue"
 
 	db := s.db.GetInstance()
@@ -479,7 +479,7 @@ func (s *Synchronizer) initQueue() error {
 	return nil
 }
 
-func (s *Synchronizer) getQueueEpsFromDB() (*[]QueueEpisode, error) {
+func (s *PlayerSync) getQueueEpsFromDB() (*[]QueueEpisode, error) {
 	query := "SELECT * FROM player_queue;"
 
 	sqlDB := s.db.GetInstance()
@@ -512,7 +512,7 @@ func (s *Synchronizer) getQueueEpsFromDB() (*[]QueueEpisode, error) {
 	return &eps, nil
 }
 
-func (s *Synchronizer) insertEpInQueue(e QueueEpisode) error {
+func (s *PlayerSync) insertEpInQueue(e QueueEpisode) error {
 	sqlDB := s.db.GetInstance()
 	insertQuery := "INSERT INTO player_queue (podcast_id, episode_id, position) VALUES (?, ?, ?);"
 
