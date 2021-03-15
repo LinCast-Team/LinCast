@@ -25,7 +25,7 @@ func subscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&u)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
@@ -39,7 +39,7 @@ func subscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 
 	p, err := podcasts.GetPodcast(u.URL)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
 			"remoteAddr":  r.RemoteAddr,
@@ -57,7 +57,7 @@ func subscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 	err = _podcastsDB.InsertPodcast(p)
 	if err != nil {
 		if errorx.IsOfType(err, errorx.RejectedOperation) {
-			w.WriteHeader(http.StatusConflict)
+			http.Error(w, "the submitted podcast already exists", http.StatusConflict)
 
 			log.WithFields(log.Fields{
 				"remoteAddr":  r.RemoteAddr,
@@ -69,7 +69,7 @@ func subscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		log.WithFields(log.Fields{
 			"remoteAddr":    r.RemoteAddr,
@@ -89,14 +89,16 @@ func subscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 func unsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 	keys, ok := r.URL.Query()["id"]
 	if !ok || len(keys[0]) < 1 {
+		err := errorx.IllegalFormat.New("param 'id' is missing")
+
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
 			"requestURI": r.RequestURI,
 			"method":     r.Method,
-			"error":      errorx.IllegalFormat.New("param 'id' is missing"),
+			"error":      err.Error(),
 		}).Error("Request rejected due to absence of parameter 'id'")
-
-		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
@@ -105,7 +107,7 @@ func unsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
@@ -119,7 +121,7 @@ func unsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 	err = _podcastsDB.SetPodcastSubscription(int(id), false)
 	if err != nil {
 		if errorx.IsOfType(err, errorx.IllegalArgument) {
-			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, "the podcast with the given ID does not exist", http.StatusBadRequest)
 
 			log.WithFields(log.Fields{
 				"remoteAddr": r.RemoteAddr,
@@ -129,7 +131,7 @@ func unsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 				"usedID":     id,
 			}).Error("Error when trying to change the subscription status of the podcast")
 		} else {
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 
 			log.WithFields(log.Fields{
 				"remoteAddr": r.RemoteAddr,
@@ -160,7 +162,7 @@ func getUserPodcastsHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		s, err := strconv.ParseBool(keys[0])
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 
 			log.WithFields(log.Fields{
 				"remoteAddr":      r.RemoteAddr,
@@ -186,7 +188,7 @@ func getUserPodcastsHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		uns, err := strconv.ParseBool(keys[0])
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 
 			log.WithFields(log.Fields{
 				"remoteAddr":        r.RemoteAddr,
@@ -206,7 +208,7 @@ func getUserPodcastsHandler(w http.ResponseWriter, r *http.Request) {
 	if subscribed || (!subscribed && !unsubscribed) {
 		sp, err := _podcastsDB.GetPodcastsBySubscribedStatus(true)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 
 			log.WithFields(log.Fields{
 				"remoteAddr": r.RemoteAddr,
@@ -225,7 +227,7 @@ func getUserPodcastsHandler(w http.ResponseWriter, r *http.Request) {
 	if unsubscribed || (!subscribed && !unsubscribed) {
 		up, err := _podcastsDB.GetPodcastsBySubscribedStatus(false)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 
 			log.WithFields(log.Fields{
 				"remoteAddr": r.RemoteAddr,
@@ -246,10 +248,11 @@ func getUserPodcastsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 
 	err := json.NewEncoder(w).Encode(p)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
@@ -260,8 +263,6 @@ func getUserPodcastsHandler(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 func getPodcastHandler(w http.ResponseWriter, r *http.Request) {
@@ -269,7 +270,7 @@ func getPodcastHandler(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
@@ -285,7 +286,7 @@ func getPodcastHandler(w http.ResponseWriter, r *http.Request) {
 	p, err := _podcastsDB.GetPodcastByID(int(id))
 	if err != nil {
 		if errorx.IsOfType(err, errorx.IllegalArgument) {
-			w.WriteHeader(http.StatusNotFound)
+			http.Error(w, "the podcast with the given ID does not exist", http.StatusNotFound)
 
 			log.WithFields(log.Fields{
 				"remoteAddr": r.RemoteAddr,
@@ -295,7 +296,7 @@ func getPodcastHandler(w http.ResponseWriter, r *http.Request) {
 				"givenID":    id,
 			}).Error("Error when trying to get the requested podcast")
 		} else {
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 
 			log.WithFields(log.Fields{
 				"remoteAddr": r.RemoteAddr,
@@ -310,10 +311,11 @@ func getPodcastHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 
 	err = json.NewEncoder(w).Encode(p)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
@@ -324,8 +326,6 @@ func getPodcastHandler(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 func getEpisodesHandler(w http.ResponseWriter, r *http.Request) {
@@ -333,7 +333,7 @@ func getEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
@@ -349,7 +349,7 @@ func getEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 	eps, err := _podcastsDB.GetEpisodesByPodcast(int(id))
 	if err != nil {
 		if errorx.IsOfType(err, errorx.IllegalArgument) {
-			w.WriteHeader(http.StatusNotFound)
+			http.Error(w, "the podcast with the given ID does not exist", http.StatusNotFound)
 
 			log.WithFields(log.Fields{
 				"remoteAddr": r.RemoteAddr,
@@ -359,7 +359,7 @@ func getEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 				"givenID":    id,
 			}).Error("Error when trying to get the requested episodes")
 		} else {
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 
 			log.WithFields(log.Fields{
 				"remoteAddr": r.RemoteAddr,
@@ -377,7 +377,7 @@ func getEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewEncoder(w).Encode(eps)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
@@ -402,7 +402,7 @@ func playerProgressHandler(w http.ResponseWriter, r *http.Request) {
 
 		err := json.NewEncoder(w).Encode(p)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 
 			log.WithFields(log.Fields{
 				"remoteAddr": r.RemoteAddr,
@@ -418,7 +418,7 @@ func playerProgressHandler(w http.ResponseWriter, r *http.Request) {
 	var p psync.CurrentProgress
 	err := json.NewDecoder(r.Body).Decode(&p)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
@@ -432,7 +432,7 @@ func playerProgressHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = _pSynchronizer.UpdateProgress(p.Progress, p.EpisodeGUID, p.PodcastID)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
@@ -456,7 +456,7 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 
 			err := json.NewDecoder(r.Body).Decode(&q)
 			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
+				http.Error(w, err.Error(), http.StatusBadRequest)
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
@@ -473,7 +473,7 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 			for _, ep := range q {
 				for _, p := range positions {
 					if ep.Position == p {
-						w.WriteHeader(http.StatusBadRequest)
+						http.Error(w, "two or more episodes have the same position", http.StatusBadRequest)
 
 						log.WithFields(log.Fields{
 							"remoteAddr": r.RemoteAddr,
@@ -490,7 +490,7 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 
 			err = _pSynchronizer.SetQueue(&q)
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
@@ -502,6 +502,7 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			w.Header().Set("Location", "/api/v0/player/queue")
 			w.WriteHeader(http.StatusCreated)
 		}
 
@@ -509,7 +510,7 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 		{
 			err := _pSynchronizer.CleanQueue()
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
@@ -528,11 +529,12 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 		{
 			q := _pSynchronizer.GetQueue()
 
+			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
 
 			err := json.NewEncoder(w).Encode(q.Content)
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
@@ -543,13 +545,95 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 
 				return
 			}
-
-			w.WriteHeader(http.StatusOK)
 		}
 	}
 }
 
 func addToQueueHandler(w http.ResponseWriter, r *http.Request) {
+	keys, ok := r.URL.Query()["append"]
+	if !ok || len(keys[0]) < 1 {
+		err := errorx.IllegalFormat.New("param 'append' is missing")
+
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"error":      err.Error(),
+		}).Error("Request rejected due to absence of parameter 'append'")
+
+		return
+	}
+
+	appendStr := keys[0]
+
+	append, err := strconv.ParseBool(appendStr)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"error":      errorx.EnsureStackTrace(err),
+		}).Error("The variable 'append' is not present in the request or the value cannot be parsed")
+
+		return
+	}
+
+	var ep psync.QueueEpisode
+
+	err = json.NewDecoder(r.Body).Decode(&ep)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"error":      errorx.EnsureStackTrace(err),
+		}).Error("Error when trying to decode the request's body")
+
+		return
+	}
+
+	epID, err := _pSynchronizer.AddToQueue(ep, !append)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"appendStr":  appendStr,
+			"error":      errorx.EnsureStackTrace(err),
+		}).Error("Error when trying to add an episode to the queue")
+
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Location", "/api/v0/player/queue")
+
+	response := map[string]int{
+		"episodeID": epID,
+	}
+
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"error":      errorx.EnsureStackTrace(err),
+		}).Error("Error when trying to encode the response")
+
+		return
+	}
 }
 
 func delFromQueueHandler(w http.ResponseWriter, r *http.Request) {

@@ -27,7 +27,8 @@ type HandlersTestSuite struct {
 	podcastsDBFilename string
 	sampleFeeds        []string
 
-	mutex sync.Mutex
+	podcastsMMutex sync.Mutex // Use this only for tests related with podcasts management.
+	queueMutex     sync.Mutex // Use this only for tests related with the queue of the player.
 	suite.Suite
 }
 
@@ -107,7 +108,6 @@ func (s *HandlersTestSuite) TestSubscribeToPodcastHandler() {
 	}
 
 	assert := assert2.New(s.T())
-	res := httptest.NewRecorder()
 
 	r := reqBody{
 		URL: "https://www.ivoox.com/podcast-tortulia-podcast-episodios_fg_f1157653_filtro_1.xml",
@@ -118,24 +118,21 @@ func (s *HandlersTestSuite) TestSubscribeToPodcastHandler() {
 		panic(err)
 	}
 
-	req := httptest.NewRequest("GET", "/api/v0/podcasts/subscribe", bytes.NewReader(c))
-	newRouter(false, false).ServeHTTP(res, req)
+	res := s.newRequest(http.MethodGet, "/api/v0/podcasts/subscribe", bytes.NewReader(c))
 
 	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
 		" a 404 HTTP status code")
 
-	s.mutex.Lock()
-	req = httptest.NewRequest("POST", "/api/v0/podcasts/subscribe", bytes.NewReader(c))
-	res = httptest.NewRecorder()
-	newRouter(false, false).ServeHTTP(res, req)
-	s.mutex.Unlock()
+	s.podcastsMMutex.Lock()
+
+	res = s.newRequest(http.MethodPost, "/api/v0/podcasts/subscribe", bytes.NewReader(c))
+
+	s.podcastsMMutex.Unlock()
 
 	assert.Equal(http.StatusCreated, res.Code, "if the body of the request has no issues, it should be"+
 		" responded with the HTTP status code 201 (Created)")
 
-	req = httptest.NewRequest("POST", "/api/v0/podcasts/subscribe", bytes.NewReader(c))
-	res = httptest.NewRecorder()
-	newRouter(false, false).ServeHTTP(res, req)
+	res = s.newRequest(http.MethodPost, "/api/v0/podcasts/subscribe", bytes.NewReader(c))
 
 	assert.Equal(http.StatusConflict, res.Code, "if the submitted feed already exists on the database"+
 		" the request should be responded with the HTTP status code 409 (Conflict)")
@@ -147,9 +144,7 @@ func (s *HandlersTestSuite) TestSubscribeToPodcastHandler() {
 		panic(err)
 	}
 
-	req = httptest.NewRequest("POST", "/api/v0/podcasts/subscribe", bytes.NewReader(c))
-	res = httptest.NewRecorder()
-	newRouter(false, false).ServeHTTP(res, req)
+	res = s.newRequest(http.MethodPost, "/api/v0/podcasts/subscribe", bytes.NewReader(c))
 
 	assert.Equal(http.StatusBadRequest, res.Code, "if the body of the request contains a not valid URL,"+
 		" it should be responded with the HTTP status code 400 (Bad Request)")
@@ -157,34 +152,28 @@ func (s *HandlersTestSuite) TestSubscribeToPodcastHandler() {
 
 func (s *HandlersTestSuite) TestUnSubscribeToPodcastHandler() {
 	assert := assert2.New(s.T())
-	res := httptest.NewRecorder()
 	id := 1
 
-	req := httptest.NewRequest("GET", "/api/v0/podcasts/unsubscribe?id="+strconv.Itoa(id), nil)
-	newRouter(false, false).ServeHTTP(res, req)
+	res := s.newRequest(http.MethodGet, "/api/v0/podcasts/unsubscribe?id="+strconv.Itoa(id), nil)
 
 	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
 		" a 404 HTTP status code")
 
-	s.mutex.Lock()
-	res = httptest.NewRecorder()
-	req = httptest.NewRequest("PUT", "/api/v0/podcasts/unsubscribe?id="+strconv.Itoa(id), nil)
-	newRouter(false, false).ServeHTTP(res, req)
-	s.mutex.Unlock()
+	s.podcastsMMutex.Lock()
+
+	res = s.newRequest(http.MethodPut, "/api/v0/podcasts/unsubscribe?id="+strconv.Itoa(id), nil)
+
+	s.podcastsMMutex.Unlock()
 
 	assert.Equal(http.StatusNoContent, res.Code, "the request should be processed correctly, returning"+
 		" a 204 HTTP status code")
 
-	res = httptest.NewRecorder()
-	req = httptest.NewRequest("PUT", "/api/v0/podcasts/unsubscribe?id="+strconv.Itoa(100), nil)
-	newRouter(false, false).ServeHTTP(res, req)
+	res = s.newRequest(http.MethodPut, "/api/v0/podcasts/unsubscribe?id="+strconv.Itoa(100), nil)
 
 	assert.Equal(http.StatusBadRequest, res.Code, "the usage of a non existent ID should return"+
 		" a 400 HTTP status code")
 
-	res = httptest.NewRecorder()
-	req = httptest.NewRequest("PUT", "/api/v0/podcasts/unsubscribe", nil)
-	newRouter(false, false).ServeHTTP(res, req)
+	res = s.newRequest(http.MethodPut, "/api/v0/podcasts/unsubscribe", nil)
 
 	assert.Equal(http.StatusBadRequest, res.Code, "if the request does not contain an ID param,"+
 		" it should return a 400 HTTP status code (Bad Request)")
@@ -192,20 +181,16 @@ func (s *HandlersTestSuite) TestUnSubscribeToPodcastHandler() {
 
 func (s *HandlersTestSuite) TestGetPodcastHandler() {
 	assert := assert2.New(s.T())
-	res := httptest.NewRecorder()
 	id := 2
 
-	req := httptest.NewRequest("POST", "/api/v0/podcasts/"+strconv.Itoa(id)+"/details", nil)
-	newRouter(false, false).ServeHTTP(res, req)
+	res := s.newRequest(http.MethodPost, "/api/v0/podcasts/"+strconv.Itoa(id)+"/details", nil)
 
 	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
 		" a 404 HTTP status code")
 	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
 		" the 'Content-Type' headers'")
 
-	res = httptest.NewRecorder()
-	req = httptest.NewRequest("GET", "/api/v0/podcasts/"+strconv.Itoa(id)+"/details", nil)
-	newRouter(false, false).ServeHTTP(res, req)
+	res = s.newRequest(http.MethodGet, "/api/v0/podcasts/"+strconv.Itoa(id)+"/details", nil)
 
 	assert.Equal(http.StatusOK, res.Code, "the request should be processed correctly, returning"+
 		" a 200 HTTP status code")
@@ -238,31 +223,25 @@ func (s *HandlersTestSuite) TestGetPodcastHandler() {
 	assert.Equal(*p, receivedPodcast, "the response should contain the same podcast as the one stored"+
 		" in the database")
 
-	res = httptest.NewRecorder()
-	req = httptest.NewRequest("GET", "/api/v0/podcasts/"+strconv.Itoa(100)+"/details", nil)
-	newRouter(false, false).ServeHTTP(res, req)
+	res = s.newRequest(http.MethodGet, "/api/v0/podcasts/"+strconv.Itoa(100)+"/details", nil)
 
 	assert.Equal(http.StatusNotFound, res.Code, "if the used ID does not exist, the response should be"+
 		" with the HTTP status code 404 (Not Found)")
-	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
+	assert.Equal("text/plain; charset=utf-8", res.Header().Get("Content-Type"), "the response should not contain"+
 		" the 'Content-Type' headers'")
 }
 
 func (s *HandlersTestSuite) TestGetUserPodcastsHandler() {
 	assert := assert2.New(s.T())
-	res := httptest.NewRecorder()
 
-	req := httptest.NewRequest("POST", "/api/v0/podcasts/user?subscribed=true&unsubscribed=true", nil)
-	newRouter(false, false).ServeHTTP(res, req)
+	res := s.newRequest(http.MethodPost, "/api/v0/podcasts/user?subscribed=true&unsubscribed=true", nil)
 
 	assert.Equal(http.StatusNotFound, res.Code, "the usage of a incorrect method should return"+
 		" a 404 HTTP status code")
 	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
 		" the 'Content-Type' headers'")
 
-	req = httptest.NewRequest("GET", "/api/v0/podcasts/user?subscribed=true&unsubscribed=true", nil)
-	res = httptest.NewRecorder()
-	newRouter(false, false).ServeHTTP(res, req)
+	res = s.newRequest(http.MethodGet, "/api/v0/podcasts/user?subscribed=true&unsubscribed=true", nil)
 
 	if assert.Equal(http.StatusOK, res.Code, "the request should be processed correctly, returning"+
 		" a 200 HTTP status code") {
@@ -291,9 +270,7 @@ func (s *HandlersTestSuite) TestGetUserPodcastsHandler() {
 		}
 	}
 
-	req = httptest.NewRequest("GET", "/api/v0/podcasts/user", nil)
-	res = httptest.NewRecorder()
-	newRouter(false, false).ServeHTTP(res, req)
+	res = s.newRequest(http.MethodGet, "/api/v0/podcasts/user", nil)
 
 	if assert.Equal(http.StatusOK, res.Code, "if the request does not contain parameters it should be"+
 		" responded with all the podcasts and a HTTP status code 200 (OK)") {
@@ -322,19 +299,16 @@ func (s *HandlersTestSuite) TestGetUserPodcastsHandler() {
 		}
 	}
 
-	req = httptest.NewRequest("GET", "/api/v0/podcasts/user?subscribed=true&unsubscribed=hello", nil)
-	res = httptest.NewRecorder()
-	newRouter(false, false).ServeHTTP(res, req)
+	res = s.newRequest(http.MethodGet, "/api/v0/podcasts/user?subscribed=true&unsubscribed=hello", nil)
 
 	assert.Equal(http.StatusBadRequest, res.Code, "if the content of a parameter is incorrect, the"+
 		" response's HTTP code should be 400 (Bad Request)")
-	assert.Equal("", res.Header().Get("Content-Type"), "the response should"+
+	assert.Equal("text/plain; charset=utf-8", res.Header().Get("Content-Type"), "the response should"+
 		" not contain the 'Content-Type' headers'")
 
-	s.mutex.Lock()
-	req = httptest.NewRequest("GET", "/api/v0/podcasts/user?subscribed=false&unsubscribed=true", nil)
-	res = httptest.NewRecorder()
-	newRouter(false, false).ServeHTTP(res, req)
+	s.podcastsMMutex.Lock()
+
+	res = s.newRequest(http.MethodGet, "/api/v0/podcasts/user?subscribed=false&unsubscribed=true", nil)
 
 	if assert.Equal(http.StatusOK, res.Code, "the request should be responded with a 200 HTTP status"+
 		" code (OK)") {
@@ -345,7 +319,7 @@ func (s *HandlersTestSuite) TestGetUserPodcastsHandler() {
 		if err != nil {
 			panic(errorx.EnsureStackTrace(err))
 		}
-		s.mutex.Unlock()
+		s.podcastsMMutex.Unlock()
 
 		var p map[string][]podcasts.Podcast
 
@@ -380,26 +354,22 @@ func (s *HandlersTestSuite) TestGetUserPodcastsHandler() {
 				" should be the same as the ones stored in the database")
 		}
 	} else {
-		s.mutex.Unlock()
+		s.podcastsMMutex.Unlock()
 	}
 }
 
 func (s *HandlersTestSuite) TestGetEpisodesHandler() {
 	assert := assert2.New(s.T())
-	res := httptest.NewRecorder()
 	id := 2
 
-	req := httptest.NewRequest("POST", "/api/v0/podcasts/"+strconv.Itoa(id)+"/episodes", nil)
-	newRouter(false, false).ServeHTTP(res, req)
+	res := s.newRequest(http.MethodPost, "/api/v0/podcasts/"+strconv.Itoa(id)+"/episodes", nil)
 
 	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
 		" a 404 HTTP status code")
 	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
 		" the 'Content-Type' headers'")
 
-	res = httptest.NewRecorder()
-	req = httptest.NewRequest("GET", "/api/v0/podcasts/"+strconv.Itoa(id)+"/episodes", nil)
-	newRouter(false, false).ServeHTTP(res, req)
+	res = s.newRequest(http.MethodGet, "/api/v0/podcasts/"+strconv.Itoa(id)+"/episodes", nil)
 
 	assert.Equal(http.StatusOK, res.Code, "the request should be processed correctly, returning"+
 		" a 200 HTTP status code")
@@ -435,31 +405,25 @@ func (s *HandlersTestSuite) TestGetEpisodesHandler() {
 	assert.Equal(*eps, receivedEps, "the response should contain the same episodes as the ones that"+
 		" are stored on the database")
 
-	res = httptest.NewRecorder()
-	req = httptest.NewRequest("GET", "/api/v0/podcasts/"+strconv.Itoa(100)+"/episodes", nil)
-	newRouter(false, false).ServeHTTP(res, req)
+	res = s.newRequest(http.MethodGet, "/api/v0/podcasts/"+strconv.Itoa(100)+"/episodes", nil)
 
 	assert.Equal(http.StatusNotFound, res.Code, "if the used ID does not exist, the response should be"+
 		" with the HTTP status code 404 (Not Found)")
-	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
+	assert.Equal("text/plain; charset=utf-8", res.Header().Get("Content-Type"), "the response should not contain"+
 		" the 'Content-Type' headers'")
 }
 
 func (s *HandlersTestSuite) TestPlayerProgressHandler() {
 	assert := assert2.New(s.T())
-	res := httptest.NewRecorder()
 
-	req := httptest.NewRequest("DELETE", "/api/v0/player/progress", nil)
-	newRouter(false, false).ServeHTTP(res, req)
+	res := s.newRequest(http.MethodDelete, "/api/v0/player/progress", nil)
 
 	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
 		" a 404 HTTP status code")
 	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
 		" the 'Content-Type' headers'")
 
-	res = httptest.NewRecorder()
-	req = httptest.NewRequest("GET", "/api/v0/player/progress", nil)
-	newRouter(false, false).ServeHTTP(res, req)
+	res = s.newRequest(http.MethodGet, "/api/v0/player/progress", nil)
 
 	assert.Equal(http.StatusOK, res.Code, "the request should be processed correctly, returning"+
 		" a 200 HTTP status code")
@@ -482,17 +446,13 @@ func (s *HandlersTestSuite) TestPlayerProgressHandler() {
 		panic(err)
 	}
 
-	res = httptest.NewRecorder()
-	req = httptest.NewRequest("PUT", "/api/v0/player/progress", bytes.NewReader(b))
-	newRouter(false, false).ServeHTTP(res, req)
+	res = s.newRequest(http.MethodPut, "/api/v0/player/progress", bytes.NewReader(b))
 
 	assert.Equal(http.StatusCreated, res.Code, "the request should be processed correctly, returning"+
 		" a 201 HTTP status code")
 	assert.Equal(p, _pSynchronizer.GetProgress(), "the progress should be correctly updated")
 
-	res = httptest.NewRecorder()
-	req = httptest.NewRequest("GET", "/api/v0/player/progress", nil)
-	newRouter(false, false).ServeHTTP(res, req)
+	res = s.newRequest(http.MethodGet, "/api/v0/player/progress", nil)
 
 	assert.Equal(http.StatusOK, res.Code, "the request should be processed correctly, returning"+
 		" a 200 HTTP status code")
@@ -509,10 +469,8 @@ func (s *HandlersTestSuite) TestPlayerProgressHandler() {
 
 func (s *HandlersTestSuite) TestQueueHandler() {
 	assert := assert2.New(s.T())
-	res := httptest.NewRecorder()
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v0/player/queue", nil)
-	newRouter(false, false).ServeHTTP(res, req)
+	res := s.newRequest(http.MethodPost, "/api/v0/player/queue", nil)
 
 	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
 		" a 404 HTTP status code")
@@ -522,25 +480,25 @@ func (s *HandlersTestSuite) TestQueueHandler() {
 	/* ---------------------------- Test PUT requests --------------------------- */
 	q := []psync.QueueEpisode{
 		{
-			ID:        1,
+			ID:        0,
 			PodcastID: 10,
 			EpisodeID: "10d981dd-20dd-4bc8-9999-e12586a561d8",
 			Position:  0,
 		},
 		{
-			ID:        2,
+			ID:        0,
 			PodcastID: 8,
 			EpisodeID: "5f069078-eb21-480d-9e8e-be92742d90f5",
 			Position:  2, // the position is repeated on purpose
 		},
 		{
-			ID:        3,
+			ID:        0,
 			PodcastID: 1,
 			EpisodeID: "1c547723-43a5-46fe-91ae-4d410b0ebc79",
 			Position:  2,
 		},
 		{
-			ID:        4,
+			ID:        0,
 			PodcastID: 24,
 			EpisodeID: "e0bab9d0-bad6-4b4f-afa4-4af40939b5c5",
 			Position:  3,
@@ -552,13 +510,13 @@ func (s *HandlersTestSuite) TestQueueHandler() {
 		panic(err)
 	}
 
-	res = httptest.NewRecorder()
-	req = httptest.NewRequest(http.MethodPut, "/api/v0/player/queue", bytes.NewReader(c))
-	newRouter(false, false).ServeHTTP(res, req)
+	s.queueMutex.Lock()
+
+	res = s.newRequest(http.MethodPut, "/api/v0/player/queue", bytes.NewReader(c))
 
 	assert.Equal(http.StatusBadRequest, res.Code, "the request should be rejected because one position"+
 		" is repeated, returning a 400 HTTP status code")
-	assert.Equal("", res.Header().Get("Content-Type"), "the response"+
+	assert.Equal("text/plain; charset=utf-8", res.Header().Get("Content-Type"), "the response"+
 		" should not contain 'Content-Type' headers'")
 
 	// Set the correct position
@@ -569,24 +527,27 @@ func (s *HandlersTestSuite) TestQueueHandler() {
 		panic(err)
 	}
 
-	res = httptest.NewRecorder()
-	req = httptest.NewRequest(http.MethodPut, "/api/v0/player/queue", bytes.NewReader(c))
-	newRouter(false, false).ServeHTTP(res, req)
+	res = s.newRequest(http.MethodPut, "/api/v0/player/queue", bytes.NewReader(c))
 
 	assert.Equal(http.StatusCreated, res.Code, "the request should be processed correctly, returning"+
 		" a 201 HTTP status code")
 	assert.Equal("", res.Header().Get("Content-Type"), "if the response is successful"+
 		" should not contain 'Content-Type' headers'")
+	assert.Equal("/api/v0/player/queue", res.Header().Get("Location"), "the response should return"+
+		" a Location header with the respective value indicating the location of the recently added resource")
 
 	localQ := _pSynchronizer.GetQueue()
+
+	// Overwrite the IDs to avoid a false positive.
+	for i := range localQ.Content {
+		localQ.Content[i].ID = 0
+	}
 
 	assert.Equal(q, localQ.Content, "the queue should be inserted correctly")
 	/* -------------------------------------------------------------------------- */
 
 	/* -------------------------- Test GET requests -------------------------- */
-	res = httptest.NewRecorder()
-	req = httptest.NewRequest(http.MethodGet, "/api/v0/player/queue", nil)
-	newRouter(false, false).ServeHTTP(res, req)
+	res = s.newRequest(http.MethodGet, "/api/v0/player/queue", nil)
 
 	assert.Equal(http.StatusOK, res.Code, "the request should be processed correctly, returning"+
 		" a 200 HTTP status code")
@@ -604,13 +565,16 @@ func (s *HandlersTestSuite) TestQueueHandler() {
 		panic(err)
 	}
 
+	// Remove the ID to avoid inconsistencies (because we won't be sure of which test is executed first)
+	for i := range returnedQ {
+		returnedQ[i].ID = 0
+	}
+
 	assert.Equal(q, returnedQ, "the returned queue should be the same as the original")
 	/* -------------------------------------------------------------------------- */
 
 	/* -------------------------- Test DELETE requests -------------------------- */
-	res = httptest.NewRecorder()
-	req = httptest.NewRequest(http.MethodDelete, "/api/v0/player/queue", nil)
-	newRouter(false, false).ServeHTTP(res, req)
+	res = s.newRequest(http.MethodDelete, "/api/v0/player/queue", nil)
 
 	assert.Equal(http.StatusNoContent, res.Code, "the request should be processed correctly, returning"+
 		" a 204 HTTP status code")
@@ -621,10 +585,77 @@ func (s *HandlersTestSuite) TestQueueHandler() {
 
 	assert.Equal([]psync.QueueEpisode{}, localQ.Content, "the queue should be removed correctly")
 	/* -------------------------------------------------------------------------- */
+
+	s.queueMutex.Unlock()
 }
 
 func (s *HandlersTestSuite) TestAddToQueueHandler() {
+	assert := assert2.New(s.T())
 
+	res := s.newRequest(http.MethodGet, "/api/v0/player/queue/add", nil)
+
+	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
+		" a 404 HTTP status code")
+	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
+		" the 'Content-Type' header")
+
+	ep := psync.QueueEpisode{
+		ID:        0,
+		PodcastID: 88,
+		EpisodeID: "1ab36235-ddc2-4ee3-b2a7-382b379f0cba",
+		Position:  0,
+	}
+
+	epB, err := json.Marshal(ep)
+	if err != nil {
+		panic(err)
+	}
+
+	s.queueMutex.Lock()
+	defer s.queueMutex.Unlock()
+
+	res = s.newRequest(http.MethodPost, "/api/v0/player/queue/add", bytes.NewReader(epB))
+
+	assert.Equal(http.StatusBadRequest, res.Code, "if the request does not have the 'append' variable, it should"+
+		" return a 400 HTTP status code")
+	assert.Equal("text/plain; charset=utf-8", res.Header().Get("Content-Type"), "the response should not contain"+
+		" the 'Content-Type' header")
+
+	res = s.newRequest(http.MethodPost, "/api/v0/player/queue/add?append=1", bytes.NewReader(epB))
+
+	assert.Equal(http.StatusCreated, res.Code, "the request should be processed correctly, returning"+
+		" a 201 HTTP status code")
+	assert.Equal("application/json", res.Header().Get("Content-Type"), "if the response is successful"+
+		" should contain the appropriate 'Content-Type' headers'")
+	assert.Equal("/api/v0/player/queue", res.Header().Get("Location"), "the response should return"+
+		" a Location header with the respective value indicating the location of the recently added resource")
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	assert.NotEmpty(body, "the body must not be empty and should contain the ID of the recently added episode")
+
+	storedQ := _pSynchronizer.GetQueue().Content
+
+	var qEp psync.QueueEpisode
+	for _, e := range storedQ {
+		if ep.EpisodeID == e.EpisodeID {
+			qEp = e
+		}
+	}
+
+	// Remove the ID and Position to avoid a false positive when comparing the structures.
+	qEp.ID = 0
+	qEp.Position = 0
+
+	assert.Equal(ep, qEp, "the episode should be correctly added to the queue stored in the database")
+
+	/**
+	 * We are not checking if the episode has been added at the end or the beginning of the queue
+	 * because other tests are taking care of that task.
+	 */
 }
 
 func (s *HandlersTestSuite) TestDelFromQueueHandler() {
@@ -638,6 +669,14 @@ func (s *HandlersTestSuite) parseProgressReq(body *bytes.Buffer, progressVar *ps
 	}
 
 	return json.Unmarshal(b, progressVar)
+}
+
+func (s *HandlersTestSuite) newRequest(method, target string, body io.Reader) *httptest.ResponseRecorder {
+	res := httptest.NewRecorder()
+	req := httptest.NewRequest(method, target, body)
+	newRouter(false, false).ServeHTTP(res, req)
+
+	return res
 }
 
 func (s *HandlersTestSuite) AfterTest(_, _ string) {}
