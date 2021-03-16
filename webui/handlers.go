@@ -106,20 +106,22 @@ func unsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 
 	idStr := keys[0]
 
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
+	id := safe.SafeParseInt(idStr)
+	if id == safe.DefaultAllocate {
+		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values", idStr)
+
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
 			"requestURI": r.RequestURI,
 			"method":     r.Method,
-			"usedID":     idStr,
-			"error":      errorx.EnsureStackTrace(err),
+			"error":      err.Error(),
+			"givenID":    idStr,
 		}).Error("Cannot parse the ID of the podcast to unsubscribe")
 	}
 
-	err = _podcastsDB.SetPodcastSubscription(int(id), false)
+	err := _podcastsDB.SetPodcastSubscription(int(id), false)
 	if err != nil {
 		if errorx.IsOfType(err, errorx.IllegalArgument) {
 			http.Error(w, "the podcast with the given ID does not exist", http.StatusBadRequest)
@@ -269,15 +271,17 @@ func getUserPodcastsHandler(w http.ResponseWriter, r *http.Request) {
 func getPodcastHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := mux.Vars(r)["id"]
 
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
+	id := safe.SafeParseInt(idStr)
+	if id == safe.DefaultAllocate {
+		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values", idStr)
+
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
 			"requestURI": r.RequestURI,
 			"method":     r.Method,
-			"error":      errorx.EnsureStackTrace(err),
+			"error":      err.Error(),
 			"givenID":    idStr,
 		}).Error("The given ID cannot be parsed")
 
@@ -332,15 +336,17 @@ func getPodcastHandler(w http.ResponseWriter, r *http.Request) {
 func getEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := mux.Vars(r)["id"]
 
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
+	id := safe.SafeParseInt(idStr)
+	if id == safe.DefaultAllocate {
+		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values", idStr)
+
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
 			"requestURI": r.RequestURI,
 			"method":     r.Method,
-			"error":      errorx.EnsureStackTrace(err),
+			"error":      err.Error(),
 			"givenID":    idStr,
 		}).Error("The given ID cannot be parsed")
 
@@ -666,6 +672,7 @@ func delFromQueueHandler(w http.ResponseWriter, r *http.Request) {
 			"requestURI": r.RequestURI,
 			"method":     r.Method,
 			"error":      err.Error(),
+			"givenID":    idStr,
 		}).Error("The variable 'id' is not present in the request or the value cannot be parsed")
 
 		return
