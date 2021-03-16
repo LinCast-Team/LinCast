@@ -34,17 +34,17 @@ func getFileSystem(devMode bool) http.FileSystem {
 }
 
 // New returns a new instance of the server. To execute it, the method `ListenAndServe` must be called.
-func New(port uint16, localServer bool, devMode bool, logRequests bool, podcastsDB *database.Database, playerSynchronizer *psync.Synchronizer) *http.Server {
+func New(port uint16, localServer bool, devMode bool, logRequests bool, podcastsDB *database.Database, playerSync *psync.PlayerSync) *http.Server {
 	if podcastsDB == nil {
 		log.Panic("'podcastsDB' is nil")
 	}
 
-	if playerSynchronizer == nil {
-		log.Panic("'playerSynchronizer' is nil")
+	if playerSync == nil {
+		log.Panic("'playerSync' is nil")
 	}
 
 	_podcastsDB = podcastsDB
-	_pSynchronizer = playerSynchronizer
+	_playerSync = playerSync
 
 	router := newRouter(devMode, logRequests)
 
@@ -85,6 +85,9 @@ func newRouter(devMode, logRequests bool) *mux.Router {
 	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}/details", getPodcastHandler).Methods("GET")
 	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}/episodes", getEpisodesHandler).Methods("GET")
 	router.HandleFunc("/api/v0/player/progress", playerProgressHandler).Methods("GET", "PUT")
+	router.HandleFunc("/api/v0/player/queue", queueHandler).Methods("GET", "PUT", "DELETE")
+	router.HandleFunc("/api/v0/player/queue/add", addToQueueHandler).Methods("POST")
+	router.HandleFunc("/api/v0/player/queue/remove", delFromQueueHandler).Methods("DELETE")
 	router.PathPrefix("/").Handler(http.FileServer(getFileSystem(devMode)))
 
 	return router
