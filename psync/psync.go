@@ -171,7 +171,7 @@ func (s *PlayerSync) CleanQueue() error {
 }
 
 // AddToQueue adds the given QueueEpisode to the actual queue. The parameter `atBeginning` defines if that QueueEpisode
-// should be added with the first position or the last one. If there is an error, the ID returned will be -1.
+// should be added with the first position or the last one.
 func (s *PlayerSync) AddToQueue(e QueueEpisode, atBeginning bool) (id int, err error) {
 	sqlDB := s.db.GetInstance()
 
@@ -184,12 +184,12 @@ func (s *PlayerSync) AddToQueue(e QueueEpisode, atBeginning bool) (id int, err e
 		** of the variable `atBeginning`.
 		 */
 
-		// Make sure that the position of the episode is 0.
-		e.Position = 0
+		// Make sure that the position of the episode is 1.
+		e.Position = 1
 
 		err := s.insertEpInQueue(e)
 		if err != nil {
-			return -1, err
+			return 0, err
 		}
 	} else if s.queue.len != 0 && atBeginning {
 		/*
@@ -202,16 +202,16 @@ func (s *PlayerSync) AddToQueue(e QueueEpisode, atBeginning bool) (id int, err e
 		// Update the position of the episodes adding 1 to each one.
 		result, err := sqlDB.Exec(upQuery)
 		if err != nil {
-			return -1, err
+			return 0, err
 		}
 
 		rowsAffected, err := result.RowsAffected()
 		if err != nil {
-			return -1, err
+			return 0, err
 		}
 
 		if rowsAffected == 0 && s.queue.len != 0 {
-			return -1, errorx.InternalError.New("no rows have been affected")
+			return 0, errorx.InternalError.New("no rows have been affected")
 		}
 
 		// Update the queue on memory
@@ -219,12 +219,12 @@ func (s *PlayerSync) AddToQueue(e QueueEpisode, atBeginning bool) (id int, err e
 			s.queue.Content[i].Position = s.queue.Content[i].Position + 1
 		}
 
-		// Make sure that the position of the episode is 0.
-		e.Position = 0
+		// Make sure that the position of the episode is 1.
+		e.Position = 1
 
 		err = s.insertEpInQueue(e)
 		if err != nil {
-			return -1, err
+			return 0, err
 		}
 	} else {
 		/*
@@ -244,7 +244,7 @@ func (s *PlayerSync) AddToQueue(e QueueEpisode, atBeginning bool) (id int, err e
 
 		err := s.insertEpInQueue(e)
 		if err != nil {
-			return -1, err
+			return 0, err
 		}
 	}
 

@@ -292,11 +292,8 @@ func (s *SynchronizerTestSuite) TestAddToQueue() {
 	}
 
 	assert.Equal(anotherEp1DB.ID, id1, "the ID returned by the method 'AddToQueue' should be correct")
-	// The length of the queue is: the length of the slice `eps` + 1 (the one that we added) - 1 (because positions start at 0), so
-	// it should be 10.
-	assert.Equal(10, anotherEp1DB.Position, "the position of the inserted episode should equal to the"+
-		" length of the queue - 1. Note: 'last element in the queue' refers to the episode that"+
-		" is literally at the end of the queue, no the episode stored in the last row of the table 'player_queue'.")
+	assert.Equal(11, anotherEp1DB.Position, "the position of the inserted episode should equal to the"+
+		" length of the queue")
 	assert.Equal(anotherEp1.PodcastID, anotherEp1DB.PodcastID, "the 'PodcastID' of the episode returned"+
 		" should be the same as the inserted one")
 	assert.Equal(anotherEp1.EpisodeID, anotherEp1DB.EpisodeID, "the 'EpisodeID' of the episode returned"+
@@ -313,8 +310,8 @@ func (s *SynchronizerTestSuite) TestAddToQueue() {
 	}
 
 	assert.Equal(anotherEp2DB.ID, id2, "the ID returned by the method 'AddToQueue' should be correct")
-	// Positions start at 0
-	assert.Equal(0, anotherEp2DB.Position, "the position of the inserted episode should be the"+
+	// Positions start at 1
+	assert.Equal(1, anotherEp2DB.Position, "the position of the inserted episode should be the"+
 		" position of the last element in the queue + 1. Note: 'last element in the queue' refers to the episode that"+
 		" is literally at the end of the queue, no the episode stored in the last row of the table 'player_queue'.")
 	assert.Equal(anotherEp2.PodcastID, anotherEp2DB.PodcastID, "the 'PodcastID' of the episode returned"+
@@ -355,6 +352,14 @@ func (s *SynchronizerTestSuite) TestRemoveFromQueue() {
 func (s *SynchronizerTestSuite) AfterTest(_, _ string) {}
 
 func (s *SynchronizerTestSuite) TearDownTest() {
+	_ = s.dbInstance1.Close()
+	_ = s.dbInstance2.Close()
+	_ = s.dbInstanceQ1.Close()
+	_ = s.dbInstanceQ2.Close()
+	_ = s.dbInstanceQ3.Close()
+	_ = s.dbInstanceQ4.Close()
+	_ = s.dbInstanceQ5.Close()
+
 	err := os.RemoveAll(s.dbPath)
 	if err != nil {
 		panic(err)
@@ -404,7 +409,7 @@ func (s *SynchronizerTestSuite) generateDummyQueueEp(n int, withID bool) *[]Queu
 			ID:        ID,
 			PodcastID: int(lTesting.RandomInt63(20)),
 			EpisodeID: lTesting.RandomString(10),
-			Position:  i,
+			Position:  i + 1,
 		}
 
 		eps = append(eps, ep)
