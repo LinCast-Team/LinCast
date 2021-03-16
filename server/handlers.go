@@ -9,6 +9,7 @@ import (
 	"lincast/database"
 	"lincast/podcasts"
 	"lincast/psync"
+	"lincast/utils/safe"
 
 	"github.com/gorilla/mux"
 	"github.com/joomcode/errorx"
@@ -374,6 +375,7 @@ func getEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 
 	err = json.NewEncoder(w).Encode(eps)
 	if err != nil {
@@ -388,8 +390,6 @@ func getEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 func playerProgressHandler(w http.ResponseWriter, r *http.Request) {
@@ -637,4 +637,68 @@ func addToQueueHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func delFromQueueHandler(w http.ResponseWriter, r *http.Request) {
+	keys, ok := r.URL.Query()["id"]
+	if !ok || len(keys[0]) < 1 {
+		err := errorx.IllegalFormat.New("param 'id' is missing")
+
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"error":      err.Error(),
+		}).Error("Request rejected due to absence of parameter 'id'")
+
+		return
+	}
+
+	idStr := keys[0]
+
+	id := safe.SafeParseInt(idStr)
+	if id == safe.DefaultAllocate {
+		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values", idStr)
+
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"error":      err.Error(),
+		}).Error("The variable 'id' is not present in the request or the value cannot be parsed")
+
+		return
+	}
+
+	err := _playerSync.RemoveFromQueue(id)
+	if err != nil {
+		if errorx.IsOfType(err, errorx.IllegalArgument) {
+			errmsg := "the episode of the queue with the given ID does not exist"
+
+			http.Error(w, errmsg, http.StatusBadRequest)
+
+			log.WithFields(log.Fields{
+				"remoteAddr": r.RemoteAddr,
+				"requestURI": r.RequestURI,
+				"method":     r.Method,
+				"error":      errorx.Decorate(err, errmsg),
+				"usedID":     id,
+			}).Error("Error when trying to remove an episode from the queue")
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+
+			log.WithFields(log.Fields{
+				"remoteAddr": r.RemoteAddr,
+				"requestURI": r.RequestURI,
+				"method":     r.Method,
+				"error":      errorx.EnsureStackTrace(err),
+				"podcastID":  id,
+			}).Error("Error when trying to remove an episode from the queue")
+		}
+
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

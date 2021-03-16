@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -659,7 +660,67 @@ func (s *HandlersTestSuite) TestAddToQueueHandler() {
 }
 
 func (s *HandlersTestSuite) TestDelFromQueueHandler() {
+	assert := assert2.New(s.T())
 
+	res := s.newRequest(http.MethodGet, "/api/v0/player/queue/remove", nil)
+
+	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
+		" a 404 HTTP status code")
+	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
+		" the 'Content-Type' header")
+
+	res = s.newRequest(http.MethodDelete, "/api/v0/player/queue/remove", nil)
+
+	assert.Equal(http.StatusBadRequest, res.Code, "the omision of the parameter 'id' should"+
+		" return a 400 HTTP status code")
+	assert.Equal("text/plain; charset=utf-8", res.Header().Get("Content-Type"), "the response should contain"+
+		" the appropriate 'Content-Type' headers")
+
+	s.queueMutex.Lock()
+	defer s.queueMutex.Unlock()
+
+	ep := psync.QueueEpisode{
+		ID:        0,
+		PodcastID: 112,
+		EpisodeID: "683eaff9-6bda-4066-842f-627e312e6160",
+		Position:  0,
+	}
+
+	id, err := _playerSync.AddToQueue(ep, false)
+	if err != nil {
+		panic(err)
+	}
+
+	q := _playerSync.GetQueue()
+
+	for _, e := range q.Content {
+		if e.ID == id {
+			// Overwrite our custom episode with the episode from the database, which contains the current ID and position of it.
+			ep = e
+
+			break
+		}
+	}
+
+	res = s.newRequest(http.MethodDelete, "/api/v0/player/queue/remove?id="+fmt.Sprintf("%d", ep.ID), nil)
+
+	assert.Equal(http.StatusNoContent, res.Code, "the request should be processed correctly, returning"+
+		" a 204 HTTP status code")
+	assert.Equal("", res.Header().Get("Content-Type"), "if the response is successful"+
+		", it should not contain the 'Content-Type' headers")
+
+	q = _playerSync.GetQueue()
+
+	var existsOnDB bool
+	for _, e := range q.Content {
+		if e.ID == ep.ID {
+			existsOnDB = true
+
+			break
+		}
+	}
+
+	assert.False(existsOnDB, "the episode should be correctly removed from the queue")
 }
 
 func (s *HandlersTestSuite) parseProgressReq(body *bytes.Buffer, progressVar *psync.CurrentProgress) error {
