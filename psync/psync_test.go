@@ -141,8 +141,6 @@ func (s *SynchronizerTestSuite) TestUpdateProgress() {
 		assert.True(errorx.IsOfType(err, errorx.IllegalArgument), "the returned error should be of"+
 			" type errorx.IllegalArgument")
 	}
-
-	_ = s.dbInstance1.Close()
 }
 
 func (s *SynchronizerTestSuite) TestGetProgress() {
@@ -167,8 +165,6 @@ func (s *SynchronizerTestSuite) TestGetProgress() {
 	assert.Equal(progress, p.Progress, "the progress should be obtained correctly")
 	assert.Equal(episodeGUID, p.EpisodeGUID, "the episodeGUID should be obtained correctly")
 	assert.Equal(podcastID, p.PodcastID, "the podcastID should be obtained correctly")
-
-	_ = s.dbInstance2.Close()
 }
 
 func (s *SynchronizerTestSuite) TestGetQueue() {
