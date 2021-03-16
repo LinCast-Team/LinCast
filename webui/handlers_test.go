@@ -475,7 +475,7 @@ func (s *HandlersTestSuite) TestQueueHandler() {
 
 	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
 		" a 404 HTTP status code")
-	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
+	assert.Equal("text/plain; charset=utf-8", res.Header().Get("Content-Type"), "the response should not contain"+
 		" the 'Content-Type' headers'")
 
 	/* ---------------------------- Test PUT requests --------------------------- */
@@ -597,7 +597,7 @@ func (s *HandlersTestSuite) TestAddToQueueHandler() {
 
 	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
 		" a 404 HTTP status code")
-	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
+	assert.Equal("text/plain; charset=utf-8", res.Header().Get("Content-Type"), "the response should not contain"+
 		" the 'Content-Type' header")
 
 	ep := psync.QueueEpisode{
@@ -666,7 +666,7 @@ func (s *HandlersTestSuite) TestDelFromQueueHandler() {
 
 	assert.Equal(http.StatusNotFound, res.Code, "the usage of an incorrect method should return"+
 		" a 404 HTTP status code")
-	assert.Equal("", res.Header().Get("Content-Type"), "the response should not contain"+
+	assert.Equal("text/plain; charset=utf-8", res.Header().Get("Content-Type"), "the response should not contain"+
 		" the 'Content-Type' header")
 
 	res = s.newRequest(http.MethodDelete, "/api/v0/player/queue/remove", nil)
