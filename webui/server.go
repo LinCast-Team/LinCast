@@ -13,6 +13,7 @@ import (
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
+	"github.com/NYTimes/gziphandler"
 )
 
 const frontendPath = "frontend/dist"
@@ -79,16 +80,16 @@ func newRouter(devMode, logRequests bool) *mux.Router {
 		router.Use(loggingMiddleware)
 	}
 
-	router.HandleFunc("/api/v0/podcasts/subscribe", subscribeToPodcastHandler).Methods("POST")
-	router.HandleFunc("/api/v0/podcasts/unsubscribe", unsubscribeToPodcastHandler).Methods("PUT")
-	router.HandleFunc("/api/v0/podcasts/user", getUserPodcastsHandler).Methods("GET")
-	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}/details", getPodcastHandler).Methods("GET")
-	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}/episodes", getEpisodesHandler).Methods("GET")
-	router.HandleFunc("/api/v0/player/progress", playerProgressHandler).Methods("GET", "PUT")
-	router.HandleFunc("/api/v0/player/queue", queueHandler).Methods("GET", "PUT", "DELETE")
-	router.HandleFunc("/api/v0/player/queue/add", addToQueueHandler).Methods("POST")
-	router.HandleFunc("/api/v0/player/queue/remove", delFromQueueHandler).Methods("DELETE")
-	router.PathPrefix("/").Handler(http.FileServer(getFileSystem(devMode)))
+	router.Handle("/api/v0/podcasts/subscribe", gziphandler.GzipHandler(subscribeToPodcastHandler)).Methods("POST")
+	router.Handle("/api/v0/podcasts/unsubscribe", gziphandler.GzipHandler(unsubscribeToPodcastHandler)).Methods("PUT")
+	router.Handle("/api/v0/podcasts/user", gziphandler.GzipHandler(getUserPodcastsHandler)).Methods("GET")
+	router.Handle("/api/v0/podcasts/{id:[0-9]+}/details", gziphandler.GzipHandler(getPodcastHandler)).Methods("GET")
+	router.Handle("/api/v0/podcasts/{id:[0-9]+}/episodes", gziphandler.GzipHandler(getEpisodesHandler)).Methods("GET")
+	router.Handle("/api/v0/player/progress", gziphandler.GzipHandler(playerProgressHandler)).Methods("GET", "PUT")
+	router.Handle("/api/v0/player/queue", gziphandler.GzipHandler(queueHandler)).Methods("GET", "PUT", "DELETE")
+	router.Handle("/api/v0/player/queue/add", gziphandler.GzipHandler(addToQueueHandler)).Methods("POST")
+	router.Handle("/api/v0/player/queue/remove", gziphandler.GzipHandler(delFromQueueHandler)).Methods("DELETE")
+	router.PathPrefix("/").Handler(gziphandler.GzipHandler(http.FileServer(getFileSystem(devMode))))
 
 	return router
 }

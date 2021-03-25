@@ -19,7 +19,7 @@ import (
 var _podcastsDB *database.Database
 var _playerSync *psync.PlayerSync
 
-func subscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
+var subscribeToPodcastHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	u := struct {
 		URL string `json:"url"`
 	}{}
@@ -85,9 +85,9 @@ func subscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-}
+})
 
-func unsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
+var unsubscribeToPodcastHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	keys, ok := r.URL.Query()["id"]
 	if !ok || len(keys[0]) < 1 {
 		err := errorx.IllegalFormat.New("param 'id' is missing")
@@ -149,9 +149,9 @@ func unsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
+})
 
-func getUserPodcastsHandler(w http.ResponseWriter, r *http.Request) {
+var getUserPodcastsHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	var subscribed bool
 	var unsubscribed bool
 
@@ -266,9 +266,9 @@ func getUserPodcastsHandler(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-}
+})
 
-func getPodcastHandler(w http.ResponseWriter, r *http.Request) {
+var getPodcastHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	idStr := mux.Vars(r)["id"]
 
 	id := safe.SafeParseInt(idStr)
@@ -331,9 +331,9 @@ func getPodcastHandler(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-}
+})
 
-func getEpisodesHandler(w http.ResponseWriter, r *http.Request) {
+var getEpisodesHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	idStr := mux.Vars(r)["id"]
 
 	id := safe.SafeParseInt(idStr)
@@ -396,9 +396,9 @@ func getEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-}
+})
 
-func playerProgressHandler(w http.ResponseWriter, r *http.Request) {
+var playerProgressHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		w.Header().Set("Content-Type", "application/json")
 
@@ -451,9 +451,9 @@ func playerProgressHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-}
+})
 
-func queueHandler(w http.ResponseWriter, r *http.Request) {
+var queueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPut:
 		{
@@ -553,9 +553,9 @@ func queueHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-}
+})
 
-func addToQueueHandler(w http.ResponseWriter, r *http.Request) {
+var addToQueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	keys, ok := r.URL.Query()["append"]
 	if !ok || len(keys[0]) < 1 {
 		err := errorx.IllegalFormat.New("param 'append' is missing")
@@ -640,9 +640,9 @@ func addToQueueHandler(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-}
+})
 
-func delFromQueueHandler(w http.ResponseWriter, r *http.Request) {
+var delFromQueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	keys, ok := r.URL.Query()["id"]
 	if !ok || len(keys[0]) < 1 {
 		err := errorx.IllegalFormat.New("param 'id' is missing")
@@ -708,4 +708,4 @@ func delFromQueueHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
+})
