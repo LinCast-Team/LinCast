@@ -3,6 +3,7 @@ module lincast
 go 1.16
 
 require (
+	github.com/NYTimes/gziphandler v1.1.1
 	github.com/gorilla/mux v1.8.0
 	github.com/joomcode/errorx v1.0.3
 	github.com/mattn/go-sqlite3 v1.14.6
