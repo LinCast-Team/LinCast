@@ -22,7 +22,7 @@
   </div>
 </template>
 
-<script>
+<script lang='ts'>
 import Item from '@/components/library/Item.vue';
 import RecentPodcast from '@/components/library/RecentPodcast.vue';
 import LinCastInfo from '@/components/library/LinCastInfo.vue';

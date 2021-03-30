@@ -26,7 +26,7 @@
     </div>
   </div>
 </template>
-<script>
+<script lang='ts'>
 import { ref } from 'vue';
 import Category from '@/components/discover/Category.vue';
 import Search from '@/components/discover/Search.vue';
@@ -41,11 +41,11 @@ export default {
   setup() {
     const searchMode = ref(false);
 
-    const onSearchInput = (input) => {
+    const onSearchInput = (input: string) => {
       console.log(input);
     };
 
-    const onSearchFocus = (f) => {
+    const onSearchFocus = (f: boolean) => {
       searchMode.value = f;
     };
 
