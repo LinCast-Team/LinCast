@@ -90,10 +90,46 @@ export default {
 
 <style lang="scss">
 body {
-  @apply bg-black;
+  @apply bg-primary-dt;
 }
 
 .bg-real-gray {
-  background-color: #222529;
+  background-color: #222529
+}
+
+// ========== Color Palette Dark Theme ===========
+
+// Background color
+
+.bg-primary-dt {
+  background-color: #101010
+}
+
+.bg-secondary-dt {
+  background-color: #252525
+}
+
+.bg-accent-dt {
+  background-color: #6D6D6D
+}
+
+// Text color
+
+.text-primary-dt {
+  color: #E6E6E6
+}
+
+.text-secondary-dt {
+  color: #9F9F9F
+}
+
+// Primary Accent
+
+.primary-accent {
+  color: #4DB6AC
+}
+
+.primary-accent {
+  color: #00796B
 }
 </style>

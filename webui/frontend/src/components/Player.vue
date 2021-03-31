@@ -2,8 +2,8 @@
 <div
   class="flex z-50 shadow-lg font-sans transition-colors duration-500 text-center"
   :class="{
-    'flex-row items-center bg-real-gray border-solid border-b border-black': !expanded,
-    'flex-col w-full h-full bg-gradient-to-b bg-local from-green-900 via-black to-black overflow-y-auto': expanded,
+    'flex-row items-center bg-primary-dt border-solid border-b border-gray-800': !expanded,
+    'flex-col w-full h-full bg-primary-dt overflow-y-auto': expanded,
   }"
 > <!-- bg-gradient-to-br from-gray-700 to-gray-900 -->
   <div v-show="expanded" @click="emitCloseEvent" class="flex-none rounded-lg bg-gray-500 w-1/5 m-auto my-5 h-1 shadow-md"></div>
