@@ -20,11 +20,11 @@
   </div>
 </template>
 
-<script>
+<script lang='ts'>
 import { ref } from 'vue';
 import Player from '@/components/Player.vue';
 import NavigationBar from '@/components/NavigationBar.vue';
-import anime from 'animejs/lib/anime.es';
+import anime from 'animejs';
 
 export default {
   components: {
@@ -52,7 +52,10 @@ export default {
           translateY: 0,
           begin: () => {
             playerExpanded.value = true;
-            document.getElementById('player-container').style.top = '0px';
+            const el = document.getElementById('player-container');
+            if (el != null) {
+              el.style.top = '0px';
+            }
           },
         }, '-=300');
     };
@@ -74,7 +77,10 @@ export default {
           translateY: 0,
           begin: () => {
             playerExpanded.value = false;
-            document.getElementById('player-container').style.top = 'auto';
+            const el = document.getElementById('player-container');
+            if (el != null) {
+              el.style.top = 'auto';
+            }
           },
         }, '-=300');
     };
