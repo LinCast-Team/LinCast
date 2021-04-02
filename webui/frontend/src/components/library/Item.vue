@@ -26,7 +26,6 @@ export default {
       required: true,
     },
   },
-  },
   setup(props: Data): Data {
     const icon = computed(() => feather.icons[props.iconClass as string].toSvg({ 'stroke-width': 1.5, class: 'text-gray-400 w-8 h-8 mx-4' }));
 
