@@ -10,7 +10,6 @@
   "dependencies": {
     "animejs": "^3.2.1",
     "autoprefixer": "^9",
-    "axios": "^0.21.1",
     "core-js": "^3.6.5",
     "feather-icons": "^4.28.0",
     "postcss": "^7",
