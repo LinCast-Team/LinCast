@@ -7,6 +7,7 @@
           v-for="rp in recentPodcasts"
           :title="rp.title"
           :key="rp.key"
+          imgSrc='https://picsum.photos/600'
         />
       </div>
       <div class="w-full bg-gray-700" style="height: 1px"></div>

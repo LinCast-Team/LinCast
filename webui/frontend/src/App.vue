@@ -8,7 +8,7 @@
     <player
       id="player"
       :audioSrc="'http://www.ivoox.com/tortulia-209-william-adams-parte-1_mf_60745571_feed_1.mp3'"
-      :artworkSrc="'http://static-2.ivoox.com/canales/1/5/3/4/7691470744351_XXL.jpg'"
+      :artworkSrc="'https://picsum.photos/1200'"
       :podcastTitle="'La tortulia podcast'"
       :episodeTitle="'India vs China'"
       :expanded="playerExpanded"
