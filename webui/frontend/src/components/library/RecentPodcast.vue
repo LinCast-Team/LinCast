@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col w-36 my-2 mx-4 p-1">
-      <img :src="imgSrc" :alt="title + '\'s artwork'" class="h-32 w-32">
-      <p class="truncate text-gray-400 mt-2">{{ title }}</p>
+      <img :src="imgSrc" :alt="title + '\'s artwork'" class="h-32 w-32 rounded-md">
+      <p class="truncate text-secondary-dt mt-1">{{ title }}</p>
   </div>
 </template>
 

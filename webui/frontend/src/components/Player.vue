@@ -1,13 +1,13 @@
 <template>
 <div
-  class="flex z-50 shadow-lg font-sans transition-colors duration-500 text-center"
+  class="flex z-50 shadow-lg font-sans transition-colors duration-500 text-center text-secondary-dt"
   :class="{
     'flex-row items-center bg-primary-dt border-solid border-b border-gray-800': !expanded,
     'flex-col w-full h-full bg-primary-dt overflow-y-auto': expanded,
   }"
 > <!-- bg-gradient-to-br from-gray-700 to-gray-900 -->
-  <div v-show="expanded" @click="emitCloseEvent" class="flex-none rounded-lg bg-gray-500 w-1/5 m-auto my-5 h-1 shadow-md"></div>
-  <h1 v-show="expanded" class="text-2xl mb-8 mt-2 text-gray-300">Playing Now</h1>
+  <div v-show="expanded" @click="emitCloseEvent" class="flex-none rounded-lg bg-accent-dt opacity-40 w-1/5 m-auto my-5 h-1 shadow-md"></div>
+  <h1 v-show="expanded" class="text-2xl mb-8 mt-2 text-primary-dt">Playing Now</h1>
 
   <img
     id="player__podcast-artwork"
@@ -21,18 +21,18 @@
   >
 
   <div
-    class=" text-center text-gray-100"
+    class=" text-center"
     :class="{
       'flex flex-row justify-around my-2 sm:mt-4 sm:mb-6 sm:mx-14 md:mx-20': expanded,
       'w-3/5 cursor-pointer': !expanded,
     }"
     @click="if (!expanded) emitOpenEvent();"
   >
-    <div v-show="expanded" v-html="share2Icon" class="self-center"></div>
+    <div v-show="expanded" v-html="share2Icon" class="self-center text-primary-dt"></div>
     <div class="" :class="{ 'text-center justify-self-center w-3/5': expanded, 'text-left': !expanded }">
       <p
         id="player__podcast-title"
-        class="truncate text-gray-100 uppercase"
+        class="truncate text-primary-dt uppercase"
         :class="{
           'font-extrabold text-xl': expanded,
           'font-bold text-base': !expanded,
@@ -40,13 +40,13 @@
       >{{ podcastTitle }}</p>
       <p
         id="player__episode-title"
-        class="truncate text-gray-400"
+        class="truncate"
         :class="{
           'text-sm': !expanded
         }"
       >{{ episodeTitle }}</p>
     </div>
-    <div v-show="expanded" v-html="moreVerticalIcon" class="self-center"></div>
+    <div v-show="expanded" v-html="moreVerticalIcon" class="self-center text-primary-dt"></div>
   </div>
 
   <audio ref="audioElement" :src="audioSrc" preload="auto"></audio>
@@ -61,7 +61,7 @@
       <div class="h-full w-0 shadow-inner" :class="{ 'rounded-md': expanded }" :style="'background-color: #14B8A6; width: ' + calculatedProgress  + '%;'"></div>
       <div v-show="expanded" class="h-4 w-4 rounded-full border border-black relative -left-2" style="background-color: #14B8A6; top: -6px;"></div>
     </div>
-    <div v-show="expanded" class="flex flex-row text-gray-400 font-bold text-sm bg-transparent mx-2 justify-between">
+    <div v-show="expanded" class="flex flex-row font-bold text-sm bg-transparent mx-2 justify-between">
       <p>{{ currentTimeStr }}</p>
       <p>-{{ remainingTimeStr }}</p>
     </div>
@@ -69,7 +69,7 @@
 
   <div
     id="player__buttons"
-    class="bg-transparent transition-colors duration-500 text-gray-100"
+    class="bg-transparent transition-colors duration-500 text-primary-dt"
     :class="{
       'grid grid-cols-5 items-center md:mx-20 py-4 px-1 sm:px-3 lg:px-1 xl:px-3 my-auto': expanded,
       'self-center': !expanded,
@@ -106,7 +106,7 @@
       <div v-html="skipForwardIcon"></div>
     </button>
   </div>
-  <div id="player__episode-description" v-if="episodeDescription !== ''" v-show="expanded" class="m-4 p-2 rounded-xl text-gray-200 bg-real-gray">
+  <div id="player__episode-description" v-if="episodeDescription !== ''" v-show="expanded" class="m-4 p-2 rounded-xl text-primary-dt bg-secondary-dt">
     {{ episodeDescription }}
   </div>
 </div>

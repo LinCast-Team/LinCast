@@ -1,7 +1,10 @@
 <template>
   <div class="font-sans flex flex-col overflow-y-auto">
     <div class="mt-6">
-      <h3 class="text-gray-50 my-2 mx-8 text-lg font-semibold">Latest</h3>
+      <div class="flex flex-row justify-between my-2 mx-6">
+        <h3 class="text-primary-dt text-xl font-semibold">Recently</h3>
+        <div v-html="settingsIcon"></div>
+      </div>
       <div class="flex flex-row my-2 overflow-x-auto">
         <recent-podcast
           v-for="rp in recentPodcasts"
@@ -10,14 +13,13 @@
           imgSrc='https://picsum.photos/600'
         />
       </div>
-      <div class="w-full bg-gray-700" style="height: 1px"></div>
-      <div class="p-4">
-        <item title="Listen Later" icon-class="package" />
-        <item title="Subscriptions" icon-class="layers" />
-        <item title="Latest Episodes" icon-class="clock" />
-        <item title="History" icon-class="list" />
+      <div class="w-full bg-gray-500 opacity-25" style="height: 1px"></div>
+      <div class="py-2 ">
+        <item title="History" icon-class="book" />
+        <item title="Listen Later" icon-class="clock" />
+        <item title="Likes" icon-class="thumbs-up" />
       </div>
-      <div class="w-full bg-gray-700" style="height: 1px"></div>
+      <div class="w-full bg-gray-500 opacity-25" style="height: 1px"></div>
     </div>
     <lincast-info />
   </div>
@@ -27,7 +29,8 @@
 import Item from '@/components/library/Item.vue';
 import RecentPodcast from '@/components/library/RecentPodcast.vue';
 import LinCastInfo from '@/components/library/LinCastInfo.vue';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import feather from 'feather-icons';
 
 export default {
   components: {
@@ -45,8 +48,11 @@ export default {
       { title: 'Sample Podcast 6', key: 16 },
     ]);
 
+    const settingsIcon = computed(() => feather.icons.settings.toSvg({ 'stroke-width': 1.5, class: 'text-secondary-dt w-7 h-7 mx-4' }));
+
     return {
       recentPodcasts,
+      settingsIcon,
     };
   },
 };
