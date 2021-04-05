@@ -95,6 +95,8 @@ export default {
 </script>
 
 <style lang="scss">
+@import "@/assets/css/_palette.scss";
+
 body {
   @apply bg-primary-dt;
 }
@@ -108,34 +110,34 @@ body {
 // Background color
 
 .bg-primary-dt {
-  background-color: #101010
+  background-color: $bg-primary;
 }
 
 .bg-secondary-dt {
-  background-color: #252525
+  background-color: $bg-secondary;
 }
 
 .bg-accent-dt {
-  background-color: #6D6D6D
+  background-color: $bg-accent;
 }
 
 // Text color
 
 .text-primary-dt {
-  color: #E6E6E6
+  color: $text-primary;
 }
 
 .text-secondary-dt {
-  color: #9F9F9F
+  color: $text-secondary;
 }
 
 // Primary Accent
 
 .primary-accent {
-  color: #4DB6AC
+  color: $primary-accent;
 }
 
-.primary-accent {
-  color: #00796B
+.secondary-accent {
+  color: $secondary-accent;
 }
 </style>
