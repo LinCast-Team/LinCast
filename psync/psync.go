@@ -23,8 +23,8 @@ type PlayerSync struct {
 // currently playing on the player.
 type CurrentProgress struct {
 	Progress    time.Duration `json:"progress"`
-	EpisodeGUID string        `json:"episode_id"`
-	PodcastID   int           `json:"podcast_id"`
+	EpisodeGUID string        `json:"episodeID"`
+	PodcastID   int           `json:"podcastID"`
 }
 
 // Queue is the structure that represents the queue of the player (located on the client), and is used for its storage,
@@ -37,8 +37,8 @@ type Queue struct {
 // QueueEpisode represents an episode of the queue.
 type QueueEpisode struct {
 	ID        int    `json:"id"`
-	PodcastID int    `json:"podcast_id"`
-	EpisodeID string `json:"episode_id"`
+	PodcastID int    `json:"podcastID"`
+	EpisodeID string `json:"episodeID"`
 	Position  int    `json:"position"`
 }
 
