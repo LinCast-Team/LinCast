@@ -11,15 +11,9 @@ export const getCurrentProgress = async (): Promise<CurrentProgress> => {
     throw new Error(`Request failed with status code ${response.status}`);
   }
 
-  const data = await response.json();
+  const data: CurrentProgress = await response.json();
 
-  const progress: CurrentProgress = {
-    progress: data.progress,
-    episodeID: data.episodeID,
-    podcastID: data.podcastID,
-  };
-
-  return progress;
+  return data;
 };
 
 export const sendCurrentProgress = async (p: CurrentProgress) => {
