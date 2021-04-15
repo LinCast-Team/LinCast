@@ -17,7 +17,7 @@ export const getCurrentProgress = async (): Promise<CurrentProgress> => {
 };
 
 export const sendCurrentProgress = async (p: CurrentProgress) => {
-  const request = await fetch('/api/v0/player/progress', {
+  const response = await fetch('/api/v0/player/progress', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -25,7 +25,7 @@ export const sendCurrentProgress = async (p: CurrentProgress) => {
     body: JSON.stringify(p),
   });
 
-  if (!request.ok) {
-    throw new Error(`Request failed with status code ${request.status}`);
+  if (!response.ok) {
+    throw new Error(`Request failed with status code ${response.status}`);
   }
 };
