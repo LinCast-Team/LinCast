@@ -1,7 +1,7 @@
 export type Queue = Array<QueueEpisode>;
 
 export interface QueueEpisode {
-  ID: number;
+  id: number;
   podcastID: number;
   episodeID: string;
   positon: number;
