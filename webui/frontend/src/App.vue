@@ -140,4 +140,8 @@ body {
 .secondary-accent {
   color: $secondary-accent;
 }
+
+.link {
+  color: $primary-accent;
+}
 </style>
