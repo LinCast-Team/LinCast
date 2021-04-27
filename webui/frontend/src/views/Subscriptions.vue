@@ -4,7 +4,7 @@
       title='Subscriptions'
       class="mt-6"
     />
-    <button class="text-primary-dt font-semibold btn-bg mx-8 rounded py-0.5 my-2 ">
+    <button class="text-primary-dt font-semibold btn-bg mx-8 rounded py-1 my-2 ">
       <div class="flex flex-row justify-center">
         Listen All
         <div v-html="playIcon" class="my-auto mx-2"></div>
