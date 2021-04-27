@@ -3,6 +3,7 @@ import Home from '../views/Home.vue';
 
 const DiscoverView = () => import('../views/Discover.vue');
 const LibraryView = () => import('../views/Library.vue');
+const SubscriptionsView = () => import('../views/Subscriptions.vue');
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -19,6 +20,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/library',
     name: 'Library',
     component: LibraryView,
+  },
+  {
+    path: '/subscriptions',
+    name: 'Subscriptions',
+    component: SubscriptionsView,
   },
 ];
 
