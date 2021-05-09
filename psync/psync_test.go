@@ -243,9 +243,11 @@ func (s *SynchronizerTestSuite) TestCleanQueue() {
 		panic(err)
 	}
 
-	assert.False(rows.Next(), "there should be no rows because the table is supposed to be empty")
+	defer func() {
+		_ = rows.Close()
+	}()
 
-	_ = rows.Close()
+	assert.False(rows.Next(), "there should be no rows because the table is supposed to be empty")
 }
 
 func (s *SynchronizerTestSuite) TestAddToQueue() {

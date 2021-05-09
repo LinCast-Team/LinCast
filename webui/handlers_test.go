@@ -671,7 +671,7 @@ func (s *HandlersTestSuite) TestDelFromQueueHandler() {
 
 	res = s.newRequest(http.MethodDelete, "/api/v0/player/queue/remove", nil)
 
-	assert.Equal(http.StatusBadRequest, res.Code, "the omision of the parameter 'id' should"+
+	assert.Equal(http.StatusBadRequest, res.Code, "the omission of the parameter 'id' should"+
 		" return a 400 HTTP status code")
 	assert.Equal("text/plain; charset=utf-8", res.Header().Get("Content-Type"), "the response should contain"+
 		" the appropriate 'Content-Type' headers")

@@ -127,9 +127,7 @@ func (s *QueueTestSuite) TestWorker() {
 
 			assert.True(len(*eps) > 0, "the episodes of the processed podcast should be stored in the database")
 		}(i, feed, &wg)
-
 	}
-
 }
 
 func (s *QueueTestSuite) TestNewJob() {

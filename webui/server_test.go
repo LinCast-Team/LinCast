@@ -1,8 +1,9 @@
 package webui
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -28,7 +29,7 @@ func (s *ServerTestSuite) TestIndex() {
 	newRouter(false, false).ServeHTTP(res, req)
 
 	// Read the body of the response.
-	responseBody, err := ioutil.ReadAll(res.Body)
+	responseBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -40,7 +41,7 @@ func (s *ServerTestSuite) TestIndex() {
 	}
 
 	// Open the index file and read the content.
-	indexFileContent, err := ioutil.ReadFile(fd)
+	indexFileContent, err := os.ReadFile(fd)
 	if err != nil {
 		panic(err)
 	}
