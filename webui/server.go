@@ -11,9 +11,9 @@ import (
 	"lincast/database"
 	"lincast/psync"
 
+	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
-	"github.com/NYTimes/gziphandler"
 )
 
 const frontendPath = "frontend/dist"
