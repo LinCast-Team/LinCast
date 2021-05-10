@@ -413,7 +413,8 @@ func (db *Database) GetEpisodesByPodcast(id int) (*podcasts.Episodes, error) {
 
 	query := `
 SELECT * FROM episodes
-WHERE parent_podcast_id = ?;
+WHERE parent_podcast_id = ?
+ORDER BY published DESC;
 `
 	rows, err := db.instance.Query(query, id)
 	if err != nil {
