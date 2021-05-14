@@ -168,7 +168,7 @@ var GetUserPodcastsHandler = http.HandlerFunc(func(w http.ResponseWriter, r *htt
 
 	var subscribedPodcasts []models.Podcast
 	if subscribed || (!subscribed && !unsubscribed) {
-		if res := _db.Where("subscribed", true).Find(&subscribedPodcasts); res.Error != nil {
+		if res := _db.Where("subscribed = ?", true).Find(&subscribedPodcasts); res.Error != nil {
 			http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 
 			log.WithFields(log.Fields{
@@ -184,7 +184,7 @@ var GetUserPodcastsHandler = http.HandlerFunc(func(w http.ResponseWriter, r *htt
 
 	var unsubscribedPodcasts []models.Podcast
 	if unsubscribed || (!subscribed && !unsubscribed) {
-		if res := _db.Where("subscribed", false).Find(&unsubscribedPodcasts); res.Error != nil {
+		if res := _db.Where("subscribed = ?", false).Find(&unsubscribedPodcasts); res.Error != nil {
 			http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 
 			log.WithFields(log.Fields{
