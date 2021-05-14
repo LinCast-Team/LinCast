@@ -1,28 +1,30 @@
 package queue
 
 import (
+	"errors"
 	"time"
 
-	"lincast/database"
+	"lincast/models"
 	"lincast/podcasts"
 
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 // Job returns a new job to be processed by a worker of an active UpdateQueue. The channel Job.Done can be used to know
 // when that job has been processed and it shouldn't be used to send something, just to receive.
 type Job struct {
-	Podcast *podcasts.Podcast
+	Podcast *models.Podcast
 	Done    chan struct{}
 }
 
 type UpdateQueue struct {
-	dbInstance *database.Database
+	dbInstance *gorm.DB
 	q          chan Job
 }
 
-func NewUpdateQueue(db *database.Database, length int) (*UpdateQueue, error) {
+func NewUpdateQueue(db *gorm.DB, length int) (*UpdateQueue, error) {
 	if length < 1 {
 		return nil, errorx.IllegalArgument.New("the length of the queue should be at least 1")
 	}
@@ -47,7 +49,7 @@ func (q *UpdateQueue) Send(job *Job) {
 	q.q <- *job
 }
 
-func NewJob(p *podcasts.Podcast) *Job {
+func NewJob(p *models.Podcast) *Job {
 	j := Job{
 		Podcast: p,
 		Done:    make(chan struct{}),
@@ -73,14 +75,26 @@ func (q *UpdateQueue) worker(id int) {
 			"podcastFeed": job.Podcast.FeedLink,
 		}).Info("New job received")
 
-		eps, err := job.Podcast.GetEpisodes()
+		_, feed, err := podcasts.GetPodcastData(job.Podcast.FeedLink)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"worker":      id,
 				"podcastID":   job.Podcast.ID,
 				"podcastFeed": job.Podcast.FeedLink,
 				"error":       errorx.EnsureStackTrace(err),
-			}).Error("Can't get the episodes of the podcast")
+			}).Error("Error when trying to obtain the feed")
+
+			continue
+		}
+
+		eps, err := podcasts.GetEpisodes(feed)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"worker":      id,
+				"podcastID":   job.Podcast.ID,
+				"podcastFeed": job.Podcast.FeedLink,
+				"error":       errorx.EnsureStackTrace(err),
+			}).Error("Error on episodes parsing")
 
 			continue
 		}
@@ -88,20 +102,26 @@ func (q *UpdateQueue) worker(id int) {
 		for _, e := range *eps {
 			<-rateLimiter.C
 
-			exists, err := q.dbInstance.EpisodeExists(e.GUID)
-			if err != nil {
-				log.WithFields(log.Fields{
-					"worker":      id,
-					"podcastID":   job.Podcast.ID,
-					"podcastFeed": job.Podcast.FeedLink,
-					"episodeGUID": e.GUID,
-					"error":       errorx.EnsureStackTrace(err),
-				}).Error("Can't check if the episode already exists")
+			// Check if the episode is already on the table.
+			// TODO important: check if we're selecting the correct column
+			result := q.dbInstance.Where("guid = ?", e.GUID).First(&models.Episode{})
+			if result.Error != nil {
+				// The only error that we expect to get here is one of type `gorm.ErrRecordNotFound` (which means
+				// basically that the episode is not stored on the database). So, if we get another type of error
+				// we should log it and skip the rest of the iteration.
+				if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+					log.WithFields(log.Fields{
+						"worker":      id,
+						"podcastID":   job.Podcast.ID,
+						"podcastFeed": job.Podcast.FeedLink,
+						"episodeGUID": e.GUID,
+						"error":       errorx.EnsureStackTrace(err),
+					}).Error("Can't check if the episode already exists")
 
-				continue
-			}
-
-			if exists {
+					continue
+				}
+			} else {
+				// If there are no errors, then the episode with the given GUID exists so we should skip storage.
 				continue
 			}
 
@@ -112,28 +132,28 @@ func (q *UpdateQueue) worker(id int) {
 				"episodeGUID": e.GUID,
 			}).Debug("Episode is not in the database, storing")
 
-			err = q.dbInstance.InsertEpisode(&e)
-			if err != nil {
+			result = q.dbInstance.Create(&e)
+			if result.Error != nil || result.RowsAffected == 0 {
 				log.WithFields(log.Fields{
 					"worker":      id,
 					"podcastID":   job.Podcast.ID,
 					"podcastFeed": job.Podcast.FeedLink,
 					"episodeGUID": e.GUID,
-					"error":       errorx.EnsureStackTrace(err),
-				}).Error("Can't save the episode on the database")
+					"error":       errorx.EnsureStackTrace(result.Error),
+				}).Error("The new episode can't be stored")
 
 				continue
 			}
 		}
 
-		err = q.dbInstance.UpdatePodcastLastCheck(job.Podcast.ID, time.Now())
-		if err != nil {
+		result := q.dbInstance.Model(job.Podcast).Update("last_check", time.Now())
+		if result.Error != nil {
 			log.WithFields(log.Fields{
 				"worker":      id,
 				"podcastID":   job.Podcast.ID,
 				"podcastFeed": job.Podcast.FeedLink,
-				"error":       errorx.EnsureStackTrace(err),
-			}).Error("Can't update the LastCheck time in the database")
+				"error":       errorx.EnsureStackTrace(result.Error),
+			}).Error("The last_check time of the podcast can't be updated")
 
 			continue
 		}
