@@ -7,13 +7,14 @@ import (
 	"time"
 
 	"lincast/database"
-	"lincast/psync"
+	"lincast/models"
 	"lincast/queue"
 	"lincast/webui"
 
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
+	"gorm.io/gorm"
 )
 
 /* -------------------------------- Constants ------------------------------- */
@@ -69,17 +70,11 @@ func run(devMode bool) error {
 			" the database in the path '%s'", filepath.Join(dbPath, dbFilename))
 	}
 
-	playerSync, err := psync.New(db)
-	if err != nil {
-		return errorx.InternalError.Wrap(errorx.EnsureStackTrace(err), "error when trying to instantiate the"+
-			" synchronizer")
-	}
-
 	// Run the loop that updates the subscribed podcasts.
 	go runUpdateQueue(db, updateFreq)
 
 	// Make a new instance of the server.
-	sv := webui.New(serverPort, serverLocal, devMode, serverLogs, db, playerSync)
+	sv := webui.New(serverPort, serverLocal, devMode, serverLogs, db)
 
 	log.WithFields(log.Fields{
 		"port":        serverPort,
@@ -96,7 +91,7 @@ func run(devMode bool) error {
 	return nil
 }
 
-func runUpdateQueue(db *database.Database, updateInterval time.Duration) {
+func runUpdateQueue(db *gorm.DB, updateInterval time.Duration) {
 	log.WithField("updateInterval", updateInterval.String()).Debug("Starting feeds' update loop")
 
 	ticker := time.NewTicker(updateInterval)
@@ -126,14 +121,14 @@ func runUpdateQueue(db *database.Database, updateInterval time.Duration) {
 	}
 }
 
-func updatePodcasts(db *database.Database, updateQueue *queue.UpdateQueue) error {
-	subscribedPodcasts, err := db.GetPodcastsBySubscribedStatus(true)
-	if err != nil {
-		return errorx.InternalError.Wrap(err, "error trying to get subscribed podcasts")
+func updatePodcasts(db *gorm.DB, updateQueue *queue.UpdateQueue) error {
+	var subscribedPodcasts []models.Podcast
+	if res := db.Where("subscribed", true).Find(&subscribedPodcasts); res.Error != nil {
+		return errorx.InternalError.Wrap(res.Error, "error trying to get subscribed podcasts")
 	}
 
 	log.Debug("Starting loop to send podcasts to the update queue")
-	for _, p := range *subscribedPodcasts {
+	for _, p := range subscribedPodcasts {
 		j := queue.NewJob(&p)
 
 		log.WithFields(log.Fields{
