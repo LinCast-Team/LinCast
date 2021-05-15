@@ -3,12 +3,15 @@ package database
 import (
 	"os"
 	"path/filepath"
-	
+	"time"
+
 	"lincast/models"
 
 	"github.com/joomcode/errorx"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func New(path, filename string) (*gorm.DB, error) {
@@ -25,10 +28,20 @@ func New(path, filename string) (*gorm.DB, error) {
 
 	dbpath := filepath.Join(dir, filename)
 
-	db, err := gorm.Open(sqlite.Open(dbpath), &gorm.Config{})
+	l := logger.New(
+		log.StandardLogger(),
+		logger.Config{
+			IgnoreRecordNotFoundError: true,
+			LogLevel:                  logger.Error,
+			SlowThreshold:             time.Second,
+			Colorful:                  false,
+		},
+	)
+
+	db, err := gorm.Open(sqlite.Open(dbpath), &gorm.Config{Logger: l})
 	if err != nil {
-		return nil,  errorx.Decorate(err, "error when trying to open the database '%s'",
-		filepath.Join(path, filename))
+		return nil, errorx.Decorate(err, "error when trying to open the database '%s'",
+			filepath.Join(path, filename))
 	}
 
 	migrate(db)
