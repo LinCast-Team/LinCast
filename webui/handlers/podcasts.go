@@ -297,7 +297,7 @@ var GetEpisodesHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 
 	var eps []models.Episode
 
-	if res := _db.Where("podcast_id", id).Find(&eps); res.Error != nil {
+	if res := _db.Where("parent_podcast_id", id).Find(&eps); res.Error != nil {
 		http.Error(w, "the podcast with the given ID does not exist", http.StatusNotFound)
 
 		log.WithFields(log.Fields{
