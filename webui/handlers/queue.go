@@ -186,7 +186,7 @@ var AddToQueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 		var refPosition int
 		// To append the new episode to the queue we need to know which is the bigger position
 		// stored, so the position of the new episode will be that + 1.
-		if res := _db.Select("position").Limit(1).Order("position desc").First(&refPosition); res.Error != nil {
+		if res := _db.Model(&models.QueueEpisode{}).Select("position").Limit(1).Order("position desc").First(&refPosition); res.Error != nil {
 			if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 				// If the error is because there are no episodes stored (which means that the queue is
 				// empty), we know that the new episode should be stored with the position 1.
