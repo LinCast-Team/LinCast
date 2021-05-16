@@ -244,7 +244,7 @@ var AddToQueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 	} else {
 		// To add the episode with the position 1 we'll need to update the position of the rest
 		// of episodes, adding 1 to each one.
-		if res := _db.Exec("UPDATE queue_episode SET position = position + 1;"); res.Error != nil {
+		if res := _db.Model(&models.QueueEpisode{}).Where("1 = 1").Update("position", gorm.Expr("position + 1")); res.Error != nil {
 			http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 
 			log.WithFields(log.Fields{
