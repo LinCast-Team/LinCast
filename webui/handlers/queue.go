@@ -56,7 +56,7 @@ var QueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			}
 
 			// First we delete all the rows of the table.
-			if res := _db.Where("1 = 1").Delete(&models.QueueEpisode{}); res.Error != nil {
+			if res := _db.Unscoped().Where("1 = 1").Delete(&models.QueueEpisode{}); res.Error != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 
 				log.WithFields(log.Fields{
@@ -91,7 +91,7 @@ var QueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		{
 
 			// Delete all the rows of the table.
-			if res := _db.Where("1 = 1").Delete(&models.QueueEpisode{}); res.Error != nil {
+			if res := _db.Unscoped().Where("1 = 1").Delete(&models.QueueEpisode{}); res.Error != nil {
 				http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 
 				log.WithFields(log.Fields{
@@ -336,7 +336,7 @@ var DelFromQueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if res := _db.Delete(&models.QueueEpisode{}, id); res.Error != nil {
+	if res := _db.Unscoped().Delete(&models.QueueEpisode{}, id); res.Error != nil {
 		errmsg := "the episode of the queue with the given ID does not exist"
 
 		http.Error(w, errmsg, http.StatusBadRequest)
