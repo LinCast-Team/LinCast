@@ -56,7 +56,7 @@ var QueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			}
 
 			// First we delete all the rows of the table.
-			if res := _db.Where("1 = 1").Delete(&models.CurrentProgress{}); res.Error != nil {
+			if res := _db.Where("1 = 1").Delete(&models.QueueEpisode{}); res.Error != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 
 				log.WithFields(log.Fields{
@@ -91,7 +91,7 @@ var QueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		{
 
 			// Delete all the rows of the table.
-			if res := _db.Where("1 = 1").Delete(&models.CurrentProgress{}); res.Error != nil {
+			if res := _db.Where("1 = 1").Delete(&models.QueueEpisode{}); res.Error != nil {
 				http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 
 				log.WithFields(log.Fields{
