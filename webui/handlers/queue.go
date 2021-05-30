@@ -86,9 +86,9 @@ func (m *Manager) QueueHandler(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Location", "/api/v0/player/queue")
 			w.WriteHeader(http.StatusCreated)
 		}
+
 	case http.MethodDelete:
 		{
-
 			// Delete all the rows of the table.
 			if res := m.db.Unscoped().Where("1 = 1").Delete(&models.QueueEpisode{}); res.Error != nil {
 				http.Error(w, res.Error.Error(), http.StatusInternalServerError)
@@ -105,6 +105,7 @@ func (m *Manager) QueueHandler(w http.ResponseWriter, r *http.Request) {
 
 			w.WriteHeader(http.StatusNoContent)
 		}
+
 	default:
 		{
 			var q []models.QueueEpisode
