@@ -86,7 +86,6 @@ func (m *Manager) QueueHandler(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Location", "/api/v0/player/queue")
 			w.WriteHeader(http.StatusCreated)
 		}
-
 	case http.MethodDelete:
 		{
 
@@ -106,7 +105,6 @@ func (m *Manager) QueueHandler(w http.ResponseWriter, r *http.Request) {
 
 			w.WriteHeader(http.StatusNoContent)
 		}
-
 	default:
 		{
 			var q []models.QueueEpisode
@@ -258,7 +256,7 @@ func (m *Manager) AddToQueueHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Now that all the positions have been updated, we need to insert the new episode with the positon 1.
+		// Now that all the positions have been updated, we need to insert the new episode with the position 1.
 		ep.Position = 1
 		if res := m.db.Create(&ep); res.Error != nil {
 			http.Error(w, res.Error.Error(), http.StatusInternalServerError)
