@@ -40,9 +40,9 @@ func New(port uint16, localServer bool, devMode bool, logRequests bool, db *gorm
 		log.Panic("'podcastsDB' is nil")
 	}
 
-	handlers.SetGlobalDB(db)
+	handlersManager := handlers.NewManager(db)
 
-	router := newRouter(devMode, logRequests)
+	router := newRouter(devMode, logRequests, handlersManager)
 
 	var addr string
 	if localServer {
@@ -68,23 +68,29 @@ func New(port uint16, localServer bool, devMode bool, logRequests bool, db *gorm
 }
 
 // newRouter returns a new instance of the router with their paths already set.
-func newRouter(devMode, logRequests bool) *mux.Router {
+func newRouter(devMode, logRequests bool, handlersManager *handlers.Manager) *mux.Router {
 	router := mux.NewRouter()
 
 	if logRequests {
 		router.Use(loggingMiddleware)
 	}
 
-	router.Handle("/api/v0/podcasts/subscribe", gziphandler.GzipHandler(handlers.SubscribeToPodcastHandler)).Methods("POST")
-	router.Handle("/api/v0/podcasts/unsubscribe", gziphandler.GzipHandler(handlers.UnsubscribeToPodcastHandler)).Methods("PUT")
-	router.Handle("/api/v0/podcasts/user", gziphandler.GzipHandler(handlers.GetUserPodcastsHandler)).Methods("GET")
-	router.Handle("/api/v0/podcasts/{id:[0-9]+}/details", gziphandler.GzipHandler(handlers.GetPodcastHandler)).Methods("GET")
-	router.Handle("/api/v0/podcasts/{id:[0-9]+}/episodes", gziphandler.GzipHandler(handlers.GetEpisodesHandler)).Methods("GET")
-	router.Handle("/api/v0/player/progress", gziphandler.GzipHandler(handlers.PlayerProgressHandler)).Methods("GET", "PUT")
-	router.Handle("/api/v0/player/queue", gziphandler.GzipHandler(handlers.QueueHandler)).Methods("GET", "PUT", "DELETE")
-	router.Handle("/api/v0/player/queue/add", gziphandler.GzipHandler(handlers.AddToQueueHandler)).Methods("POST")
-	router.Handle("/api/v0/player/queue/remove", gziphandler.GzipHandler(handlers.DelFromQueueHandler)).Methods("DELETE")
-	router.PathPrefix("/").Handler(gziphandler.GzipHandler(http.FileServer(getFileSystem(devMode))))
+	// gzip.BestCompression = 9
+	// gzip.BestSpeed = 1
+	gzipMiddleware, _ := gziphandler.NewGzipLevelHandler(5) // Intermediate compression without letting aside the speed.
+
+	router.Use(gzipMiddleware)
+
+	router.HandleFunc("/api/v0/podcasts/subscribe", handlersManager.SubscribeToPodcastHandler).Methods("POST")
+	router.HandleFunc("/api/v0/podcasts/unsubscribe", handlersManager.UnsubscribeToPodcastHandler).Methods("PUT")
+	router.HandleFunc("/api/v0/podcasts/user", handlersManager.GetUserPodcastsHandler).Methods("GET")
+	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}/details", handlersManager.GetPodcastHandler).Methods("GET")
+	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}/episodes", handlersManager.GetEpisodesHandler).Methods("GET")
+	router.HandleFunc("/api/v0/player/progress", handlersManager.PlayerProgressHandler).Methods("GET", "PUT")
+	router.HandleFunc("/api/v0/player/queue", handlersManager.QueueHandler).Methods("GET", "PUT", "DELETE")
+	router.HandleFunc("/api/v0/player/queue/add", handlersManager.AddToQueueHandler).Methods("POST")
+	router.HandleFunc("/api/v0/player/queue/remove", handlersManager.DelFromQueueHandler).Methods("DELETE")
+	router.PathPrefix("/").Handler(http.FileServer(getFileSystem(devMode)))
 
 	return router
 }

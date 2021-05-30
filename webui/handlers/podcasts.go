@@ -5,19 +5,16 @@ import (
 	"net/http"
 	"strconv"
 
-	"lincast/podcasts"
 	"lincast/models"
+	"lincast/podcasts"
 	"lincast/utils/safe"
 
 	"github.com/gorilla/mux"
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
-var _db *gorm.DB
-
-var SubscribeToPodcastHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 	u := struct {
 		URL string `json:"url"`
 	}{}
@@ -54,12 +51,12 @@ var SubscribeToPodcastHandler = http.HandlerFunc(func(w http.ResponseWriter, r *
 	p.Subscribed = true
 
 	// TODO avoid possible duplicate of podcasts.
-	_db.Create(&p)
+	m.db.Create(&p)
 
 	w.WriteHeader(http.StatusCreated)
-})
+}
 
-var UnsubscribeToPodcastHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) UnsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
 	keys, ok := r.URL.Query()["id"]
 	if !ok || len(keys[0]) < 1 {
 		err := errorx.IllegalFormat.New("param 'id' is missing")
@@ -93,7 +90,7 @@ var UnsubscribeToPodcastHandler = http.HandlerFunc(func(w http.ResponseWriter, r
 		}).Error("Cannot parse the ID of the podcast to unsubscribe")
 	}
 
-	if res := _db.Model(&models.Podcast{}).Where("id = ?", id).Update("subscribed", false); res.Error != nil {
+	if res := m.db.Model(&models.Podcast{}).Where("id = ?", id).Update("subscribed", false); res.Error != nil {
 		http.Error(w, "the podcast with the given ID does not exist", http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
@@ -108,9 +105,9 @@ var UnsubscribeToPodcastHandler = http.HandlerFunc(func(w http.ResponseWriter, r
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-})
+}
 
-var GetUserPodcastsHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) GetUserPodcastsHandler(w http.ResponseWriter, r *http.Request) {
 	var subscribed bool
 	var unsubscribed bool
 
@@ -168,7 +165,7 @@ var GetUserPodcastsHandler = http.HandlerFunc(func(w http.ResponseWriter, r *htt
 
 	var subscribedPodcasts []models.Podcast
 	if subscribed || (!subscribed && !unsubscribed) {
-		if res := _db.Where("subscribed = ?", true).Find(&subscribedPodcasts); res.Error != nil {
+		if res := m.db.Where("subscribed = ?", true).Find(&subscribedPodcasts); res.Error != nil {
 			http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 
 			log.WithFields(log.Fields{
@@ -184,7 +181,7 @@ var GetUserPodcastsHandler = http.HandlerFunc(func(w http.ResponseWriter, r *htt
 
 	var unsubscribedPodcasts []models.Podcast
 	if unsubscribed || (!subscribed && !unsubscribed) {
-		if res := _db.Where("subscribed = ?", false).Find(&unsubscribedPodcasts); res.Error != nil {
+		if res := m.db.Where("subscribed = ?", false).Find(&unsubscribedPodcasts); res.Error != nil {
 			http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 
 			log.WithFields(log.Fields{
@@ -219,9 +216,9 @@ var GetUserPodcastsHandler = http.HandlerFunc(func(w http.ResponseWriter, r *htt
 
 		return
 	}
-})
+}
 
-var GetPodcastHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) GetPodcastHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := mux.Vars(r)["id"]
 
 	id := safe.SafeParseInt(idStr)
@@ -243,7 +240,7 @@ var GetPodcastHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 
 	var p models.Podcast
 
-	if res := _db.Where("id = ?", id).First(&p); res.Error != nil {
+	if res := m.db.Where("id = ?", id).First(&p); res.Error != nil {
 		http.Error(w, "the podcast with the given ID does not exist", http.StatusNotFound)
 
 		log.WithFields(log.Fields{
@@ -273,9 +270,9 @@ var GetPodcastHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 
 		return
 	}
-})
+}
 
-var GetEpisodesHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) GetEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := mux.Vars(r)["id"]
 
 	id := safe.SafeParseInt(idStr)
@@ -297,7 +294,7 @@ var GetEpisodesHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 
 	var eps []models.Episode
 
-	if res := _db.Where("parent_podcast_id", id).Find(&eps); res.Error != nil {
+	if res := m.db.Where("parent_podcast_id", id).Find(&eps); res.Error != nil {
 		http.Error(w, "the podcast with the given ID does not exist", http.StatusNotFound)
 
 		log.WithFields(log.Fields{
@@ -327,4 +324,4 @@ var GetEpisodesHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 
 		return
 	}
-})
+}

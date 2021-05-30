@@ -14,7 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var QueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) QueueHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPut:
 		{
@@ -56,7 +56,7 @@ var QueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			}
 
 			// First we delete all the rows of the table.
-			if res := _db.Unscoped().Where("1 = 1").Delete(&models.QueueEpisode{}); res.Error != nil {
+			if res := m.db.Unscoped().Where("1 = 1").Delete(&models.QueueEpisode{}); res.Error != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 
 				log.WithFields(log.Fields{
@@ -70,7 +70,7 @@ var QueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			}
 
 			// And later we introduce the new elements of the queue.
-			if res := _db.Create(&q); res.Error != nil {
+			if res := m.db.Create(&q); res.Error != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 
 				log.WithFields(log.Fields{
@@ -91,7 +91,7 @@ var QueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		{
 
 			// Delete all the rows of the table.
-			if res := _db.Unscoped().Where("1 = 1").Delete(&models.QueueEpisode{}); res.Error != nil {
+			if res := m.db.Unscoped().Where("1 = 1").Delete(&models.QueueEpisode{}); res.Error != nil {
 				http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 
 				log.WithFields(log.Fields{
@@ -111,7 +111,7 @@ var QueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		{
 			var q []models.QueueEpisode
 
-			_db.Find(&q)
+			m.db.Find(&q)
 
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
@@ -131,9 +131,9 @@ var QueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			}
 		}
 	}
-})
+}
 
-var AddToQueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) AddToQueueHandler(w http.ResponseWriter, r *http.Request) {
 	keys, ok := r.URL.Query()["append"]
 	if !ok || len(keys[0]) < 1 {
 		err := errorx.IllegalFormat.New("param 'append' is missing")
@@ -186,13 +186,13 @@ var AddToQueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 		var refPosition int
 		// To append the new episode to the queue we need to know which is the bigger position
 		// stored, so the position of the new episode will be that + 1.
-		if res := _db.Model(&models.QueueEpisode{}).Select("position").Limit(1).Order("position desc").First(&refPosition); res.Error != nil {
+		if res := m.db.Model(&models.QueueEpisode{}).Select("position").Limit(1).Order("position desc").First(&refPosition); res.Error != nil {
 			if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 				// If the error is because there are no episodes stored (which means that the queue is
 				// empty), we know that the new episode should be stored with the position 1.
 				ep.Position = 1
 
-				if res := _db.Create(&ep); res.Error != nil {
+				if res := m.db.Create(&ep); res.Error != nil {
 					http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 
 					log.WithFields(log.Fields{
@@ -228,7 +228,7 @@ var AddToQueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 		// Last position + 1
 		ep.Position = refPosition + 1
 
-		if res := _db.Create(&ep); res.Error != nil {
+		if res := m.db.Create(&ep); res.Error != nil {
 			http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 
 			log.WithFields(log.Fields{
@@ -244,7 +244,7 @@ var AddToQueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 	} else {
 		// To add the episode with the position 1 we'll need to update the position of the rest
 		// of episodes, adding 1 to each one.
-		if res := _db.Model(&models.QueueEpisode{}).Where("1 = 1").Update("position", gorm.Expr("position + 1")); res.Error != nil {
+		if res := m.db.Model(&models.QueueEpisode{}).Where("1 = 1").Update("position", gorm.Expr("position + 1")); res.Error != nil {
 			http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 
 			log.WithFields(log.Fields{
@@ -260,7 +260,7 @@ var AddToQueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 
 		// Now that all the positions have been updated, we need to insert the new episode with the positon 1.
 		ep.Position = 1
-		if res := _db.Create(&ep); res.Error != nil {
+		if res := m.db.Create(&ep); res.Error != nil {
 			http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 
 			log.WithFields(log.Fields{
@@ -298,9 +298,9 @@ response:
 
 		return
 	}
-})
+}
 
-var DelFromQueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) DelFromQueueHandler(w http.ResponseWriter, r *http.Request) {
 	keys, ok := r.URL.Query()["id"]
 	if !ok || len(keys[0]) < 1 {
 		err := errorx.IllegalFormat.New("param 'id' is missing")
@@ -336,7 +336,7 @@ var DelFromQueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if res := _db.Unscoped().Delete(&models.QueueEpisode{}, id); res.Error != nil {
+	if res := m.db.Unscoped().Delete(&models.QueueEpisode{}, id); res.Error != nil {
 		errmsg := "the episode of the queue with the given ID does not exist"
 
 		http.Error(w, errmsg, http.StatusBadRequest)
@@ -353,4 +353,4 @@ var DelFromQueueHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.R
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-})
+}

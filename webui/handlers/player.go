@@ -10,13 +10,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var PlayerProgressHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (m *Manager) PlayerProgressHandler(w http.ResponseWriter, r *http.Request) {
 	var p models.CurrentProgress
 
 	if r.Method == http.MethodGet {
 		w.Header().Set("Content-Type", "application/json")
 
-		if res := _db.First(&p); res.Error != nil {
+		if res := m.db.First(&p); res.Error != nil {
 			http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 
 			log.WithFields(log.Fields{
@@ -62,7 +62,7 @@ var PlayerProgressHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http
 
 	// Update the first (and only) row of the table that stores the current progress
 	// of the player.
-	if res := _db.Model(&models.CurrentProgress{}).Where("id = ?", 1).Updates(&p); res.Error != nil {
+	if res := m.db.Model(&models.CurrentProgress{}).Where("id = ?", 1).Updates(&p); res.Error != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		log.WithFields(log.Fields{
@@ -76,4 +76,4 @@ var PlayerProgressHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http
 	}
 
 	w.WriteHeader(http.StatusCreated)
-})
+}
