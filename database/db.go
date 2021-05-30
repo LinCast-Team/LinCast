@@ -50,13 +50,32 @@ func New(path, filename string) (*gorm.DB, error) {
 }
 
 func migrate(db *gorm.DB) {
-	db.AutoMigrate(&models.Podcast{})
-	db.AutoMigrate(&models.Episode{})
-	db.AutoMigrate(&models.CurrentProgress{})
-	db.AutoMigrate(&models.QueueEpisode{})
+	err := db.AutoMigrate(&models.Podcast{})
+	if err != nil {
+		log.WithError(errorx.EnsureStackTrace(err)).Panic("error on execution pf the automatic migration of the table " +
+			"that contains the podcasts")
+	}
+
+	err = db.AutoMigrate(&models.Episode{})
+	if err != nil {
+		log.WithError(errorx.EnsureStackTrace(err)).Panic("error when executing the automatic migration of the table " +
+			"that contains the episodes")
+	}
+
+	err = db.AutoMigrate(&models.CurrentProgress{})
+	if err != nil {
+		log.WithError(errorx.EnsureStackTrace(err)).Panic("error when executing the automatic migration of the table " +
+			"that contains the current progress of the player")
+	}
+
+	err = db.AutoMigrate(&models.QueueEpisode{})
+	if err != nil {
+		log.WithError(errorx.EnsureStackTrace(err)).Panic("error when executing the automatic migration of the table " +
+			"that contains the queue of the player")
+	}
 
 	// We need to make sure that there will be allways one row on the table that stores
 	// the progress of the player, otherwise, we can have issues trying to update the
 	// progress on a non-existent row.
-	db.FirstOrCreate(&models.CurrentProgress{})
+	_ = db.FirstOrCreate(&models.CurrentProgress{})
 }
