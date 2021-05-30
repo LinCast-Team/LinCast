@@ -132,6 +132,9 @@ func (q *UpdateQueue) worker(id int) {
 				"episodeGUID": e.GUID,
 			}).Debug("Episode is not in the database, storing")
 
+			// Set the ID of the parent podcast before store the episode (if is not already on the db).
+			e.ParentPodcastID = job.Podcast.ID
+
 			result = q.dbInstance.Create(&e)
 			if result.Error != nil || result.RowsAffected == 0 {
 				log.WithFields(log.Fields{

@@ -30,7 +30,7 @@ type Podcast struct {
 
 // Episode is the structure that represent an episode of a podcast.
 type Episode struct {
-	ParentPodcastID int
+	ParentPodcastID uint
 	Title           string
 	Description     string
 	Link            string
