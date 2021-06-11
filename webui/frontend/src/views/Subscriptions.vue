@@ -5,16 +5,6 @@
       class="mt-6"
     />
     <SubTabs />
-    <!-- <div class="flex justify-evenly border-b-2 border-gray-700">
-      <button class="primary-accent w-28 h-8 border-b-2 border-green-600 rounded-none">Podcasts</button>
-      <button class="text-secondary-dt w-28 h-8">New Episodes</button>
-    </div> -->
-    <!-- <podcast-item
-          v-for="rp in PodcastsItem"
-          :title="rp.title"
-          :key="rp.key"
-          imgSrc='https://picsum.photos/600'
-        /> -->
   </div>
 </template>
 
