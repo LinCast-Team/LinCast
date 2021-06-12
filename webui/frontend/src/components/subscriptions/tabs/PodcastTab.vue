@@ -2,15 +2,15 @@
   <div class="flex p-2 py-5">
     <podcast-item
       title= "Podcast"
-      update= "Day ago"
+      author= "Author"
     />
     <podcast-item
       title= "Podcast"
-      update= "Day ago"
+      author= "Author"
     />
     <podcast-item
       title= "Podcast"
-      update= "Day ago"
+      author= "Author"
     />
   </div>
 </template>

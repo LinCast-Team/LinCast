@@ -2,7 +2,7 @@
   <div class="flex flex-col p-0.5">
       <img :src="imgSrc" :alt="title + '\'s artwork'" class=" rounded-md">
       <h1 class="truncate text-secondary-dt mt-1">{{ title }}</h1>
-      <h3 class="truncate text-secondary-dt mt-1">{{ update }}</h3>
+      <h3 class="truncate text-secondary-dt mt-1">{{ author }}</h3>
   </div>
 </template>
 
@@ -20,7 +20,7 @@ export default {
       type: String,
       required: true,
     },
-    update: {
+    author: {
       type: String,
       required: true,
     },
