@@ -1,8 +1,8 @@
 <template>
   <div class="flex flex-row justify-between m-2 p-2">
-    <div v-html="backIcon"></div>
+    <span @click="$router.go(-1)" v-html="backIcon"></span>
     <h2 class="text-primary-dt text-xl font-semibold">{{ title }}</h2>
-    <div v-html="moreIcon"></div>
+    <span v-html="moreIcon"></span>
   </div>
 </template>
 
@@ -13,6 +13,10 @@ import feather from 'feather-icons';
 export default {
   props: {
     title: {
+      type: String,
+      required: true,
+    },
+    route: {
       type: String,
       required: true,
     },
