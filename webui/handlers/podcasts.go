@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"encoding/json"	
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -38,7 +38,7 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 	res := m.db.Model(&models.Podcast{}).Where("feed_link = ?", u.URL).Count(&alreadyOnDB)
 	if res.Error != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	
+
 		log.WithFields(log.Fields{
 			"remoteAddr":  r.RemoteAddr,
 			"requestURI":  r.RequestURI,
@@ -68,7 +68,7 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 		}
 
 		p.Subscribed = true
-		
+
 		res = m.db.Create(&p)
 		if res.Error != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -83,6 +83,8 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 
 			return
 		}
+
+		w.WriteHeader(http.StatusCreated)
 	} else { // If alreadyOnDB is not 0 (should be 1), the feed is already on db and we should just update the 'subscribed' column.
 		res = m.db.Model(&models.Podcast{}).Where("feed_link = ?", u.URL).Update("subscribed", true)
 		if res.Error != nil {
@@ -98,9 +100,9 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 
 			return
 		}
-	}
 
-	w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(http.StatusNoContent)
+	}
 }
 
 func (m *Manager) UnsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
