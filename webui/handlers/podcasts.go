@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"encoding/json"
+	"encoding/json"	
 	"net/http"
 	"strconv"
 
@@ -33,25 +33,72 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	p, _, err := podcasts.GetPodcastData(u.URL)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-
+	// Check if the feed's URL is already on the database by counting their appearances.
+	var alreadyOnDB int64
+	res := m.db.Model(&models.Podcast{}).Where("feed_link = ?", u.URL).Count(&alreadyOnDB)
+	if res.Error != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	
 		log.WithFields(log.Fields{
 			"remoteAddr":  r.RemoteAddr,
 			"requestURI":  r.RequestURI,
 			"method":      r.Method,
 			"request.url": u.URL,
 			"error":       errorx.EnsureStackTrace(err),
-		}).Error("Error when trying to decode the body of the request")
+		}).Error("Error when checking if the feed url is already in the database")
 
 		return
 	}
 
-	p.Subscribed = true
+	// If alreadyOnDB equals to 0, then the feed is not in db.
+	if alreadyOnDB == 0 {
+		p, _, err := podcasts.GetPodcastData(u.URL)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 
-	// TODO avoid possible duplicate of podcasts.
-	m.db.Create(&p)
+			log.WithFields(log.Fields{
+				"remoteAddr":  r.RemoteAddr,
+				"requestURI":  r.RequestURI,
+				"method":      r.Method,
+				"request.url": u.URL,
+				"error":       errorx.EnsureStackTrace(err),
+			}).Error("Error when trying to decode the body of the request")
+
+			return
+		}
+
+		p.Subscribed = true
+		
+		res = m.db.Create(&p)
+		if res.Error != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+
+			log.WithFields(log.Fields{
+				"remoteAddr":  r.RemoteAddr,
+				"requestURI":  r.RequestURI,
+				"method":      r.Method,
+				"request.url": u.URL,
+				"error":       errorx.EnsureStackTrace(err),
+			}).Error("Error when trying to store the new subscribed podcast")
+
+			return
+		}
+	} else { // If alreadyOnDB is not 0 (should be 1), the feed is already on db and we should just update the 'subscribed' column.
+		res = m.db.Model(&models.Podcast{}).Where("feed_link = ?", u.URL).Update("subscribed", true)
+		if res.Error != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+
+			log.WithFields(log.Fields{
+				"remoteAddr":  r.RemoteAddr,
+				"requestURI":  r.RequestURI,
+				"method":      r.Method,
+				"request.url": u.URL,
+				"error":       errorx.EnsureStackTrace(err),
+			}).Error("Error when trying to update the subscription of a podcast")
+
+			return
+		}
+	}
 
 	w.WriteHeader(http.StatusCreated)
 }
