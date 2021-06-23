@@ -12,5 +12,5 @@ require (
 	github.com/stretchr/testify v1.7.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gorm.io/driver/sqlite v1.1.4
-	gorm.io/gorm v1.21.9
+	gorm.io/gorm v1.21.11
 )
