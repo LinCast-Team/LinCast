@@ -40,5 +40,6 @@ func TestSubscribeToPodcastHandler(t *testing.T) {
 	r = testUtils.NewRequest(mng.SubscribeToPodcastHandler, method, testUtils.NewBody(t, body))
 
 	assert.Equal(http.StatusBadRequest, r.StatusCode, "The status code returned if the feed provided is invalid should be 400 Bad Request")
-	assert.Equal("", r.Header.Get("Content-Type"), "Since the response should not return a body, the 'Content-Type' headers should not be there")
+	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"), "Since the response should contain an error msg in plain text, the 'Content-Type' headers should be "+
+		"'text/plain; charset=utf-8'")
 }
