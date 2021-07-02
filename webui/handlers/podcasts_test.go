@@ -36,11 +36,6 @@ func TestSubscribeToPodcastHandler(t *testing.T) {
 	assert.Equal(http.StatusNoContent, r.StatusCode, "The status code returned on the subscription of a podcast that is already on the database should be 204 No Content")
 	assert.Equal("", r.Header.Get("Content-Type"), "Since the response should not return a body, the 'Content-Type' headers should not be there")
 
-	r = testUtils.NewRequest(mng.SubscribeToPodcastHandler, "GET", testUtils.NewBody(t, body))
-
-	assert.Equal(http.StatusMethodNotAllowed, r.StatusCode, "The status code returned if the method used is not allowed should be 405 Method Not Allowed")
-	assert.Equal("", r.Header.Get("Content-Type"), "Since the response should not return a body, the 'Content-Type' headers should not be there")
-
 	body.Url = "abc123"
 	r = testUtils.NewRequest(mng.SubscribeToPodcastHandler, method, testUtils.NewBody(t, body))
 
