@@ -2,8 +2,9 @@ package database
 
 import (
 	"errors"
-	"lincast/models"
 	"testing"
+
+	"lincast/models"
 
 	assert2 "github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
