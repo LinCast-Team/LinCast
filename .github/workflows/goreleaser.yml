@@ -26,7 +26,7 @@ jobs:
         name: Setup Node.js environment
         uses: actions/setup-node@v2.1.2
         with:
-          node-version: ^16.1.0
+          node-version: ^15.14.0
       - 
         name: Compile the frontend
         run: |
