@@ -106,6 +106,8 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 
 		w.WriteHeader(http.StatusNoContent)
 	}
+
+	w.Header().Add("Content-Length", "0")
 }
 
 func (m *Manager) UnsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
@@ -171,6 +173,7 @@ func (m *Manager) UnsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+	w.Header().Add("Content-Length", "0")
 }
 
 func (m *Manager) GetUserPodcastsHandler(w http.ResponseWriter, r *http.Request) {
