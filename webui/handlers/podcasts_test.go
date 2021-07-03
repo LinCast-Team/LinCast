@@ -26,18 +26,18 @@ func TestSubscribeToPodcastHandler(t *testing.T) {
 		Url: "https://gotime.fm/rss",
 	}
 
-	r := testUtils.NewRequest(mng.SubscribeToPodcastHandler, method, testUtils.NewBody(t, body))
+	r := testUtils.NewRequest(mng.SubscribeToPodcastHandler, method, "", testUtils.NewBody(t, body))
 
 	assert.Equal(http.StatusCreated, r.StatusCode, "The status code returned on the subscription of a new podcast should be 201 Created")
 	assert.Equal("", r.Header.Get("Content-Type"), "Since the response should not return a body, the 'Content-Type' headers should not be there")
 
-	r = testUtils.NewRequest(mng.SubscribeToPodcastHandler, method, testUtils.NewBody(t, body))
+	r = testUtils.NewRequest(mng.SubscribeToPodcastHandler, method, "", testUtils.NewBody(t, body))
 
 	assert.Equal(http.StatusNoContent, r.StatusCode, "The status code returned on the subscription of a podcast that is already on the database should be 204 No Content")
 	assert.Equal("", r.Header.Get("Content-Type"), "Since the response should not return a body, the 'Content-Type' headers should not be there")
 
 	body.Url = "abc123"
-	r = testUtils.NewRequest(mng.SubscribeToPodcastHandler, method, testUtils.NewBody(t, body))
+	r = testUtils.NewRequest(mng.SubscribeToPodcastHandler, method, "", testUtils.NewBody(t, body))
 
 	assert.Equal(http.StatusBadRequest, r.StatusCode, "The status code returned if the feed provided is invalid should be 400 Bad Request")
 	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"), "Since the response should contain an error msg in plain text, the 'Content-Type' headers should be "+
