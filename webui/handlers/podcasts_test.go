@@ -1,13 +1,18 @@
 package handlers
 
 import (
-	"lincast/database"
+	"fmt"
 	"net/http"
 	"testing"
+
+	"lincast/database"
+	"lincast/models"
+	"lincast/podcasts"
 
 	testUtils "lincast/utils/testing"
 
 	assert2 "github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 )
 
 func TestSubscribeToPodcastHandler(t *testing.T) {
@@ -45,4 +50,56 @@ func TestSubscribeToPodcastHandler(t *testing.T) {
 	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"), "Since the response should contain an error msg in plain text, the "+
 		"'Content-Type' headers should be 'text/plain; charset=utf-8'")
 	assert.NotEqual(0, r.ContentLength, "The ContentLength of the response should not be 0, since the body must contain the description of the error")
+}
+
+func TestUnsubscribeToPodcastHandler(t *testing.T) {
+	assert := assert2.New(t)
+	tempDir := t.TempDir()
+	db, err := database.New(tempDir, "test.db")
+	if err != nil {
+		assert.FailNow(err.Error())
+	}
+	mng := NewManager(db)
+
+	addPodcastToDB("https://gotime.fm/rss", true, db, t) // ID: 1
+	id := 1
+
+	method := "PUT"
+
+	// Usage of an ID that is supposed to exist
+	r := testUtils.NewRequest(mng.UnsubscribeToPodcastHandler, method, "?id="+fmt.Sprint(id), testUtils.NewBody(t, nil))
+
+	assert.Equal(http.StatusNoContent, r.StatusCode, "The status code returned on the unsubscription of a podcast should be 204 No Content")
+	assert.Equal("", r.Header.Get("Content-Type"), "Since the response should not return a body, the 'Content-Type' headers should not be there")
+	assert.Equal(0, r.ContentLength, "The ContentLength of the response should be 0, since it should not have a body")
+
+	var pFromDB models.Podcast
+	res := db.First(&pFromDB, id)
+	if res.Error != nil {
+		assert.FailNow(err.Error())
+	}
+
+	assert.False(pFromDB.Subscribed, "The subscription of the podcast should be altered correctly")
+
+	// Usage of an ID that does not exist
+	r = testUtils.NewRequest(mng.UnsubscribeToPodcastHandler, method, "?id="+fmt.Sprint(10), testUtils.NewBody(t, nil))
+
+	assert.Equal(http.StatusBadRequest, r.StatusCode, "The status code returned when trying to unsubscribe of a podcast with an ID that does not exist should be 400 Bad Request")
+	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"), "Since the response should contain an error msg in plain text, the 'Content-Type'"+
+		" headers should be 'text/plain; charset=utf-8'")
+	assert.NotEqual(0, r.ContentLength, "The ContentLength of the response should not be 0, since the body must contain the description of the error")
+}
+
+func addPodcastToDB(feedURL string, subscribed bool, db *gorm.DB, t *testing.T) {
+	p, _, err := podcasts.GetPodcastData(feedURL)
+	if err != nil {
+		assert2.FailNow(t, err.Error())
+	}
+
+	p.Subscribed = subscribed
+
+	res := db.Save(p)
+	if res.Error != nil {
+		assert2.FailNow(t, err.Error())
+	}
 }
