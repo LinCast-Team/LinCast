@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Request) {
@@ -141,17 +143,31 @@ func (m *Manager) UnsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	if res := m.db.Model(&models.Podcast{}).Where("id = ?", id).Update("subscribed", false); res.Error != nil {
-		http.Error(w, "the podcast with the given ID does not exist", http.StatusBadRequest)
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			http.Error(w, "the podcast with the given ID does not exist", http.StatusBadRequest)
 
-		log.WithFields(log.Fields{
-			"remoteAddr": r.RemoteAddr,
-			"requestURI": r.RequestURI,
-			"method":     r.Method,
-			"error":      errorx.Decorate(res.Error, "the podcast with the given ID does not exist"),
-			"usedID":     id,
-		}).Error("Error when trying to change the subscription status of the podcast")
+			log.WithFields(log.Fields{
+				"remoteAddr": r.RemoteAddr,
+				"requestURI": r.RequestURI,
+				"method":     r.Method,
+				"error":      errorx.Decorate(res.Error, "the podcast with the given ID does not exist"),
+				"usedID":     id,
+			}).Error("Error when trying to change the subscription status of the podcast")
 
-		return
+			return
+		} else {
+			http.Error(w, res.Error.Error(), http.StatusInternalServerError)
+
+			log.WithFields(log.Fields{
+				"remoteAddr": r.RemoteAddr,
+				"requestURI": r.RequestURI,
+				"method":     r.Method,
+				"error":      errorx.EnsureStackTrace(res.Error),
+				"usedID":     id,
+			}).Error("Unexpected error when trying to change the subscription status of the podcast")
+
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)
