@@ -83,7 +83,7 @@ func newRouter(devMode, logRequests bool, handlersManager *handlers.Manager) *mu
 
 	router.HandleFunc("/api/v0/podcasts/subscribe", handlersManager.SubscribeToPodcastHandler).Methods("POST")
 	router.HandleFunc("/api/v0/podcasts/unsubscribe", handlersManager.UnsubscribeToPodcastHandler).Methods("PUT")
-	router.HandleFunc("/api/v0/podcasts/user", handlersManager.GetUserPodcastsHandler).Methods("GET")
+	router.HandleFunc("/api/v0/user/subscriptions", handlersManager.GetUserPodcastsHandler).Methods("GET")
 	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}/details", handlersManager.GetPodcastHandler).Methods("GET")
 	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}/episodes", handlersManager.GetEpisodesHandler).Methods("GET")
 	router.HandleFunc("/api/v0/player/progress", handlersManager.PlayerProgressHandler).Methods("GET", "PUT")
