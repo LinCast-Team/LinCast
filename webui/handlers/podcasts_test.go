@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
@@ -83,6 +84,47 @@ func TestUnsubscribeToPodcastHandler(t *testing.T) {
 	assert.Equal(http.StatusBadRequest, r.StatusCode, "The status code returned when trying to unsubscribe of a podcast with an ID that does not exist should be 400 Bad Request")
 	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"), "Since the response should contain an error msg in plain text, the 'Content-Type'"+
 		" headers should be 'text/plain; charset=utf-8'")
+}
+
+func TestGetUserPodcastsHandler(t *testing.T) {
+	assert := assert2.New(t)
+	tempDir := t.TempDir()
+	db, err := database.New(tempDir, "test.db")
+	if err != nil {
+		assert.FailNow(err.Error())
+	}
+	mng := NewManager(db)
+
+	feeds := map[string]bool{
+		"https://gotime.fm/rss":                     true,
+		"https://rustacean-station.org/podcast.rss": false,
+		"https://realpython.com/podcasts/rpp/feed":  true,
+	}
+
+	for k, v := range feeds {
+		addPodcastToDB(k, v, db, t)
+	}
+
+	method := "GET"
+
+	r := testUtils.NewRequest(mng.GetUserPodcastsHandler, method, "", testUtils.NewBody(t, nil))
+
+	assert.Equal(http.StatusOK, r.StatusCode, "The status code returned when returning the user's subscriptions should be 200 OK")
+	assert.Equal("application/json", r.Header.Get("Content-Type"), "Since the response should not return a body, the 'Content-Type' headers should not be there")
+
+	var userPodcasts []models.Podcast
+	err = json.NewDecoder(r.Body).Decode(&userPodcasts)
+	if err != nil {
+		panic(err)
+	}
+
+	assert.Len(userPodcasts, 2, "There are only 2 podcasts with an active subscription")
+
+	for _, p := range userPodcasts {
+		if assert.NotNil(p, "There shouldn't be nil subscriptions") {
+			assert.True(p.Subscribed, "Only subscribed podcasts should be returned")
+		}
+	}
 }
 
 func addPodcastToDB(feedURL string, subscribed bool, db *gorm.DB, t *testing.T) {
