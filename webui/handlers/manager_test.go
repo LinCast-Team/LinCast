@@ -8,7 +8,6 @@ import (
 	assert2 "github.com/stretchr/testify/assert"
 )
 
-
 func TestNewManager(t *testing.T) {
 	assert := assert2.New(t)
 	tempDir := t.TempDir()
@@ -16,7 +15,7 @@ func TestNewManager(t *testing.T) {
 	if err != nil {
 		assert.FailNow(err.Error())
 	}
-	
+
 	mng := NewManager(db)
 
 	assert.NotNil(mng, "A valid instance of Manager should be returned")
