@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"lincast/models"
 	"lincast/podcasts"
@@ -173,102 +172,25 @@ func (m *Manager) UnsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (m *Manager) GetUserPodcastsHandler(w http.ResponseWriter, r *http.Request) {
-	var subscribed bool
-	var unsubscribed bool
+	var p []models.Podcast
 
-	keys, ok := r.URL.Query()["subscribed"]
-	if !ok || len(keys[0]) < 1 {
+	if res := m.db.Where("subscribed = ?", true).Find(&p); res.Error != nil {
+		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
+
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
 			"requestURI": r.RequestURI,
 			"method":     r.Method,
-		}).Warn("Parameter 'subscribed' is not present in the request")
-	} else {
-		s, err := strconv.ParseBool(keys[0])
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			"error":      errorx.EnsureStackTrace(res.Error),
+		}).Error("Error when trying to get subscribed podcasts from db")
 
-			log.WithFields(log.Fields{
-				"remoteAddr":      r.RemoteAddr,
-				"requestURI":      r.RequestURI,
-				"method":          r.Method,
-				"error":           errorx.Decorate(err, "'subscribed' cannot be parsed"),
-				"subscribedValue": keys[0],
-			}).Error("Error when trying to parse the value of 'subscribed' param")
-
-			return
-		}
-
-		subscribed = s
-	}
-
-	keys, ok = r.URL.Query()["unsubscribed"]
-	if !ok || len(keys[0]) < 1 {
-		log.WithFields(log.Fields{
-			"remoteAddr": r.RemoteAddr,
-			"requestURI": r.RequestURI,
-			"method":     r.Method,
-		}).Warn("Parameter 'unsubscribed' is not present in the request")
-	} else {
-		uns, err := strconv.ParseBool(keys[0])
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-
-			log.WithFields(log.Fields{
-				"remoteAddr":        r.RemoteAddr,
-				"requestURI":        r.RequestURI,
-				"method":            r.Method,
-				"error":             errorx.Decorate(err, "'unsubscribed' cannot be parsed"),
-				"unsubscribedValue": keys[0],
-			}).Error("Error when trying to parse the value of 'unsubscribed' param")
-
-			return
-		}
-
-		unsubscribed = uns
-	}
-
-	var subscribedPodcasts []models.Podcast
-	if subscribed || (!subscribed && !unsubscribed) {
-		if res := m.db.Where("subscribed = ?", true).Find(&subscribedPodcasts); res.Error != nil {
-			http.Error(w, res.Error.Error(), http.StatusInternalServerError)
-
-			log.WithFields(log.Fields{
-				"remoteAddr": r.RemoteAddr,
-				"requestURI": r.RequestURI,
-				"method":     r.Method,
-				"error":      errorx.EnsureStackTrace(res.Error),
-			}).Error("Error when trying to get subscribed podcasts from db")
-
-			return
-		}
-	}
-
-	var unsubscribedPodcasts []models.Podcast
-	if unsubscribed || (!subscribed && !unsubscribed) {
-		if res := m.db.Where("subscribed = ?", false).Find(&unsubscribedPodcasts); res.Error != nil {
-			http.Error(w, res.Error.Error(), http.StatusInternalServerError)
-
-			log.WithFields(log.Fields{
-				"remoteAddr": r.RemoteAddr,
-				"requestURI": r.RequestURI,
-				"method":     r.Method,
-				"error":      errorx.EnsureStackTrace(res.Error),
-			}).Error("Error when trying to get unsubscribed podcasts from db")
-
-			return
-		}
-	}
-
-	p := map[string][]models.Podcast{
-		"subscribed":   subscribedPodcasts,
-		"unsubscribed": unsubscribedPodcasts,
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	err := json.NewEncoder(w).Encode(p)
+	err := json.NewEncoder(w).Encode(&p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
