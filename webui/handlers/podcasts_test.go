@@ -110,7 +110,7 @@ func TestGetUserPodcastsHandler(t *testing.T) {
 	r := testUtils.NewRequest(mng.GetUserPodcastsHandler, method, "", testUtils.NewBody(t, nil))
 
 	assert.Equal(http.StatusOK, r.StatusCode, "The status code returned when returning the user's subscriptions should be 200 OK")
-	assert.Equal("application/json", r.Header.Get("Content-Type"), "Since the response should not return a body, the 'Content-Type' headers should not be there")
+	assert.Equal("application/json", r.Header.Get("Content-Type"), "Since the response should have a body with the requested data (json), the 'Content-Type' headers should be 'application/json'")
 
 	var userPodcasts []models.Podcast
 	err = json.NewDecoder(r.Body).Decode(&userPodcasts)
