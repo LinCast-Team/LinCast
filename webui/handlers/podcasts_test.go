@@ -127,6 +127,68 @@ func TestGetUserPodcastsHandler(t *testing.T) {
 	}
 }
 
+func TestGetPodcastHandler(t *testing.T) {
+	assert := assert2.New(t)
+	tempDir := t.TempDir()
+	db, err := database.New(tempDir, "test.db")
+	if err != nil {
+		assert.FailNow(err.Error())
+	}
+	mng := NewManager(db)
+
+	url := "https://gotime.fm/rss"
+	method := "GET"
+	id := 1
+
+	parsedFeed, _, err := podcasts.GetPodcastData(url)
+	if err != nil {
+		panic(err)
+	}
+
+	addOfflinePodcastToDB(parsedFeed, db, t) // ID: 1
+
+	vars := map[string]string{
+		"id": fmt.Sprint(id),
+	}
+	r := testUtils.NewRequestWithVars(mng.GetPodcastHandler, method, "/api/v0/podcasts/{id:[0-9]+}/details", vars, testUtils.NewBody(t, nil))
+
+	assert.Equal(http.StatusOK, r.StatusCode, "The response should have the status code 200")
+	assert.Equal("application/json", r.Header.Get("Content-Type"), "Since the response should have a body with the requested data (json), the 'Content-Type' headers should be 'application/json'")
+
+	var receivedData models.Podcast
+	err = json.NewDecoder(r.Body).Decode(&receivedData)
+	if err != nil {
+		panic(err)
+	}
+
+	// Check time data independently, since it will throw a false positive (metadata diff).
+	if assert.True(parsedFeed.Added.Equal(receivedData.Added)) {
+		receivedData.Added = parsedFeed.Added
+	}
+	if assert.True(parsedFeed.LastCheck.Equal(receivedData.LastCheck)) {
+		receivedData.LastCheck = parsedFeed.LastCheck
+	}
+
+	assert.Equal(*parsedFeed, receivedData, "The received data about the podcast should be the same as the stored one")
+
+	// Request with a non-existent ID
+	id = 10
+
+	vars = map[string]string{
+		"id": fmt.Sprint(id),
+	}
+	r = testUtils.NewRequestWithVars(mng.GetPodcastHandler, method, "/api/v0/podcasts/{id:[0-9]+}/details", vars, testUtils.NewBody(t, nil))
+
+	assert.Equal(http.StatusNotFound, r.StatusCode)
+	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"))
+
+	// Request without ID
+	r = testUtils.NewRequest(mng.GetPodcastHandler, method, "", testUtils.NewBody(t, nil))
+
+	assert.Equal(http.StatusBadRequest, r.StatusCode)
+	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"))
+}
+
 func addPodcastToDB(feedURL string, subscribed bool, db *gorm.DB, t *testing.T) {
 	p, _, err := podcasts.GetPodcastData(feedURL)
 	if err != nil {
@@ -137,6 +199,13 @@ func addPodcastToDB(feedURL string, subscribed bool, db *gorm.DB, t *testing.T) 
 
 	res := db.Save(p)
 	if res.Error != nil {
-		assert2.FailNow(t, err.Error())
+		assert2.FailNow(t, res.Error.Error())
+	}
+}
+
+func addOfflinePodcastToDB(p *models.Podcast, db *gorm.DB, t *testing.T) {
+	res := db.Save(p)
+	if res.Error != nil {
+		assert2.FailNow(t, res.Error.Error())
 	}
 }
