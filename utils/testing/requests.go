@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,6 +25,18 @@ func NewBody(t *testing.T, content interface{}) *bytes.Reader {
 func NewRequest(handlerFunc http.HandlerFunc, method string, url string, body *bytes.Reader) *http.Response {
 	res := httptest.NewRecorder()
 	req, _ := http.NewRequest(method, url, body)
+	handlerFunc(res, req)
+
+	return res.Result()
+}
+
+// NewRequestWithVars does the same as `NewRequest` but injecting the given vars (to be handled by `mux.Vars`) into the request.
+func NewRequestWithVars(handlerFunc http.HandlerFunc, method string, url string, vars map[string]string, body *bytes.Reader) *http.Response {
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest(method, url, body)
+
+	req = mux.SetURLVars(req, vars)
+
 	handlerFunc(res, req)
 
 	return res.Result()
