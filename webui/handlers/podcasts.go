@@ -281,14 +281,31 @@ func (m *Manager) GetEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 
 	var eps []models.Episode
 
-	if res := m.db.Where("parent_podcast_id", id).Find(&eps); res.Error != nil {
-		http.Error(w, "the podcast with the given ID does not exist", http.StatusNotFound)
+	res := m.db.Where("parent_podcast_id", id).Find(&eps)
+	if res.Error != nil {
+		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
 			"requestURI": r.RequestURI,
 			"method":     r.Method,
-			"error":      errorx.Decorate(res.Error, "the podcast with the given ID does not exist"),
+			"error":      errorx.Decorate(res.Error, "unexpected error when trying to fetch episodes from db"),
+			"givenID":    id,
+		}).Error("Error when trying to get the requested episodes")
+
+		return
+	}
+
+	if len(eps) == 0 {
+		errmsg := "the podcast with the given ID does not exist or has no episodes fetched"
+
+		http.Error(w, errmsg, http.StatusNotFound)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"error":      errorx.Decorate(res.Error, errmsg),
 			"givenID":    id,
 		}).Error("Error when trying to get the requested episodes")
 
