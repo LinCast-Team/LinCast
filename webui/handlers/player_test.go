@@ -43,7 +43,7 @@ func TestPlayerProgressHandler_GET(t *testing.T) {
 
 	assert.Equal(expectedProgress, firstResult, "The db should store an empty progress")
 
-	// Now, we should check if the stored progress is corretly returned from the handler.
+	// Now, we should check if the stored progress is correctly returned from the handler.
 	expectedProgress = models.CurrentProgress{
 		PodcastID:   1,
 		EpisodeGUID: "guid-123",
