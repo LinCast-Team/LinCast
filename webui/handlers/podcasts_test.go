@@ -138,17 +138,16 @@ func TestGetPodcastHandler(t *testing.T) {
 
 	url := "https://gotime.fm/rss"
 	method := "GET"
-	id := 1
 
 	parsedFeed, _, err := podcasts.GetPodcastData(url)
 	if err != nil {
 		panic(err)
 	}
 
-	addOfflinePodcastToDB(parsedFeed, db, t) // ID: 1
+	addOfflinePodcastToDB(parsedFeed, db, t)
 
 	vars := map[string]string{
-		"id": fmt.Sprint(id),
+		"id": fmt.Sprint(parsedFeed.ID),
 	}
 	r := testUtils.NewRequestWithVars(mng.GetPodcastHandler, method, "/api/v0/podcasts/{id:[0-9]+}/details", vars, testUtils.NewBody(t, nil))
 
@@ -171,8 +170,17 @@ func TestGetPodcastHandler(t *testing.T) {
 
 	assert.Equal(*parsedFeed, receivedData, "The received data about the podcast should be the same as the stored one")
 
+	// Usage of an ID that is not an integer
+	vars = map[string]string{
+		"id": "abc",
+	}
+	r = testUtils.NewRequestWithVars(mng.GetPodcastHandler, method, "/api/v0/podcasts/{id:[0-9]+}/details", vars, testUtils.NewBody(t, nil))
+
+	assert.Equal(http.StatusBadRequest, r.StatusCode)
+	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"))
+
 	// Request with a non-existent ID
-	id = 10
+	id := 10
 
 	vars = map[string]string{
 		"id": fmt.Sprint(id),
