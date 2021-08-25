@@ -307,7 +307,6 @@ func addEpisodesToDB(originalFeed *gofeed.Feed, parentPodcastID uint, db *gorm.D
 		if res.Error != nil {
 			assert2.FailNow(t, "Error when trying to store an episode: %s", res.Error.Error())
 		}
-
 	}
 }
 
