@@ -161,12 +161,18 @@ func TestGetPodcastHandler(t *testing.T) {
 		panic(err)
 	}
 
-	// Check time data independently, since it will throw a false positive (metadata diff).
+	// Check data of type time.Time independently, since it will throw a false positive (metadata diff).
 	if assert.True(parsedFeed.Added.Equal(receivedData.Added)) {
 		receivedData.Added = parsedFeed.Added
 	}
 	if assert.True(parsedFeed.LastCheck.Equal(receivedData.LastCheck)) {
 		receivedData.LastCheck = parsedFeed.LastCheck
+	}
+	if assert.True(parsedFeed.Model.CreatedAt.Equal(receivedData.Model.CreatedAt)) {
+		receivedData.Model.CreatedAt = parsedFeed.Model.CreatedAt
+	}
+	if assert.True(parsedFeed.Model.UpdatedAt.Equal(receivedData.Model.UpdatedAt)) {
+		receivedData.Model.UpdatedAt = parsedFeed.Model.UpdatedAt
 	}
 
 	assert.Equal(*parsedFeed, receivedData, "The received data about the podcast should be the same as the stored one")
@@ -309,6 +315,7 @@ func compareEpisodes(expected *[]models.Episode, current *[]models.Episode, t *t
 	assert := assert2.New(t)
 
 	for i := range *expected {
+		// Check data of type time.Time independently, since it will throw a false positive (metadata diff).
 		if assert.True((*expected)[i].Updated.Equal((*current)[i].Updated), `The field "Updated" of the current episode %d does not match with the original`, i) {
 			(*current)[i].Updated = (*expected)[i].Updated
 		}
