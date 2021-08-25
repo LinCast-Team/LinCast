@@ -12,6 +12,7 @@ import (
 
 	testUtils "lincast/utils/testing"
 
+	"github.com/mmcdole/gofeed"
 	assert2 "github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
@@ -197,6 +198,75 @@ func TestGetPodcastHandler(t *testing.T) {
 	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"))
 }
 
+func TestGetEpisodesHandler(t *testing.T) {
+	assert := assert2.New(t)
+	tempDir := t.TempDir()
+	db, err := database.New(tempDir, "test.db")
+	if err != nil {
+		assert.FailNow(err.Error())
+	}
+	mng := NewManager(db)
+
+	url := "https://gotime.fm/rss"
+	method := "GET"
+
+	parsedFeed, originalFeed, err := podcasts.GetPodcastData(url)
+	if err != nil {
+		panic(err)
+	}
+
+	addOfflinePodcastToDB(parsedFeed, db, t)
+	addEpisodesToDB(originalFeed, parsedFeed.ID, db, t)
+
+	var epsFromDB []models.Episode
+	res := db.Where("parent_podcast_id", parsedFeed.ID).Find(&epsFromDB)
+	if res.Error != nil {
+		assert.FailNow("Cannot get the episodes stored on the database: %s", res.Error.Error())
+	}
+
+	vars := map[string]string{
+		"id": fmt.Sprint(parsedFeed.ID),
+	}
+	r := testUtils.NewRequestWithVars(mng.GetEpisodesHandler, method, "/api/v0/podcasts/{id:[0-9]+}/episodes", vars, testUtils.NewBody(t, nil))
+
+	assert.Equal(http.StatusOK, r.StatusCode, "The response should have the status code 200")
+	assert.Equal("application/json", r.Header.Get("Content-Type"), "Since the response should have a body with the requested data (json), the 'Content-Type' headers should be 'application/json'")
+
+	var receivedData []models.Episode
+	err = json.NewDecoder(r.Body).Decode(&receivedData)
+	if err != nil {
+		assert.FailNow(err.Error())
+	}
+
+	compareEpisodes(&epsFromDB, &receivedData, t)
+
+	// Usage of an ID that is not an integer
+	vars = map[string]string{
+		"id": "abc",
+	}
+	r = testUtils.NewRequestWithVars(mng.GetEpisodesHandler, method, "/api/v0/podcasts/{id:[0-9]+}/episodes", vars, testUtils.NewBody(t, nil))
+
+	assert.Equal(http.StatusBadRequest, r.StatusCode)
+	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"))
+
+	// Request with a non-existent ID
+	id := 9999999
+
+	vars = map[string]string{
+		"id": fmt.Sprint(id),
+	}
+	r = testUtils.NewRequestWithVars(mng.GetEpisodesHandler, method, "/api/v0/podcasts/{id:[0-9]+}/episodes", vars, testUtils.NewBody(t, nil))
+
+	assert.Equal(http.StatusNotFound, r.StatusCode)
+	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"))
+
+	// Request without ID
+	r = testUtils.NewRequest(mng.GetEpisodesHandler, method, "", testUtils.NewBody(t, nil))
+
+	assert.Equal(http.StatusBadRequest, r.StatusCode)
+	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"))
+}
+
 func addPodcastToDB(feedURL string, subscribed bool, db *gorm.DB, t *testing.T) {
 	p, _, err := podcasts.GetPodcastData(feedURL)
 	if err != nil {
@@ -216,4 +286,45 @@ func addOfflinePodcastToDB(p *models.Podcast, db *gorm.DB, t *testing.T) {
 	if res.Error != nil {
 		assert2.FailNow(t, res.Error.Error())
 	}
+}
+
+func addEpisodesToDB(originalFeed *gofeed.Feed, parentPodcastID uint, db *gorm.DB, t *testing.T) {
+	eps, err := podcasts.GetEpisodes(originalFeed)
+	if err != nil {
+		assert2.FailNow(t, "Error trying to get episodes of the given feed: %s", err.Error())
+	}
+
+	for _, e := range *eps {
+		e.ParentPodcastID = parentPodcastID
+
+		res := db.Create(&e)
+		if res.Error != nil {
+			assert2.FailNow(t, "Error when trying to store an episode: %s", res.Error.Error())
+		}
+
+	}
+}
+
+func compareEpisodes(expected *[]models.Episode, current *[]models.Episode, t *testing.T) {
+	assert := assert2.New(t)
+
+	for i := range *expected {
+		if assert.True((*expected)[i].Updated.Equal((*current)[i].Updated), `The field "Updated" of the current episode %d does not match with the original`, i) {
+			(*current)[i].Updated = (*expected)[i].Updated
+		}
+
+		if assert.True((*expected)[i].Published.Equal((*current)[i].Published), `The field "Published" of the current episode %d does not match with the original`, i) {
+			(*current)[i].Published = (*expected)[i].Published
+		}
+
+		if assert.True((*expected)[i].Model.UpdatedAt.Equal((*current)[i].Model.UpdatedAt), `The field "Model.UpdatedAt" of the current episode %d does not match with the original`, i) {
+			(*current)[i].Model.UpdatedAt = (*expected)[i].Model.UpdatedAt
+		}
+
+		if assert.True((*expected)[i].Model.CreatedAt.Equal((*current)[i].Model.CreatedAt), `The field "Model.CreatedAt" of the current episode %d does not match with the original`, i) {
+			(*current)[i].Model.CreatedAt = (*expected)[i].Model.CreatedAt
+		}
+	}
+
+	assert.Equal(*expected, *current, "There's a mismatch between the expected episodes and the received ones")
 }
