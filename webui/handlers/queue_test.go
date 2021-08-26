@@ -65,7 +65,6 @@ func TestQueueHandler_GET(t *testing.T) {
 	}
 
 	assert.Equal(http.StatusOK, r.StatusCode)
-	// For some reason the contents of the "Content-Type" headers are not being recorded by the http.ResponseRecorder.
-	// assert.Equal("application/json", r.Header.Get("Content-Type"))
+	assert.Equal("application/json", r.Header.Get("Content-Type"))
 	assert.Equal(expectedQueue, receivedQueue)
 }

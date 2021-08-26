@@ -112,8 +112,8 @@ func (m *Manager) QueueHandler(w http.ResponseWriter, r *http.Request) {
 
 			m.db.Find(&q)
 
-			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
 
 			err := json.NewEncoder(w).Encode(q)
 			if err != nil {
