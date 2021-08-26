@@ -110,7 +110,19 @@ func (m *Manager) QueueHandler(w http.ResponseWriter, r *http.Request) {
 		{
 			var q []models.QueueEpisode
 
-			m.db.Find(&q)
+			res := m.db.Find(&q)
+			if res.Error != nil {
+				http.Error(w, res.Error.Error(), http.StatusInternalServerError)
+
+				log.WithFields(log.Fields{
+					"remoteAddr": r.RemoteAddr,
+					"requestURI": r.RequestURI,
+					"method":     r.Method,
+					"error":      errorx.EnsureStackTrace(res.Error),
+				}).Error("Error when trying to fetch the queue from the database")
+
+				return
+			}
 
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
