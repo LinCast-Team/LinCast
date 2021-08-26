@@ -150,7 +150,7 @@ func TestQueueHandler_DELETE(t *testing.T) {
 	mng := NewManager(db)
 	method := "DELETE"
 
-	expectedQueue := []models.QueueEpisode{
+	queueToStore := []models.QueueEpisode{
 		{
 			Position:  1,
 			PodcastID: 10,
@@ -168,7 +168,7 @@ func TestQueueHandler_DELETE(t *testing.T) {
 		},
 	}
 
-	res := db.Save(&expectedQueue)
+	res := db.Save(&queueToStore)
 	if res.Error != nil {
 		assert.FailNow(res.Error.Error())
 	}
