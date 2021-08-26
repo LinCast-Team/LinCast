@@ -139,3 +139,49 @@ func TestQueueHandler_PUT(t *testing.T) {
 	assert.Equal(http.StatusBadRequest, r.StatusCode)
 	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"))
 }
+
+func TestQueueHandler_DELETE(t *testing.T) {
+	assert := assert2.New(t)
+	tempDir := t.TempDir()
+	db, err := database.New(tempDir, "test.db")
+	if err != nil {
+		assert.FailNow(err.Error())
+	}
+	mng := NewManager(db)
+	method := "DELETE"
+
+	expectedQueue := []models.QueueEpisode{
+		{
+			Position:  1,
+			PodcastID: 10,
+			EpisodeID: "guid1",
+		},
+		{
+			Position:  2,
+			PodcastID: 1,
+			EpisodeID: "guid2",
+		},
+		{
+			Position:  3,
+			PodcastID: 18,
+			EpisodeID: "guid3",
+		},
+	}
+
+	res := db.Save(&expectedQueue)
+	if res.Error != nil {
+		assert.FailNow(res.Error.Error())
+	}
+
+	r := testUtils.NewRequest(mng.QueueHandler, method, "", testUtils.NewBody(t, nil))
+
+	var queueFromDB []models.QueueEpisode
+	res = db.Find(&queueFromDB)
+	if res.Error != nil {
+		assert.FailNow(res.Error.Error())
+	}
+
+	assert.Equal(http.StatusNoContent, r.StatusCode)
+	assert.Equal("", r.Header.Get("Content-Type"), "Since the response should not have a body, the 'Content-Type' headers must be empty")
+	assert.Len(queueFromDB, 0, "The queue should be empty")
+}
