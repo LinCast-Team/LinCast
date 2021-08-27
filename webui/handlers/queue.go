@@ -347,10 +347,25 @@ func (m *Manager) DelFromQueueHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if res := m.db.Unscoped().Delete(&models.QueueEpisode{}, id); res.Error != nil {
+	res := m.db.Unscoped().Delete(&models.QueueEpisode{}, id)
+	if res.Error != nil {
+		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"error":      errorx.Decorate(res.Error, res.Error.Error()),
+			"usedID":     id,
+		}).Error("Error when trying to remove an episode from the queue")
+
+		return
+	}
+
+	if res.RowsAffected == 0 {
 		errmsg := "the episode of the queue with the given ID does not exist"
 
-		http.Error(w, errmsg, http.StatusBadRequest)
+		http.Error(w, errmsg, http.StatusNotFound)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
@@ -358,7 +373,7 @@ func (m *Manager) DelFromQueueHandler(w http.ResponseWriter, r *http.Request) {
 			"method":     r.Method,
 			"error":      errorx.Decorate(res.Error, errmsg),
 			"usedID":     id,
-		}).Error("Error when trying to remove an episode from the queue")
+		}).Warning("Usage of the wrong ID when trying to remove an episode from the queue")
 
 		return
 	}
