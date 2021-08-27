@@ -126,7 +126,7 @@ func (m *Manager) UnsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Req
 
 	id := safe.SafeParseInt(idStr)
 	if id == safe.DefaultAllocate {
-		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values", idStr)
+		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values or can't be parsed", idStr)
 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
@@ -210,7 +210,7 @@ func (m *Manager) GetPodcastHandler(w http.ResponseWriter, r *http.Request) {
 
 	id := safe.SafeParseInt(idStr)
 	if id == safe.DefaultAllocate {
-		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values", idStr)
+		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values or can't be parsed", idStr)
 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
@@ -264,7 +264,7 @@ func (m *Manager) GetEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 
 	id := safe.SafeParseInt(idStr)
 	if id == safe.DefaultAllocate {
-		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values", idStr)
+		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values or can't be parsed", idStr)
 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 

@@ -332,7 +332,7 @@ func (m *Manager) DelFromQueueHandler(w http.ResponseWriter, r *http.Request) {
 
 	id := safe.SafeParseInt(idStr)
 	if id == safe.DefaultAllocate {
-		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values", idStr)
+		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values or can't be parsed", idStr)
 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
