@@ -288,9 +288,9 @@ func (m *Manager) AddToQueueHandler(w http.ResponseWriter, r *http.Request) {
 
 response:
 
-	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Location", "/api/v0/player/queue")
+	w.WriteHeader(http.StatusCreated)
 
 	response := map[string]uint{
 		"episodeID": ep.ID,
