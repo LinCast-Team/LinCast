@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -285,4 +286,77 @@ func TestAddToQueueHandler(t *testing.T) {
 	for i, e := range allEps {
 		assert.Equal(i+1, e.Position, "One episode has the incorrect position (guid '%s')", e.EpisodeID)
 	}
+}
+
+func TestDelFromQueueHandler(t *testing.T) {
+	assert := assert2.New(t)
+	tempDir := t.TempDir()
+	db, err := database.New(tempDir, "test.db")
+	if err != nil {
+		assert.FailNow(err.Error())
+	}
+	mng := NewManager(db)
+	method := http.MethodDelete
+
+	baseQueue := []models.QueueEpisode{
+		{
+			Position:  1,
+			PodcastID: 10,
+			EpisodeID: "guid1",
+		},
+		{
+			Position:  2,
+			PodcastID: 1,
+			EpisodeID: "guid2",
+		},
+		{
+			Position:  3,
+			PodcastID: 18,
+			EpisodeID: "guid3",
+		},
+	}
+
+	res := db.Save(&baseQueue)
+	if res.Error != nil {
+		assert.FailNow(res.Error.Error())
+	}
+
+	idToRemove := baseQueue[1].ID
+
+	expectedQueue := []models.QueueEpisode{
+		baseQueue[0],
+		baseQueue[2],
+	}
+
+	r := testUtils.NewRequest(mng.DelFromQueueHandler, method, "?id="+fmt.Sprint(idToRemove), testUtils.NewBody(t, nil))
+
+	var queueFromDB []models.QueueEpisode
+	res = db.Find(&queueFromDB)
+	if res.Error != nil {
+		assert.FailNow(res.Error.Error())
+	}
+
+	// Remove fields of type time.Time to avoid inconsistencies between them
+	for i := range queueFromDB {
+		queueFromDB[i].Model.CreatedAt = time.Time{}
+		queueFromDB[i].Model.UpdatedAt = time.Time{}
+		expectedQueue[i].Model.CreatedAt = time.Time{}
+		expectedQueue[i].Model.UpdatedAt = time.Time{}
+	}
+
+	assert.Equal(http.StatusNoContent, r.StatusCode)
+	assert.Equal("", r.Header.Get("Content-Type"))
+	assert.Equal(expectedQueue, queueFromDB)
+
+	// Try to remove an episode with a non-existent ID
+	r = testUtils.NewRequest(mng.DelFromQueueHandler, method, "?id="+fmt.Sprint(99), testUtils.NewBody(t, nil))
+
+	assert.Equal(http.StatusNotFound, r.StatusCode)
+	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"))
+
+	// Try to use an ID that is not an integer
+	r = testUtils.NewRequest(mng.DelFromQueueHandler, method, "?id=abc", testUtils.NewBody(t, nil))
+
+	assert.Equal(http.StatusBadRequest, r.StatusCode)
+	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"))
 }
