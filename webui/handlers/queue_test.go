@@ -185,3 +185,104 @@ func TestQueueHandler_DELETE(t *testing.T) {
 	assert.Equal("", r.Header.Get("Content-Type"), "Since the response should not have a body, the 'Content-Type' headers must be empty")
 	assert.Len(queueFromDB, 0, "The queue should be empty")
 }
+
+func TestAddToQueueHandler(t *testing.T) {
+	assert := assert2.New(t)
+	tempDir := t.TempDir()
+	db, err := database.New(tempDir, "test.db")
+	if err != nil {
+		assert.FailNow(err.Error())
+	}
+	mng := NewManager(db)
+	method := "POST"
+
+	baseQueue := []models.QueueEpisode{
+		{
+			Position:  1,
+			PodcastID: 10,
+			EpisodeID: "guid1",
+		},
+		{
+			Position:  2,
+			PodcastID: 1,
+			EpisodeID: "guid2",
+		},
+		{
+			Position:  3,
+			PodcastID: 18,
+			EpisodeID: "guid3",
+		},
+	}
+
+	res := db.Save(&baseQueue)
+	if res.Error != nil {
+		assert.FailNow(res.Error.Error())
+	}
+
+	extraEp := models.QueueEpisode{
+		Position:  baseQueue[len(baseQueue)-1].Position + 1,
+		PodcastID: 99,
+		EpisodeID: "guid99",
+		Model: gorm.Model{
+			ID: baseQueue[len(baseQueue)-1].ID + 1,
+		},
+	}
+
+	/* Test 1 - Try to add the episode at the end of the queue */
+
+	// Request to add the episode at the end of the queue (append)
+	r := testUtils.NewRequest(mng.AddToQueueHandler, method, "?append=1", testUtils.NewBody(t, &extraEp))
+
+	var extraEpFromDB models.QueueEpisode
+	res = db.Last(&extraEpFromDB)
+	if res.Error != nil {
+		assert.FailNow(res.Error.Error())
+	}
+
+	// Remove fields of type time.Time to avoid a false positive (due to metadata diff)
+	extraEpFromDB.Model.CreatedAt = time.Time{}
+	extraEpFromDB.Model.UpdatedAt = time.Time{}
+
+	assert.Equal(http.StatusCreated, r.StatusCode)
+	assert.Equal("application/json", r.Header.Get("Content-Type"))
+	assert.Equal("/api/v0/player/queue", r.Header.Get("Location"))
+	assert.Equal(extraEp, extraEpFromDB)
+
+	/* Test 2 - Try to add the episode at the beginning of the queue */
+	extraEp2 := models.QueueEpisode{
+		Position:  1,
+		PodcastID: 100,
+		EpisodeID: "guid100",
+		Model: gorm.Model{
+			ID: baseQueue[len(baseQueue)-1].ID + 2,
+		},
+	}
+
+	// Request to add the episode at the beginning of the queue
+	r = testUtils.NewRequest(mng.AddToQueueHandler, method, "?append=0", testUtils.NewBody(t, &extraEp2))
+
+	var extraEp2FromDB models.QueueEpisode
+	res = db.Last(&extraEp2FromDB)
+	if res.Error != nil {
+		assert.FailNow(err.Error())
+	}
+
+	// Remove fields of type time.Time to avoid a false positive (due to metadata diff)
+	extraEp2FromDB.Model.CreatedAt = time.Time{}
+	extraEp2FromDB.Model.UpdatedAt = time.Time{}
+
+	assert.Equal(http.StatusCreated, r.StatusCode)
+	assert.Equal("application/json", r.Header.Get("Content-Type"))
+	assert.Equal("/api/v0/player/queue", r.Header.Get("Location"))
+	assert.Equal(extraEp2, extraEp2FromDB)
+
+	var allEps []models.QueueEpisode
+	res = db.Model(&models.QueueEpisode{}).Order("position asc").Find(&allEps)
+	if res.Error != nil {
+		assert.FailNow(res.Error.Error())
+	}
+
+	for i, e := range allEps {
+		assert.Equal(i+1, e.Position, "One episode has the incorrect position (guid '%s')", e.EpisodeID)
+	}
+}
