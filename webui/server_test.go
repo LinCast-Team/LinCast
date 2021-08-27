@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"lincast/webui/handlers"
+
 	assert2 "github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -26,7 +28,7 @@ func (s *ServerTestSuite) TestIndex() {
 	// Should return the file `index.html`.
 	req := httptest.NewRequest("GET", "/", nil)
 
-	newRouter(false, false).ServeHTTP(res, req)
+	newRouter(false, false, &handlers.Manager{}).ServeHTTP(res, req)
 
 	// Read the body of the response.
 	responseBody, err := io.ReadAll(res.Body)
