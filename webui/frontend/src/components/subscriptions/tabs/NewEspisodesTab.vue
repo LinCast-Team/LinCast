@@ -13,7 +13,6 @@
 import EpisodeItem from '@/components/library/EpisodeItem.vue';
 
 export default {
-  name: 'NewEpisodesTab',
   components: {
     EpisodeItem,
   },
