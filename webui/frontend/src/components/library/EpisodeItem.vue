@@ -8,7 +8,6 @@
             <h2 class="truncate text-secondary-dt">{{ author }}</h2>
           </div>
         </div>
-        <h3 class="truncate text-secondary-dt mt-1">{{ update }}</h3>
         <p class="truncate text-secondary-dt mt-1 text-sm">{{ duration }}</p>
       </div>
       <p class="truncate text-primary-dt my-3">{{ resume }}</p>
