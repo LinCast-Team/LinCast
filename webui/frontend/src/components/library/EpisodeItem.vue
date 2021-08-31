@@ -1,25 +1,25 @@
 <template>
-  <div class="flex flex-col w-full p-2">
+  <div class="flex flex-col w-full p-3">
       <div class="flex justify-between">
         <div class="flex">
           <img :src="imgSrc" :alt="title + '\'s artwork'" class=" rounded-md w-14">
           <div class=" pl-3">
-            <h1 class="truncate text-secondary-dt">{{ title }}</h1>
-            <h2 class="truncate text-secondary-dt">{{ author }}</h2>
+            <h1 class="truncate text-secondary-dt text-xl">{{ title }}</h1>
+            <h2 class="truncate text-secondary-dt font-semibold">{{ author }}</h2>
           </div>
         </div>
         <h3 class="truncate text-secondary-dt mt-1">{{ update }}</h3>
-        <p class="truncate text-secondary-dt mt-1">{{ duration }}</p>
+        <p class="truncate text-secondary-dt mt-1 text-sm">{{ duration }}</p>
       </div>
       <p class="truncate text-secondary-dt my-3">{{ resume }}</p>
       <div class="flex justify-between">
-        <div class="flex">
-          <span v-html="bookmarkIcon"></span>
-          <span v-html="checkIcon"></span>
-          <span v-html="arrowdowncircleIcon"></span>
-          <span v-html="moreverticalIcon"></span>
+        <div class="flex space-x-2">
+          <div v-html="bookmarkIcon"></div>
+          <div v-html="checkIcon"></div>
+          <div v-html="arrowdowncircleIcon"></div>
+          <div v-html="moreverticalIcon"></div>
         </div>
-        <a class="flex align-middle py-0.5 px-3 border border-green-500 rounded-xl bg-green-600 text-white" href="#">Play <span class=" pl-1" v-html="playIcon"></span></a>
+        <a class="flex align-middle py-0.5 px-2.5 border rounded-2xl play-btn" href="#">Play <div class="ml-1 self-center" v-html="playIcon"></div></a>
       </div>
   </div>
 </template>
@@ -56,8 +56,8 @@ export default {
   setup() {
     const bookmarkIcon = computed(() => feather.icons.bookmark.toSvg({ 'stroke-width': 1.5, class: 'text-secondary-dt w-7 h-7 ' }));
     const checkIcon = computed(() => feather.icons.check.toSvg({ 'stroke-width': 1.5, class: 'text-secondary-dt w-7 h-7 ' }));
-    const playIcon = computed(() => feather.icons.play.toSvg({ 'stroke-width': 1.5, class: 'text-white w-6 ' }));
-    const arrowdowncircleIcon = computed(() => feather.icons['arrow-down-circle'].toSvg({ 'stroke-width': 1.5, class: 'text-secondary-dt w-7 h-7 ' }));
+    const playIcon = computed(() => feather.icons.play.toSvg({ 'stroke-width': 1.5, fill: 'currentColor', class: 'text-white w-5 h-5' }));
+    const arrowdowncircleIcon = computed(() => feather.icons['arrow-down-circle'].toSvg({ 'stroke-width': 1.5, class: 'text-secondary-dt w-7 h-7' }));
     const moreverticalIcon = computed(() => feather.icons['more-vertical'].toSvg({ 'stroke-width': 1.5, class: 'text-secondary-dt w-7 h-7 ' }));
 
     return {
@@ -71,5 +71,13 @@ export default {
 };
 </script>
 
-<style>
+<style lang='scss'>
+@import "@/assets/css/_palette.scss";
+
+.play-btn {
+  background-color: $primary-accent;
+  color: $text-primary;
+  border-color: $primary-accent;
+
+}
 </style>
