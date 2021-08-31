@@ -4,37 +4,29 @@
       title='Subscriptions'
       class="mt-6"
     />
-    <SubTabs />
+    <SubTabs @tab-change="activeTab = $event"/>
+    <component :is="activeTab" />
   </div>
 </template>
 
 <script lang='ts'>
 import LCHeader from '@/components/subscriptions/Header.vue';
-// import ListItem from '@/components/library/ListItem.vue';
-// import PodcastItem from '@/components/library/PodcastItem.vue';
 import SubTabs from '@/components/subscriptions/SubTabs.vue';
 import { ref } from 'vue';
-// import feather from 'feather-icons';
+import PodcastsTab from '../components/subscriptions/tabs/PodcastsTab.vue';
+import NewEpisodesTab from '../components/subscriptions/tabs/NewEspisodesTab.vue';
 
 export default {
   components: {
     'lc-header': LCHeader,
-    // ListItem,
-    // PodcastItem,
     SubTabs,
+    PodcastsTab,
+    NewEpisodesTab,
   },
   setup() {
-    const podcastItem = ref([
-      { title: 'Sample Podcast 1', key: 11 },
-      { title: 'Sample Podcast 2', key: 12 },
-      { title: 'Sample Podcast 3', key: 13 },
-      { title: 'Sample Podcast 4', key: 14 },
-      { title: 'Sample Podcast 5', key: 15 },
-      { title: 'Sample Podcast 6', key: 16 },
-    ]);
+    const activeTab = ref('PodcastsTab');
     return {
-      // playIcon,
-      podcastItem,
+      activeTab,
     };
   },
 };

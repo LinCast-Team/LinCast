@@ -1,26 +1,35 @@
 <template>
-   <div class="flex justify-evenly border-b-2 border-gray-700">
-      <button @click="activeTab = 'PodcastTab'" class="text-secondary-dt w-28 h-8" :class="{ 'activeTab':activeTab === 'PodcastTab' }">Podcasts</button>
-      <button @click="activeTab = 'NewEpisodesTab'" class="text-secondary-dt w-28 h-8" :class="{ 'activeTab':activeTab === 'NewEpisodesTab' }">New Episodes</button>
+   <div class="flex justify-evenly border-b-2 border-gray-700 w-100 h-100">
+      <button @click="onTabChange('PodcastTab')" class="text-secondary-dt w-28 h-8" :class="{ 'activeTab':activeTab === 'PodcastTab' }">Podcasts</button>
+      <button @click="onTabChange('NewEpisodesTab')" class="text-secondary-dt w-28 h-8" :class="{ 'activeTab':activeTab === 'NewEpisodesTab' }">New Episodes</button>
     </div>
-    <component :is="activeTab" />
 </template>
 
 <script lang='ts'>
-import { ref } from 'vue';
-import PodcastTab from './tabs/PodcastTab.vue';
-import NewEpisodesTab from './tabs/NewEspisodesTab.vue';
+import {
+  ref,
+  SetupContext,
+} from 'vue';
+
+interface Data {
+  [key: string]: unknown;
+}
 
 export default {
-  components: {
-    PodcastTab,
-    NewEpisodesTab,
-  },
-  setup() {
+  emits: [
+    'tab-change',
+  ],
+  setup(_: Data, context: SetupContext): Data {
     const activeTab = ref('PodcastTab');
+
+    const onTabChange = (event: string) => {
+      context.emit('tab-change', event);
+      activeTab.value = event;
+    };
 
     return {
       activeTab,
+      onTabChange,
     };
   },
 };
