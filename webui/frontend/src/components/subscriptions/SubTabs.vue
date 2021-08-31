@@ -1,6 +1,6 @@
 <template>
    <div class="flex justify-evenly border-b-2 border-gray-700 w-100 h-100">
-      <button @click="onTabChange('PodcastTab')" class="text-secondary-dt w-28 h-8" :class="{ 'activeTab':activeTab === 'PodcastTab' }">Podcasts</button>
+      <button @click="onTabChange('PodcastsTab')" class="text-secondary-dt w-28 h-8" :class="{ 'activeTab':activeTab === 'PodcastsTab' }">Podcasts</button>
       <button @click="onTabChange('NewEpisodesTab')" class="text-secondary-dt w-28 h-8" :class="{ 'activeTab':activeTab === 'NewEpisodesTab' }">New Episodes</button>
     </div>
 </template>
@@ -20,7 +20,7 @@ export default {
     'tab-change',
   ],
   setup(_: Data, context: SetupContext): Data {
-    const activeTab = ref('PodcastTab');
+    const activeTab = ref('PodcastsTab');
 
     const onTabChange = (event: string) => {
       context.emit('tab-change', event);
