@@ -6,7 +6,8 @@
     <component :is="activeTab" />
 </template>
 
-<script>
+<script lang='ts'>
+import { ref } from 'vue';
 import PodcastTab from './tabs/PodcastTab.vue';
 import NewEpisodesTab from './tabs/NewEspisodesTab.vue';
 
@@ -15,9 +16,11 @@ export default {
     PodcastTab,
     NewEpisodesTab,
   },
-  data() {
+  setup() {
+    const activeTab = ref('PodcastTab');
+
     return {
-      activeTab: 'PodcastTab',
+      activeTab,
     };
   },
 };
