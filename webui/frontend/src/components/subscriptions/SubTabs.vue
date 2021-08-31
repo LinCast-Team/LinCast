@@ -1,7 +1,7 @@
 <template>
    <div class="flex justify-evenly border-b-2 border-gray-700">
-      <button @click="activeTab = 'PodcastTab'" class="primary-accent w-28 h-8 border-b-2 border-green-600 rounded-none" v-bind:class="['tab-button', { active: currentTab === tab }]">Podcasts</button>
-      <button @click="activeTab = 'NewEpisodesTab'" class="text-secondary-dt w-28 h-8">New Episodes</button>
+      <button @click="activeTab = 'PodcastTab'" class="text-secondary-dt w-28 h-8" :class="{ 'activeTab':activeTab === 'PodcastTab' }">Podcasts</button>
+      <button @click="activeTab = 'NewEpisodesTab'" class="text-secondary-dt w-28 h-8" :class="{ 'activeTab':activeTab === 'NewEpisodesTab' }">New Episodes</button>
     </div>
     <component :is="activeTab" />
 </template>
@@ -26,14 +26,13 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang='scss' scoped>
+@import "@/assets/css/_palette.scss";
 
 .activeTab {
-  color:#4DB6AC;
-  border-color: #4DB6AC;
+  color: $primary-accent;
+  border-color: $primary-accent;
   @apply border-b-2;
-  @apply border-green-600;
   @apply rounded-none;
 }
-
 </style>
