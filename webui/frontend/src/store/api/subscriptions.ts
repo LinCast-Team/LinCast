@@ -1,8 +1,3 @@
-export interface UserPodcasts {
-  subscribed: Array<Podcast>;
-  unsubscribed: Array<Podcast>;
-}
-
 export interface Podcast {
   id: number;
   subscribed: boolean;
@@ -44,23 +39,23 @@ export interface Episode {
   currentProgress: Date;
 }
 
-export const getUserPodcasts = async (): Promise<UserPodcasts> => {
-  const response = await fetch('/api/v0/podcasts/user', {
-    method: 'GET'
+export const getUserSubscriptions = async (): Promise<Array<Podcast>> => {
+  const response = await fetch('/api/v0/user/subscriptions', {
+    method: 'GET',
   });
 
   if (!response.ok) {
     throw new Error(`Request failed with status code ${response.status}`);
   }
 
-  const data: UserPodcasts = await response.json();
+  const data: Array<Podcast> = await response.json();
 
   return data;
 };
 
 export const getUserPodcastDetails = async (id: number): Promise<Podcast> => {
   const response = await fetch(`/api/v0/podcasts/${id}/details`, {
-    method: 'GET'
+    method: 'GET',
   });
 
   if (!response.ok) {
@@ -74,7 +69,7 @@ export const getUserPodcastDetails = async (id: number): Promise<Podcast> => {
 
 export const getUserPodcastEpisodes = async (podcastID: number): Promise<Array<Episode>> => {
   const response = await fetch(`/api/v0/podcasts/${podcastID}/episodes`, {
-    method: 'GET'
+    method: 'GET',
   });
 
   if (!response.ok) {
