@@ -1,5 +1,5 @@
 <template>
-  <div class="flex p-2 py-5">
+  <div class="flex p-2 py-5 justify-between">
     <podcast-item
       title= "Podcast"
       author= "Author"
