@@ -7,11 +7,18 @@
         class="link text-sm self-center"
         >Show more</router-link>
     </div>
+    <work-signal/>
   </div>
 </template>
 
 <script lang='ts'>
-export default {};
+import WorkSignal from '@/components/shared/WorkSignal.vue';
+
+export default {
+  components: {
+    WorkSignal,
+  },
+};
 </script>
 
 <style lang='scss' scoped>
