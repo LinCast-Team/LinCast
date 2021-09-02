@@ -1,7 +1,8 @@
 <template>
-  <div class="muted flex flex-col items-center m-2">
+  <div class="muted flex flex-col items-center m-2 w-4/6 text-center">
     <div v-html="toolIcon"></div>
     <p>{{ text }}</p>
+    <slot></slot>
   </div>
 </template>
 

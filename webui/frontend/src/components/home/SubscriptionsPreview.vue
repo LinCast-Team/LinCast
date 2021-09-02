@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="flex flex-col">
     <div class="flex flex-row justify-between">
       <h2 class="text-primary-dt text-xl font-semibold">Subscriptions</h2>
       <router-link
@@ -7,7 +7,7 @@
         class="link text-sm self-center"
         >Show more</router-link>
     </div>
-    <work-signal/>
+    <work-signal class="self-center"/>
   </div>
 </template>
 
