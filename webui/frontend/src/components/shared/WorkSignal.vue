@@ -1,7 +1,7 @@
 <template>
   <div class="muted flex flex-col items-center m-2">
     <div v-html="toolIcon"></div>
-    <p>Work in progress</p>
+    <p>{{ text }}</p>
   </div>
 </template>
 
@@ -10,6 +10,13 @@ import { computed } from 'vue';
 import feather from 'feather-icons';
 
 export default {
+  props: {
+    text: {
+      type: String,
+      required: false,
+      default: 'Work in progress',
+    },
+  },
   setup() {
     const toolIcon = computed(() => feather.icons.tool.toSvg({ 'stroke-width': 1.5, class: 'w-24 h-24' }));
 
