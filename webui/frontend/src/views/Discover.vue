@@ -1,5 +1,15 @@
 <template>
-  <div class="flex flex-col items-center justify-center font-sans">
+  <!-- Remove this once implemented the search functionality -->
+  <div class="flex flex-col">
+    <work-signal class="self-center">
+      <div class="flex flex-col items-center">
+        <i>Meanwhile, you can add the feed's URL directly there</i>
+        <div v-html="smileIcon"></div>
+      </div>
+    </work-signal>
+  </div>
+  <!-- Remove the 'hidden' class to show the content -->
+  <div class="flex flex-col items-center justify-center font-sans hidden">
     <search
       :class="{ 'mt-4': !searchMode, 'm-0': searchMode }"
       @search-input="onSearchInput"
@@ -27,16 +37,19 @@
   </div>
 </template>
 <script lang='ts'>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import feather from 'feather-icons';
 import Category from '@/components/discover/Category.vue';
 import Search from '@/components/discover/Search.vue';
 import Podcast from '@/components/discover/Podcast.vue';
+import WorkSignal from '@/components/shared/WorkSignal.vue';
 
 export default {
   components: {
     Category,
     Search,
     Podcast,
+    WorkSignal,
   },
   setup() {
     const searchMode = ref(false);
@@ -49,10 +62,13 @@ export default {
       searchMode.value = f;
     };
 
+    const smileIcon = computed(() => feather.icons.smile.toSvg({ 'stroke-width': 2.0, class: 'w-6 h-6' }));
+
     return {
       onSearchInput,
       onSearchFocus,
       searchMode,
+      smileIcon,
     };
   },
 };
