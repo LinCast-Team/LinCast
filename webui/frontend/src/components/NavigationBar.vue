@@ -26,7 +26,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import '@/assets/css/_palette.scss';
+
 .router-link-exact-active {
-  color:#4DB6AC;
+  color:$primary-accent;
 }
 </style>
