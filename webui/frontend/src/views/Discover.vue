@@ -1,13 +1,25 @@
 <template>
   <!-- Remove this once implemented the search functionality -->
-  <div class="flex flex-col">
-    <work-signal class="self-center">
+  <div class="flex flex-col items-center">
+    <search
+      :class="{ 'mt-4': !searchMode, 'm-0': searchMode }"
+      @search-input="onSearchInput"
+      :searchMode="searchMode"
+      @search-focus="onSearchFocus"
+    />
+
+    <work-signal class="self-center absolute top-1/4">
       <div class="flex flex-col items-center">
         <i>Meanwhile, you can add the feed's URL directly there</i>
         <div v-html="smileIcon"></div>
       </div>
     </work-signal>
+
+    <button class="btn px-10 py-1.5 rounded-2xl text-primary-dt absolute bottom-1/4" @click="submitFeed">
+      Add
+    </button>
   </div>
+
   <!-- Remove the 'hidden' class to show the content -->
   <div class="flex flex-col items-center justify-center font-sans hidden">
     <search
@@ -43,6 +55,7 @@ import Category from '@/components/discover/Category.vue';
 import Search from '@/components/discover/Search.vue';
 import Podcast from '@/components/discover/Podcast.vue';
 import WorkSignal from '@/components/shared/WorkSignal.vue';
+import { subscribe } from '@/store/api/subscriptions';
 
 export default {
   components: {
@@ -53,13 +66,28 @@ export default {
   },
   setup() {
     const searchMode = ref(false);
+    const content = ref('');
 
     const onSearchInput = (input: string) => {
-      console.log(input);
+      content.value = input;
     };
 
     const onSearchFocus = (f: boolean) => {
       searchMode.value = f;
+    };
+
+    const submitFeed = () => {
+      if (content.value === '') {
+        return;
+      }
+
+      subscribe(content.value)
+        .then(() => {
+          content.value = '';
+        })
+        .catch((err) => {
+          console.error(err);
+        });
     };
 
     const smileIcon = computed(() => feather.icons.smile.toSvg({ 'stroke-width': 2.0, class: 'w-6 h-6' }));
@@ -67,6 +95,7 @@ export default {
     return {
       onSearchInput,
       onSearchFocus,
+      submitFeed,
       searchMode,
       smileIcon,
     };
@@ -74,4 +103,9 @@ export default {
 };
 </script>
 <style lang="scss">
+@import '@/assets/css/_palette.scss';
+
+.btn {
+  background-color: $primary-accent;
+}
 </style>
