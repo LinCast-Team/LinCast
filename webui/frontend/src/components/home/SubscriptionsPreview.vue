@@ -7,7 +7,7 @@
         class="link text-sm self-center"
         >Show more</router-link>
     </div>
-    <work-signal class="self-center"/>
+    <work-signal class="self-center my-5"/>
   </div>
 </template>
 
