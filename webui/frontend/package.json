@@ -10,7 +10,7 @@
   "dependencies": {
     "animejs": "^3.2.1",
     "autoprefixer": "^9",
-    "core-js": "^3.6.5",
+    "core-js": "^3.17.2",
     "feather-icons": "^4.28.0",
     "postcss": "^7",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat",
