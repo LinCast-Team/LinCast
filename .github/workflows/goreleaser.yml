@@ -23,16 +23,16 @@ jobs:
         with:
           go-version: 1.16
       - 
-        name: Setup Node.js environment
-        uses: actions/setup-node@v2.1.2
+        name: Setup Node.js/Yarn environment
+        uses: DerYeger/yarn-setup-action@master
         with:
           node-version: ^15.14.0
       - 
         name: Compile the frontend
         run: |
           cd webui/frontend
-          npm install
-          npm run build
+          yarn
+          yarn build
           cd ../..
       -
         name: Run GoReleaser
