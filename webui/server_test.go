@@ -1,12 +1,16 @@
-package backend
+package webui
 
 import (
-	assert2 "github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
-	"io/ioutil"
+	"io"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"testing"
+
+	"lincast/webui/handlers"
+
+	assert2 "github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 type ServerTestSuite struct {
@@ -24,22 +28,22 @@ func (s *ServerTestSuite) TestIndex() {
 	// Should return the file `index.html`.
 	req := httptest.NewRequest("GET", "/", nil)
 
-	newRouter(false, false).ServeHTTP(res, req)
+	newRouter(false, false, &handlers.Manager{}).ServeHTTP(res, req)
 
 	// Read the body of the response.
-	responseBody, err := ioutil.ReadAll(res.Body)
+	responseBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		panic(err)
 	}
 
 	// Get the absolute path of the frontend.
-	fd, err := filepath.Abs("../frontend/dist/index.html")
+	fd, err := filepath.Abs("../webui/frontend/dist/index.html")
 	if err != nil {
 		panic(err)
 	}
 
 	// Open the index file and read the content.
-	indexFileContent, err := ioutil.ReadFile(fd)
+	indexFileContent, err := os.ReadFile(fd)
 	if err != nil {
 		panic(err)
 	}

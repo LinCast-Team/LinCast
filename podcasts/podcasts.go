@@ -1,8 +1,10 @@
 package podcasts
 
 import (
-	"net/url"
+	"strings"
 	"time"
+
+	"lincast/models"
 
 	"github.com/joomcode/errorx"
 	"github.com/mmcdole/gofeed"
@@ -10,67 +12,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Podcast is the structure that represents a podcast.
-type Podcast struct {
-	ID          int
-	Subscribed  bool
-	AuthorName  string
-	AuthorEmail string
-	Title       string
-	Description string
-	Categories  []string
-	ImageURL    string
-	ImageTitle  string
-	Link        string
-	FeedLink    string
-	FeedType    string
-	FeedVersion string
-	Language    string
-	Updated     time.Time // Use the field gofeed.Feed.UpdatedParsed
-	LastCheck   time.Time
-	Added       time.Time
-}
-
-// Episode is the structure that represent an episode of a podcast.
-type Episode struct {
-	ID              int
-	ParentPodcastID int
-	Title           string
-	Description     string
-	Link            string
-	AuthorName      string
-	GUID            string // Unique identifier for an item
-	ImageURL        string
-	ImageTitle      string
-	Categories      []string
-	EnclosureURL    string
-	EnclosureLength string
-	EnclosureType   string
-	Season          string    // Comes from gofeed.Item.ITunesExt.Season - can be empty
-	Published       time.Time // Use the field gofeed.Item.PublishedParsed
-	Updated         time.Time // Use the field gofeed.Item.UpdatedParsed
-	Played          bool
-	CurrentProgress string
-}
-
-// Episodes is a slice of structures of type Episode.
-type Episodes []Episode
-
-// GetPodcast returns information of a podcast parsed into a struct of type *gofeed.Feed. The information will be
-// obtained from the feed's URL.
+// GetPodcastData returns the data from the feed's URL, doing the parsing of the feed itself (into a struct of type *gofeed.Feed) and the podcast.
 // Possible errors:
-// 	- errorx.IllegalFormat: if the format of the URL is incorrect.
 // 	- errorx.ExternalError: if the request to `feedURL` or the parsing of the response fails.
-func GetPodcast(feedURL string) (*Podcast, error) {
-	valid, parsedURL := isValidURL(feedURL)
-	if !valid {
-		return nil, errorx.IllegalFormat.New("the url '%s' is not correctly formatted", feedURL)
-	}
-
+func GetPodcastData(feedURL string) (parsedPodcast *models.Podcast, originalFeed *gofeed.Feed, err error) {
 	parser := gofeed.NewParser()
-	feed, err := parser.ParseURL(parsedURL.String())
+	feed, err := parser.ParseURL(feedURL)
 	if err != nil {
-		return nil, errorx.ExternalError.New("the feed can't be obtained/parsed")
+		return nil, nil, errorx.ExternalError.New("the feed can't be obtained/parsed")
 	}
 
 	now := time.Now()
@@ -79,14 +28,13 @@ func GetPodcast(feedURL string) (*Podcast, error) {
 		feed.UpdatedParsed = new(time.Time)
 	}
 
-	p := &Podcast{
-		ID:          0,
+	p := &models.Podcast{
 		Subscribed:  false,
 		AuthorName:  feed.Author.Name,
 		AuthorEmail: feed.Author.Email,
 		Title:       feed.Title,
 		Description: feed.Description,
-		Categories:  feed.Categories,
+		Categories:  strings.Join(feed.Categories, ","),
 		ImageURL:    feed.Image.URL,
 		ImageTitle:  feed.Image.Title,
 		Link:        feed.Link,
@@ -99,24 +47,19 @@ func GetPodcast(feedURL string) (*Podcast, error) {
 		Added:       now,
 	}
 
-	return p, nil
+	return p, feed, nil
 }
 
 // GetEpisodes returns the episodes (struct Episodes) of the given Podcast.
 // Possible errors:
 // 	- errorx.ExternalError: if the request to `p.FeedLink` or the parsing of the response fails.
-func (p *Podcast) GetEpisodes() (*Episodes, error) {
-	parser := gofeed.NewParser()
-	feed, err := parser.ParseURL(p.FeedLink)
-	if err != nil {
-		return nil, errorx.ExternalError.New("the feed can't be obtained/parsed")
-	}
+func GetEpisodes(feed *gofeed.Feed) (*[]models.Episode, error) {
+	var episodes []models.Episode
 
-	var episodes Episodes
 	for _, item := range feed.Items {
 		if len(item.Enclosures) == 0 {
 			log.WithFields(log.Fields{
-				"podcastFeed": p.FeedLink,
+				"podcastFeed": feed.FeedLink,
 				"episodeGUID": item.GUID,
 				"error": errorx.DataUnavailable.New("the episode (GUID '%s') doesn't have"+
 					" enclosures", item.GUID),
@@ -145,8 +88,7 @@ func (p *Podcast) GetEpisodes() (*Episodes, error) {
 			item.ITunesExt = new(ext.ITunesItemExtension)
 		}
 
-		e := Episode{
-			ParentPodcastID: p.ID,
+		e := models.Episode{
 			Title:           item.Title,
 			Description:     item.Description,
 			Link:            item.Link,
@@ -156,13 +98,13 @@ func (p *Podcast) GetEpisodes() (*Episodes, error) {
 			GUID:            item.GUID,
 			ImageURL:        item.Image.URL,
 			ImageTitle:      item.Image.Title,
-			Categories:      item.Categories,
+			Categories:      strings.Join(item.Categories, ","),
 			EnclosureURL:    item.Enclosures[0].URL,
 			EnclosureLength: item.Enclosures[0].Length,
 			EnclosureType:   item.Enclosures[0].Type,
 			Season:          item.ITunesExt.Season,
 			Played:          false,
-			CurrentProgress: "00:00:00",
+			CurrentProgress: 0,
 		}
 
 		episodes = append(episodes, e)
@@ -176,6 +118,7 @@ func (p *Podcast) GetEpisodes() (*Episodes, error) {
 	return &episodes, nil
 }
 
+/*
 func isValidURL(url1 string) (bool, url.URL) {
 	if _, err := url.ParseRequestURI(url1); err != nil {
 		return false, url.URL{}
@@ -188,3 +131,4 @@ func isValidURL(url1 string) (bool, url.URL) {
 
 	return true, *u
 }
+*/

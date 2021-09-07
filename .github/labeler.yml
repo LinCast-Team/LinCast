@@ -1,6 +1,10 @@
 backend:
   - ./*.go
-  - webui/backend/**/*
+  - database/**/*
+  - psync/**/*
+  - podcasts/**/*
+  - queue/**/*
+  - webui/*.go  
 
 frontend:
   - webui/frontend/**/*

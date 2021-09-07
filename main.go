@@ -6,23 +6,45 @@ import (
 	"runtime"
 	"time"
 
-	"lincast/podcasts"
-	"lincast/webui/backend"
+	"lincast/database"
+	"lincast/models"
+	"lincast/queue"
+	"lincast/webui"
 
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
+	"gorm.io/gorm"
 )
 
+/* -------------------------------- Constants ------------------------------- */
+
+// Default filenames (should be read of the configurations in the future).
 const (
 	dbFilename   = "podcasts.sqlite"
 	logsFilename = "lincast.log"
 )
 
+// Default settings of the server (should be read of the configurations in the future).
+const (
+	serverPort  = 8080
+	serverLocal = true
+	serverLogs  = true
+)
+
+// Default settings related with feeds' refresh (should be read of the configurations in the future).
+const (
+	updateFreq = time.Minute * 30
+)
+
+/* -------------------------------------------------------------------------- */
+
 func main() {
 	devMode := os.Getenv("DEV_MODE") != ""
 
 	setupLogger(logsFilename, devMode)
+
+	log.Info("Starting LinCast")
 
 	if r := run(devMode); r != nil {
 		log.Panicln("Error on run:", errorx.Decorate(r, "error on run"))
@@ -30,32 +52,37 @@ func main() {
 }
 
 func run(devMode bool) error {
-	log.Infoln("Starting LinCast")
-
 	wd, err := os.Getwd()
 	if err != nil {
 		return errorx.InternalError.Wrap(err, "error when trying to get the working directory")
 	}
 
 	dbPath := filepath.Join(wd, "data/")
-
 	err = os.MkdirAll(dbPath, os.ModePerm)
 	if err != nil {
 		return errorx.InternalError.Wrap(err, "error when trying to make the directory where the database"+
 			" will be stored")
 	}
 
-	db, err := podcasts.NewDB(dbPath, dbFilename)
+	db, err := database.New(dbPath, dbFilename)
 	if err != nil {
-		return errorx.InternalError.Wrap(err, "error when trying to initialize the database in the path"+
-			" '%s'", filepath.Join(dbPath, dbFilename))
+		return errorx.InternalError.Wrap(errorx.EnsureStackTrace(err), "error when trying to initialize"+
+			" the database in the path '%s'", filepath.Join(dbPath, dbFilename))
 	}
 
 	// Run the loop that updates the subscribed podcasts.
-	go runUpdateQueue(db, time.Minute*30)
+	go runUpdateQueue(db, updateFreq)
 
 	// Make a new instance of the server.
-	sv := backend.New(8080, true, devMode, true)
+	sv := webui.New(serverPort, serverLocal, devMode, serverLogs, db)
+
+	log.WithFields(log.Fields{
+		"port":        serverPort,
+		"localServer": serverLocal,
+		"devMode":     devMode,
+		"logRequests": serverLogs,
+	}).Info("Starting server")
+
 	err = sv.ListenAndServe()
 	if err != nil {
 		return errorx.InternalError.Wrap(err, "error on server ListenAndServe")
@@ -64,63 +91,53 @@ func run(devMode bool) error {
 	return nil
 }
 
-func runUpdateQueue(db *podcasts.Database, updateInterval time.Duration) {
+func runUpdateQueue(db *gorm.DB, updateInterval time.Duration) {
+	log.WithField("updateInterval", updateInterval.String()).Debug("Starting feeds' update loop")
+
 	ticker := time.NewTicker(updateInterval)
 	defer ticker.Stop()
+	qLength := runtime.NumCPU()
 
-	updateQueue, err := podcasts.NewUpdateQueue(db, runtime.NumCPU())
+	updateQueue, err := queue.NewUpdateQueue(db, qLength)
 	if err != nil {
-		log.WithField("error", errorx.Decorate(err, "error when creating update queue")).
+		log.WithField("error", errorx.Decorate(errorx.EnsureStackTrace(err), "error when creating update queue")).
 			Panic("Cannot initialize the update queue")
 	}
 
-	log.Info("Updating podcasts on boot")
+	log.Info("Updating feeds for first time since LinCast is running")
 	err = updatePodcasts(db, updateQueue)
 	if err != nil {
 		log.WithField("error", errorx.Decorate(err, "Error when trying to update podcasts"))
 	}
 
 	for range ticker.C {
+		log.Info("Updating podcasts' feeds")
 		err := updatePodcasts(db, updateQueue)
 		if err != nil {
-			log.WithField("error", errorx.Decorate(err, "Error when trying to update podcasts"))
+			log.WithField("error", errorx.EnsureStackTrace(err)).Error("Error when trying to update podcasts' feeds")
+		} else {
+			log.Info("Podcasts' feeds updated correctly")
 		}
 	}
 }
 
-func updatePodcasts(db *podcasts.Database, updateQueue *podcasts.UpdateQueue) error {
-	log.WithFields(log.Fields{
-		"dbIsNil":          db == nil,
-		"updateQueueIsNil": updateQueue == nil,
-	}).Info("Starting the update of podcasts...")
-
-	log.Info("Getting subscribed podcasts from the database")
-	subscribedPodcasts, err := db.GetPodcastsBySubscribedStatus(true)
-	if err != nil {
-		return errorx.InternalError.Wrap(err, "error trying to get subscribed podcasts")
+func updatePodcasts(db *gorm.DB, updateQueue *queue.UpdateQueue) error {
+	var subscribedPodcasts []models.Podcast
+	if res := db.Where("subscribed", true).Find(&subscribedPodcasts); res.Error != nil {
+		return errorx.InternalError.Wrap(res.Error, "error trying to get subscribed podcasts")
 	}
 
-	log.WithField("subscribedPodcastsN", len(*subscribedPodcasts)).Info("Subscribed podcasts obtained")
-
-	log.Info("Starting loop to send subscribed podcasts to UpdateQueue")
-	for _, p := range *subscribedPodcasts {
-		j := podcasts.NewJob(&p)
+	log.Debug("Starting loop to send podcasts to the update queue")
+	for _, p := range subscribedPodcasts {
+		j := queue.NewJob(&p)
 
 		log.WithFields(log.Fields{
-			"jobIsNil":          j == nil,
 			"podcastFeed":       p.FeedLink,
 			"podcastID":         p.ID,
 			"podcastSubscribed": p.Subscribed,
-		}).Info("Sending podcast to UpdateQueue as a new Job")
+		}).Info("Sending podcast to the update queue")
 
 		updateQueue.Send(j)
-
-		log.WithFields(log.Fields{
-			"jobIsNil":          j == nil,
-			"podcastFeed":       p.FeedLink,
-			"podcastID":         p.ID,
-			"podcastSubscribed": p.Subscribed,
-		}).Info("Podcast sent to UpdateQueue, worker in action")
 	}
 
 	return nil
