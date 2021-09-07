@@ -10,9 +10,9 @@
 </template>
 
 <script lang='ts'>
+import { ref } from 'vue';
 import LCHeader from '@/components/subscriptions/Header.vue';
 import SubTabs from '@/components/subscriptions/SubTabs.vue';
-import { ref } from 'vue';
 import PodcastsTab from '../components/subscriptions/tabs/PodcastsTab.vue';
 import NewEpisodesTab from '../components/subscriptions/tabs/NewEspisodesTab.vue';
 
