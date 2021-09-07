@@ -22,9 +22,9 @@
 
 <script lang='ts'>
 import { ref } from 'vue';
+import anime from 'animejs';
 import Player from '@/components/Player.vue';
 import NavigationBar from '@/components/NavigationBar.vue';
-import anime from 'animejs';
 
 export default {
   components: {

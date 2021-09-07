@@ -24,9 +24,9 @@
 </template>
 
 <script>
-import defaultArtwork from '@/assets/resources/default_artwork.svg';
-import feather from 'feather-icons';
 import { computed } from 'vue';
+import feather from 'feather-icons';
+import defaultArtwork from '@/assets/resources/default_artwork.svg';
 
 export default {
   props: {
