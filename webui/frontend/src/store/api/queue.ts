@@ -9,7 +9,7 @@ export interface QueueEpisode {
 
 export const getQueue = async (): Promise<Queue> => {
   const response = await fetch('/api/v0/player/queue', {
-    method: 'GET'
+    method: 'GET',
   });
 
   if (!response.ok) {
@@ -19,17 +19,17 @@ export const getQueue = async (): Promise<Queue> => {
   const data: Queue = await response.json();
 
   return data;
-}
+};
 
 export const clearQueue = async () => {
   const response = await fetch('/api/v0/player/queue', {
-    method: 'DELETE'
+    method: 'DELETE',
   });
 
   if (!response.ok) {
     throw new Error(`Request failed with status code ${response.status}`);
   }
-}
+};
 
 export const replaceQueue = async (newQueue: Queue) => {
   const response = await fetch('/api/v0/player/queue', {
@@ -43,7 +43,7 @@ export const replaceQueue = async (newQueue: Queue) => {
   if (!response.ok) {
     throw new Error(`Request failed with status code ${response.status}`);
   }
-}
+};
 
 export const addToQueue = async (episode: QueueEpisode, append: boolean) => {
   const response = await fetch(`/api/v0/player/queue/add?append=${append}`, {
@@ -57,7 +57,7 @@ export const addToQueue = async (episode: QueueEpisode, append: boolean) => {
   if (!response.ok) {
     throw new Error(`Request failed with status code ${response.status}`);
   }
-}
+};
 
 export const removeFromQueue = async (id: number) => {
   const response = await fetch(`/api/v0/player/queue/remove?id=${id}`, {
@@ -67,4 +67,4 @@ export const removeFromQueue = async (id: number) => {
   if (!response.ok) {
     throw new Error(`Request failed with status code ${response.status}`);
   }
-}
+};

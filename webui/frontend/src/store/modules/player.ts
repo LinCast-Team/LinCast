@@ -1,8 +1,12 @@
-import { Module, VuexModule, MutationAction, getModule } from 'vuex-module-decorators';
+/* eslint-disable class-methods-use-this */
+import {
+  Module, VuexModule, MutationAction, getModule,
+} from 'vuex-module-decorators';
 import store from '@/store';
 import { CurrentProgress, getCurrentProgress, sendCurrentProgress } from '../api/player';
-import { Queue, QueueEpisode, getQueue, addToQueue } from '../api/queue';
-
+import {
+  Queue, QueueEpisode, getQueue, addToQueue,
+} from '../api/queue';
 
 @Module({
   namespaced: true,
@@ -12,8 +16,9 @@ import { Queue, QueueEpisode, getQueue, addToQueue } from '../api/queue';
 })
 
 class Player extends VuexModule {
-  currentProgress: CurrentProgress = <CurrentProgress>{};
-  queueContent: Queue = <Queue>{};
+  currentProgress: CurrentProgress = {} as CurrentProgress;
+
+  queueContent: Queue = {} as Queue;
 
   get progress() {
     return this.currentProgress;
@@ -47,7 +52,7 @@ class Player extends VuexModule {
 
     return {
       queueContent,
-    }
+    };
   }
 
   @MutationAction
@@ -55,14 +60,13 @@ class Player extends VuexModule {
     await addToQueue(ep, append);
 
     if (append) {
-      this.queue.push(ep)
+      this.queue.push(ep);
     } else {
-      this.queue.unshift(ep)
+      this.queue.unshift(ep);
     }
 
     return {};
   }
 }
-
 
 export default getModule(Player);
