@@ -47,7 +47,6 @@ func TestPlayerProgressHandler_GET(t *testing.T) {
 	expectedProgress = models.CurrentProgress{
 		PodcastID:   1,
 		EpisodeGUID: "guid-123",
-		Progress:    time.Duration(time.Minute * 87),
 	}
 	expectedProgress.ID = 1
 
@@ -86,7 +85,6 @@ func TestPlayerProgressHandler_PUT(t *testing.T) {
 	expectedProgress := models.CurrentProgress{
 		PodcastID:   10,
 		EpisodeGUID: "some_guid-123",
-		Progress:    time.Duration(time.Minute * 30),
 	}
 	expectedProgress.ID = 1
 
