@@ -15,7 +15,7 @@
     "feather-icons": "^4.28.0",
     "postcss": "^7",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.0.2",
-    "vue": "^3.2.11",
+    "vue": "^3.2.16",
     "vue-router": "^4.0.11",
     "vuex": "^4.0.2",
     "vuex-module-decorators": "^1.0.1"
