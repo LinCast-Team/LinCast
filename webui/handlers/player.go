@@ -24,7 +24,6 @@ func (m *Manager) PlayerPlaybackInfoHandler(w http.ResponseWriter, r *http.Reque
 				// If the error is of type gorm.ErrRecordNotFound, it means that there is no episode
 				// being played, so we should let it know it to the user that there is no content
 				if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-
 					http.Error(w, "there is no episode being played", http.StatusNotFound)
 
 					log.WithFields(log.Fields{
