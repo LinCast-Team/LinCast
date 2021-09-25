@@ -363,7 +363,7 @@ func TestEpisodeProgressHandler_PUT(t *testing.T) {
 		"epID": fmt.Sprint(episodeID),
 	}
 
-	body := map[string]time.Duration{ "progress": expectedProgress }
+	body := map[string]time.Duration{"progress": expectedProgress}
 
 	r := testUtils.NewRequestWithVars(mng.EpisodeProgressHandler, method, "", vars, testUtils.NewBody(t, body))
 
