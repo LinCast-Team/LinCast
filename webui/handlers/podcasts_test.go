@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"lincast/database"
 	"lincast/models"
@@ -233,7 +234,7 @@ func TestGetEpisodesHandler(t *testing.T) {
 	vars := map[string]string{
 		"id": fmt.Sprint(parsedFeed.ID),
 	}
-	r := testUtils.NewRequestWithVars(mng.GetEpisodesHandler, method, "/api/v0/podcasts/{id:[0-9]+}/episodes", vars, testUtils.NewBody(t, nil))
+	r := testUtils.NewRequestWithVars(mng.GetEpisodesHandler, method, "", vars, testUtils.NewBody(t, nil))
 
 	assert.Equal(http.StatusOK, r.StatusCode, "The response should have the status code 200")
 	assert.Equal("application/json", r.Header.Get("Content-Type"), "Since the response should have a body with the requested data (json), the 'Content-Type' headers should be 'application/json'")
@@ -250,7 +251,7 @@ func TestGetEpisodesHandler(t *testing.T) {
 	vars = map[string]string{
 		"id": "abc",
 	}
-	r = testUtils.NewRequestWithVars(mng.GetEpisodesHandler, method, "/api/v0/podcasts/{id:[0-9]+}/episodes", vars, testUtils.NewBody(t, nil))
+	r = testUtils.NewRequestWithVars(mng.GetEpisodesHandler, method, "", vars, testUtils.NewBody(t, nil))
 
 	assert.Equal(http.StatusBadRequest, r.StatusCode)
 	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"))
@@ -261,13 +262,73 @@ func TestGetEpisodesHandler(t *testing.T) {
 	vars = map[string]string{
 		"id": fmt.Sprint(id),
 	}
-	r = testUtils.NewRequestWithVars(mng.GetEpisodesHandler, method, "/api/v0/podcasts/{id:[0-9]+}/episodes", vars, testUtils.NewBody(t, nil))
+	r = testUtils.NewRequestWithVars(mng.GetEpisodesHandler, method, "", vars, testUtils.NewBody(t, nil))
 
 	assert.Equal(http.StatusNotFound, r.StatusCode)
 	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"))
 
 	// Request without ID
 	r = testUtils.NewRequest(mng.GetEpisodesHandler, method, "", testUtils.NewBody(t, nil))
+
+	assert.Equal(http.StatusBadRequest, r.StatusCode)
+	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"))
+}
+
+func TestEpisodeProgressHandler_GET(t *testing.T) {
+	assert := assert2.New(t)
+	tempDir := t.TempDir()
+	db, err := database.New(tempDir, "test.db")
+	if err != nil {
+		assert.FailNow(err.Error())
+	}
+	mng := NewManager(db)
+
+	url := "https://feeds.megaphone.fm/darknetdiaries"
+	method := "GET"
+
+	parsedFeed, originalFeed, err := podcasts.GetPodcastData(url)
+	if err != nil {
+		panic(err)
+	}
+
+	addOfflinePodcastToDB(parsedFeed, db, t)
+	addEpisodesToDB(originalFeed, parsedFeed.ID, db, t)
+
+	podcastID := 1
+	episodeID := 5
+	expectedProgress := time.Minute * 46
+
+	res := db.Model(&models.Episode{}).Where("id = ?", episodeID).UpdateColumn("current_progress", expectedProgress)
+	if res.Error != nil {
+		assert.FailNow(res.Error.Error())
+	}
+
+	vars := map[string]string{
+		"pID":  fmt.Sprint(podcastID),
+		"epID": fmt.Sprint(episodeID),
+	}
+
+	r := testUtils.NewRequestWithVars(mng.EpisodeProgressHandler, method, "", vars, testUtils.NewBody(t, nil))
+
+	var response struct {
+		Progress time.Duration `json:"progress"`
+	}
+
+	err = json.NewDecoder(r.Body).Decode(&response)
+	if err != nil {
+		assert.FailNow(err.Error())
+	}
+
+	assert.Equal(http.StatusOK, r.StatusCode)
+	assert.Equal("application/json", r.Header.Get("Content-Type"))
+	assert.Equal(expectedProgress, response.Progress)
+
+	vars = map[string]string{
+		"pID":  fmt.Sprint(999999),
+		"epID": fmt.Sprint(999999999),
+	}
+
+	r = testUtils.NewRequestWithVars(mng.EpisodeProgressHandler, method, "", vars, testUtils.NewBody(t, nil))
 
 	assert.Equal(http.StatusBadRequest, r.StatusCode)
 	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"))
