@@ -62,7 +62,7 @@ func migrate(db *gorm.DB) {
 			"that contains the episodes")
 	}
 
-	err = db.AutoMigrate(&models.CurrentProgress{})
+	err = db.AutoMigrate(&models.PlaybackInfo{})
 	if err != nil {
 		log.WithError(errorx.EnsureStackTrace(err)).Panic("error when executing the automatic migration of the table " +
 			"that contains the current progress of the player")
@@ -73,9 +73,4 @@ func migrate(db *gorm.DB) {
 		log.WithError(errorx.EnsureStackTrace(err)).Panic("error when executing the automatic migration of the table " +
 			"that contains the queue of the player")
 	}
-
-	// We need to make sure that there will be allways one row on the table that stores
-	// the progress of the player, otherwise, we can have issues trying to update the
-	// progress on a non-existent row.
-	_ = db.FirstOrCreate(&models.CurrentProgress{})
 }
