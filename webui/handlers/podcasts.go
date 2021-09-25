@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"lincast/models"
 	"lincast/podcasts"
@@ -327,5 +328,157 @@ func (m *Manager) GetEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 		}).Error("Error when trying to encode the response to the request")
 
 		return
+	}
+}
+
+func (m *Manager) EpisodeProgressHandler(w http.ResponseWriter, r *http.Request) {
+	podcastIDStr := mux.Vars(r)["pID"]
+	epIDStr := mux.Vars(r)["epID"]
+
+	podcastID := safe.SafeParseInt(podcastIDStr)
+	if podcastID == safe.DefaultAllocate {
+		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values or can't be parsed", podcastIDStr)
+
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"error":      err.Error(),
+			"givenID":    podcastIDStr,
+		}).Error("The given podcastID cannot be parsed")
+
+		return
+	}
+
+	episodeID := safe.SafeParseInt(epIDStr)
+	if episodeID == safe.DefaultAllocate {
+		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values or can't be parsed", epIDStr)
+
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"error":      err.Error(),
+			"givenID":    epIDStr,
+		}).Error("The given episodeID cannot be parsed")
+
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		{
+			// Returns the progress of the episode
+			var ep models.Episode
+
+			res := m.db.Model(&models.Episode{}).Where("id = ? AND parent_podcast_id = ?", episodeID, podcastID).Select("current_progress").Find(&ep)
+			if res.Error != nil {
+				http.Error(w, res.Error.Error(), http.StatusInternalServerError)
+
+				log.WithFields(log.Fields{
+					"remoteAddr": r.RemoteAddr,
+					"requestURI": r.RequestURI,
+					"method":     r.Method,
+					"error":      res.Error.Error(),
+					"podcastID":  podcastID,
+					"episodeID":  episodeID,
+				}).Error("Error when trying to get the progress of the requested episode")
+
+				return
+			}
+
+			if res.RowsAffected == 0 {
+				e := "the requested episode does not exist"
+
+				http.Error(w, e, http.StatusBadRequest)
+
+				log.WithFields(log.Fields{
+					"remoteAddr": r.RemoteAddr,
+					"requestURI": r.RequestURI,
+					"method":     r.Method,
+					"podcastID":  podcastID,
+					"episodeID":  episodeID,
+				}).Error(e)
+
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+
+			err := json.NewEncoder(w).Encode(map[string]time.Duration{"progress": ep.CurrentProgress})
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+
+				log.WithFields(log.Fields{
+					"remoteAddr": r.RemoteAddr,
+					"requestURI": r.RequestURI,
+					"method":     r.Method,
+					"error":      errorx.EnsureStackTrace(err),
+				}).Error("Error when trying to encode the response to the request")
+
+				return
+			}
+		}
+
+	case http.MethodPut:
+		{
+			// Update the progress of the episode
+			var requestBody struct {
+				Progress time.Duration `json:"progress"`
+			}
+
+			err := json.NewDecoder(r.Body).Decode(&requestBody)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+
+				log.WithFields(log.Fields{
+					"remoteAddr": r.RemoteAddr,
+					"requestURI": r.RequestURI,
+					"method":     r.Method,
+					"error":      err.Error(),
+				}).Error("Error when trying to decode the body of the request")
+
+				return
+			}
+
+			res := m.db.Model(&models.Episode{}).Where("id = ? AND parent_podcast_id = ?", episodeID, podcastID).UpdateColumn("current_progress", requestBody.Progress)
+			if res.Error != nil {
+				http.Error(w, res.Error.Error(), http.StatusInternalServerError)
+
+				log.WithFields(log.Fields{
+					"remoteAddr": r.RemoteAddr,
+					"requestURI": r.RequestURI,
+					"method":     r.Method,
+					"error":      res.Error.Error(),
+					"podcastID":  podcastID,
+					"episodeID":  episodeID,
+				}).Error("Error when trying to update the progress of an episode")
+
+				return
+			}
+
+			if res.RowsAffected == 0 {
+				e := "the episode to update does not exist"
+
+				http.Error(w, e, http.StatusBadRequest)
+
+				log.WithFields(log.Fields{
+					"remoteAddr": r.RemoteAddr,
+					"requestURI": r.RequestURI,
+					"method":     r.Method,
+					"podcastID":  podcastID,
+					"episodeID":  episodeID,
+				}).Error(e)
+
+				return
+			}
+
+			w.WriteHeader(http.StatusCreated)
+		}
 	}
 }

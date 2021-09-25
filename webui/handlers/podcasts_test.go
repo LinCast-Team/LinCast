@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"lincast/database"
 	"lincast/models"
@@ -213,7 +214,7 @@ func TestGetEpisodesHandler(t *testing.T) {
 	}
 	mng := NewManager(db)
 
-	url := "https://gotime.fm/rss"
+	url := "https://feeds.feedburner.com/iTunesPodcastTTScienceMedicine"
 	method := "GET"
 
 	parsedFeed, originalFeed, err := podcasts.GetPodcastData(url)
@@ -233,7 +234,7 @@ func TestGetEpisodesHandler(t *testing.T) {
 	vars := map[string]string{
 		"id": fmt.Sprint(parsedFeed.ID),
 	}
-	r := testUtils.NewRequestWithVars(mng.GetEpisodesHandler, method, "/api/v0/podcasts/{id:[0-9]+}/episodes", vars, testUtils.NewBody(t, nil))
+	r := testUtils.NewRequestWithVars(mng.GetEpisodesHandler, method, "", vars, testUtils.NewBody(t, nil))
 
 	assert.Equal(http.StatusOK, r.StatusCode, "The response should have the status code 200")
 	assert.Equal("application/json", r.Header.Get("Content-Type"), "Since the response should have a body with the requested data (json), the 'Content-Type' headers should be 'application/json'")
@@ -250,7 +251,7 @@ func TestGetEpisodesHandler(t *testing.T) {
 	vars = map[string]string{
 		"id": "abc",
 	}
-	r = testUtils.NewRequestWithVars(mng.GetEpisodesHandler, method, "/api/v0/podcasts/{id:[0-9]+}/episodes", vars, testUtils.NewBody(t, nil))
+	r = testUtils.NewRequestWithVars(mng.GetEpisodesHandler, method, "", vars, testUtils.NewBody(t, nil))
 
 	assert.Equal(http.StatusBadRequest, r.StatusCode)
 	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"))
@@ -261,7 +262,7 @@ func TestGetEpisodesHandler(t *testing.T) {
 	vars = map[string]string{
 		"id": fmt.Sprint(id),
 	}
-	r = testUtils.NewRequestWithVars(mng.GetEpisodesHandler, method, "/api/v0/podcasts/{id:[0-9]+}/episodes", vars, testUtils.NewBody(t, nil))
+	r = testUtils.NewRequestWithVars(mng.GetEpisodesHandler, method, "", vars, testUtils.NewBody(t, nil))
 
 	assert.Equal(http.StatusNotFound, r.StatusCode)
 	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"))
@@ -271,6 +272,120 @@ func TestGetEpisodesHandler(t *testing.T) {
 
 	assert.Equal(http.StatusBadRequest, r.StatusCode)
 	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"))
+}
+
+func TestEpisodeProgressHandler_GET(t *testing.T) {
+	assert := assert2.New(t)
+	tempDir := t.TempDir()
+	db, err := database.New(tempDir, "test.db")
+	if err != nil {
+		assert.FailNow(err.Error())
+	}
+	mng := NewManager(db)
+
+	url := "https://feeds.feedburner.com/iTunesPodcastTTScienceMedicine"
+	method := "GET"
+
+	parsedFeed, originalFeed, err := podcasts.GetPodcastData(url)
+	if err != nil {
+		panic(err)
+	}
+
+	addOfflinePodcastToDB(parsedFeed, db, t)
+	addEpisodesToDB(originalFeed, parsedFeed.ID, db, t)
+
+	podcastID := 1
+	episodeID := 5
+	expectedProgress := time.Minute * 46
+
+	res := db.Model(&models.Episode{}).Where("id = ?", episodeID).UpdateColumn("current_progress", expectedProgress)
+	if res.Error != nil {
+		assert.FailNow(res.Error.Error())
+	}
+
+	vars := map[string]string{
+		"pID":  fmt.Sprint(podcastID),
+		"epID": fmt.Sprint(episodeID),
+	}
+
+	r := testUtils.NewRequestWithVars(mng.EpisodeProgressHandler, method, "", vars, testUtils.NewBody(t, nil))
+
+	var response struct {
+		Progress time.Duration `json:"progress"`
+	}
+
+	err = json.NewDecoder(r.Body).Decode(&response)
+	if err != nil {
+		assert.FailNow(err.Error())
+	}
+
+	assert.Equal(http.StatusOK, r.StatusCode, "The progress of the episode should be returned correctly, with a http status code 200 OK")
+	assert.Equal("application/json", r.Header.Get("Content-Type"), "Since the body of the response should contain progress of the episode, the 'Content-Type' headers should be correctly set")
+	assert.Equal(expectedProgress, response.Progress, "The response should contain the progress stored in the database")
+
+	vars = map[string]string{
+		"pID":  fmt.Sprint(999999),
+		"epID": fmt.Sprint(999999999),
+	}
+
+	r = testUtils.NewRequestWithVars(mng.EpisodeProgressHandler, method, "", vars, testUtils.NewBody(t, nil))
+
+	assert.Equal(http.StatusBadRequest, r.StatusCode, "If the request contains the ID of a podcast or episode that does not exist, it should be rejected with a http status code 400 Bad Request")
+	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"), "Since the response should contain the description of the error, the correct 'Content-Type' headers should be set")
+}
+
+func TestEpisodeProgressHandler_PUT(t *testing.T) {
+	assert := assert2.New(t)
+	tempDir := t.TempDir()
+	db, err := database.New(tempDir, "test.db")
+	if err != nil {
+		assert.FailNow(err.Error())
+	}
+	mng := NewManager(db)
+
+	url := "https://feeds.feedburner.com/iTunesPodcastTTScienceMedicine"
+	method := "PUT"
+
+	parsedFeed, originalFeed, err := podcasts.GetPodcastData(url)
+	if err != nil {
+		panic(err)
+	}
+
+	addOfflinePodcastToDB(parsedFeed, db, t)
+	addEpisodesToDB(originalFeed, parsedFeed.ID, db, t)
+
+	podcastID := 1
+	episodeID := 5
+	expectedProgress := time.Minute * 46
+
+	vars := map[string]string{
+		"pID":  fmt.Sprint(podcastID),
+		"epID": fmt.Sprint(episodeID),
+	}
+
+	body := map[string]time.Duration{"progress": expectedProgress}
+
+	r := testUtils.NewRequestWithVars(mng.EpisodeProgressHandler, method, "", vars, testUtils.NewBody(t, body))
+
+	var epFromDB models.Episode
+	res := db.Model(&models.Episode{}).Where("id = ?", episodeID).Select("current_progress").Find(&epFromDB)
+	if res.Error != nil {
+		assert.FailNow(err.Error())
+	}
+
+	assert.Equal(http.StatusCreated, r.StatusCode, "If the progress of the episode is correctly updated, the http status code in the response should be 201 Created")
+	assert.Equal("", r.Header.Get("Content-Type"), "Since the response should not have a body, the 'Content-Type' headers must be empty")
+	assert.Equal(expectedProgress, epFromDB.CurrentProgress, "The progress of the episode should be correctly updated in the database")
+
+	vars = map[string]string{
+		"pID":  fmt.Sprint(999999),
+		"epID": fmt.Sprint(999999999),
+	}
+
+	r = testUtils.NewRequestWithVars(mng.EpisodeProgressHandler, method, "", vars, testUtils.NewBody(t, nil))
+
+	assert.Equal(http.StatusBadRequest, r.StatusCode, "If the request contains the ID of a podcast or episode that does not exist, it should be rejected with a http status code 400 Bad Request")
+	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"), "Since the response should contain the description of the error, the correct 'Content-Type' headers should be set")
 }
 
 func addPodcastToDB(feedURL string, subscribed bool, db *gorm.DB, t *testing.T) {
