@@ -8,7 +8,7 @@ import (
 
 	"lincast/database"
 	"lincast/models"
-	"lincast/queue"
+	"lincast/update"
 	"lincast/webui"
 
 	"github.com/joomcode/errorx"
@@ -98,7 +98,7 @@ func runUpdateQueue(db *gorm.DB, updateInterval time.Duration) {
 	defer ticker.Stop()
 	qLength := runtime.NumCPU()
 
-	updateQueue, err := queue.NewUpdateQueue(db, qLength)
+	updateQueue, err := update.NewUpdateQueue(db, qLength)
 	if err != nil {
 		log.WithField("error", errorx.Decorate(errorx.EnsureStackTrace(err), "error when creating update queue")).
 			Panic("Cannot initialize the update queue")
@@ -121,7 +121,7 @@ func runUpdateQueue(db *gorm.DB, updateInterval time.Duration) {
 	}
 }
 
-func updatePodcasts(db *gorm.DB, updateQueue *queue.UpdateQueue) error {
+func updatePodcasts(db *gorm.DB, updateQueue *update.UpdateQueue) error {
 	var subscribedPodcasts []models.Podcast
 	if res := db.Where("subscribed", true).Find(&subscribedPodcasts); res.Error != nil {
 		return errorx.InternalError.Wrap(res.Error, "error trying to get subscribed podcasts")
@@ -129,7 +129,7 @@ func updatePodcasts(db *gorm.DB, updateQueue *queue.UpdateQueue) error {
 
 	log.Debug("Starting loop to send podcasts to the update queue")
 	for _, p := range subscribedPodcasts {
-		j := queue.NewJob(&p)
+		j := update.NewJob(&p)
 
 		log.WithFields(log.Fields{
 			"podcastFeed":       p.FeedLink,
