@@ -102,7 +102,40 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
+		var id uint
+		res = m.db.Model(&models.Podcast{}).Where("feed_link = ?", p.FeedLink).Select("id").Find(&id)
+		if res.Error != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+
+			log.WithFields(log.Fields{
+				"remoteAddr":  r.RemoteAddr,
+				"requestURI":  r.RequestURI,
+				"method":      r.Method,
+				"request.url": u.URL,
+				"error":       errorx.EnsureStackTrace(err),
+			}).Error("Error when trying to get the ID of the updated podcast")
+
+			return
+		}
+
+		p.ID = id
+
 		w.WriteHeader(http.StatusNoContent)
+	}
+
+	select {
+	case m.updateChannel <- p:
+	default:
+		{ // Avoid blocking if, for some reason, the channel is busy
+			log.WithFields(log.Fields{
+				"remoteAddr":  r.RemoteAddr,
+				"requestURI":  r.RequestURI,
+				"method":      r.Method,
+				"request.url": u.URL,
+				"podcastID":   p.ID,
+				"podcastFeed": p.FeedLink,
+			}).Warning("The channel used to update the recently subscribed podcasts is busy; skipping feed...")
+		}
 	}
 }
 

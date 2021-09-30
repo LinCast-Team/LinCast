@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"lincast/models"
 	"lincast/webui/handlers"
 
 	"github.com/NYTimes/gziphandler"
@@ -35,12 +36,12 @@ func getFileSystem(devMode bool) http.FileSystem {
 }
 
 // New returns a new instance of the server. To execute it, the method `ListenAndServe` must be called.
-func New(port uint16, localServer bool, devMode bool, logRequests bool, db *gorm.DB) *http.Server {
+func New(port uint16, localServer bool, devMode bool, logRequests bool, db *gorm.DB, manualUpdate chan *models.Podcast) *http.Server {
 	if db == nil {
 		log.Panic("'podcastsDB' is nil")
 	}
 
-	handlersManager := handlers.NewManager(db)
+	handlersManager := handlers.NewManager(db, manualUpdate)
 
 	router := newRouter(devMode, logRequests, handlersManager)
 

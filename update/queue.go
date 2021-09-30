@@ -103,7 +103,6 @@ func (q *UpdateQueue) worker(id int) {
 			<-rateLimiter.C
 
 			// Check if the episode is already on the table.
-			// TODO important: check if we're selecting the correct column
 			result := q.dbInstance.Where("guid = ?", e.GUID).First(&models.Episode{})
 			if result.Error != nil {
 				// The only error that we expect to get here is one of type `gorm.ErrRecordNotFound` (which means

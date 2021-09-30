@@ -20,7 +20,7 @@ func TestPlayerPlaybackInfoHandler_GET(t *testing.T) {
 	if err != nil {
 		assert.FailNow(err.Error())
 	}
-	mng := NewManager(db)
+	mng := NewManager(db, make(chan *models.Podcast))
 	method := "GET"
 
 	// If nothing is being played, an error should be returned
@@ -63,7 +63,7 @@ func TestPlayerPlaybackInfoHandler_PUT(t *testing.T) {
 	if err != nil {
 		assert.FailNow(err.Error())
 	}
-	mng := NewManager(db)
+	mng := NewManager(db, make(chan *models.Podcast))
 	method := "PUT"
 
 	expectedProgress := models.PlaybackInfo{

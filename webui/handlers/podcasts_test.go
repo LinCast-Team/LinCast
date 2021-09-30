@@ -25,7 +25,7 @@ func TestSubscribeToPodcastHandler(t *testing.T) {
 	if err != nil {
 		assert.FailNow(err.Error())
 	}
-	mng := NewManager(db)
+	mng := NewManager(db, make(chan *models.Podcast))
 
 	method := "POST"
 	body := struct {
@@ -59,7 +59,7 @@ func TestUnsubscribeToPodcastHandler(t *testing.T) {
 	if err != nil {
 		assert.FailNow(err.Error())
 	}
-	mng := NewManager(db)
+	mng := NewManager(db, make(chan *models.Podcast))
 
 	addPodcastToDB("https://gotime.fm/rss", true, db, t) // ID: 1
 	id := 1
@@ -95,7 +95,7 @@ func TestGetUserPodcastsHandler(t *testing.T) {
 	if err != nil {
 		assert.FailNow(err.Error())
 	}
-	mng := NewManager(db)
+	mng := NewManager(db, make(chan *models.Podcast))
 
 	feeds := map[string]bool{
 		"https://gotime.fm/rss":                     true,
@@ -136,7 +136,7 @@ func TestGetPodcastHandler(t *testing.T) {
 	if err != nil {
 		assert.FailNow(err.Error())
 	}
-	mng := NewManager(db)
+	mng := NewManager(db, make(chan *models.Podcast))
 
 	url := "https://gotime.fm/rss"
 	method := "GET"
@@ -212,7 +212,7 @@ func TestGetEpisodesHandler(t *testing.T) {
 	if err != nil {
 		assert.FailNow(err.Error())
 	}
-	mng := NewManager(db)
+	mng := NewManager(db, make(chan *models.Podcast))
 
 	url := "https://feeds.feedburner.com/iTunesPodcastTTScienceMedicine"
 	method := "GET"
@@ -281,7 +281,7 @@ func TestEpisodeProgressHandler_GET(t *testing.T) {
 	if err != nil {
 		assert.FailNow(err.Error())
 	}
-	mng := NewManager(db)
+	mng := NewManager(db, make(chan *models.Podcast))
 
 	url := "https://feeds.feedburner.com/iTunesPodcastTTScienceMedicine"
 	method := "GET"
@@ -341,7 +341,7 @@ func TestEpisodeProgressHandler_PUT(t *testing.T) {
 	if err != nil {
 		assert.FailNow(err.Error())
 	}
-	mng := NewManager(db)
+	mng := NewManager(db, make(chan *models.Podcast))
 
 	url := "https://feeds.feedburner.com/iTunesPodcastTTScienceMedicine"
 	method := "PUT"
