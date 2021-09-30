@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"lincast/database"
+	"lincast/models"
 
 	assert2 "github.com/stretchr/testify/assert"
 )
@@ -16,7 +17,7 @@ func TestNewManager(t *testing.T) {
 		assert.FailNow(err.Error())
 	}
 
-	mng := NewManager(db)
+	mng := NewManager(db, make(chan *models.Podcast))
 
 	assert.NotNil(mng, "A valid instance of Manager should be returned")
 }

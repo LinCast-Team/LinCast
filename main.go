@@ -70,11 +70,13 @@ func run(devMode bool) error {
 			" the database in the path '%s'", filepath.Join(dbPath, dbFilename))
 	}
 
+	manualFeedUpd := make(chan *models.Podcast)
+
 	// Run the loop that updates the subscribed podcasts.
-	go runUpdateQueue(db, updateFreq)
+	go runUpdateQueue(db, updateFreq, manualFeedUpd)
 
 	// Make a new instance of the server.
-	sv := webui.New(serverPort, serverLocal, devMode, serverLogs, db)
+	sv := webui.New(serverPort, serverLocal, devMode, serverLogs, db, manualFeedUpd)
 
 	log.WithFields(log.Fields{
 		"port":        serverPort,
@@ -91,7 +93,7 @@ func run(devMode bool) error {
 	return nil
 }
 
-func runUpdateQueue(db *gorm.DB, updateInterval time.Duration) {
+func runUpdateQueue(db *gorm.DB, updateInterval time.Duration, manualFeedUpd chan *models.Podcast) {
 	log.WithField("updateInterval", updateInterval.String()).Debug("Starting feeds' update loop")
 
 	ticker := time.NewTicker(updateInterval)
@@ -105,23 +107,40 @@ func runUpdateQueue(db *gorm.DB, updateInterval time.Duration) {
 	}
 
 	log.Info("Updating feeds for first time since LinCast is running")
-	err = updatePodcasts(db, updateQueue)
+	err = updateAllPodcasts(db, updateQueue)
 	if err != nil {
 		log.WithField("error", errorx.Decorate(err, "Error when trying to update podcasts"))
 	}
 
-	for range ticker.C {
-		log.Info("Updating podcasts' feeds")
-		err := updatePodcasts(db, updateQueue)
-		if err != nil {
-			log.WithField("error", errorx.EnsureStackTrace(err)).Error("Error when trying to update podcasts' feeds")
-		} else {
-			log.Info("Podcasts' feeds updated correctly")
+	for {
+		select {
+		case <-ticker.C:
+			{
+				log.Info("Updating podcasts' feeds")
+				err := updateAllPodcasts(db, updateQueue)
+				if err != nil {
+					log.WithField("error", errorx.EnsureStackTrace(err)).Error("Error when trying to update podcasts' feeds")
+				} else {
+					log.Info("Podcasts' feeds updated correctly")
+				}
+			}
+		case p := <-manualFeedUpd:
+			{
+				j := update.NewJob(p)
+
+				log.WithFields(log.Fields{
+					"podcastFeed":       p.FeedLink,
+					"podcastID":         p.ID,
+					"podcastSubscribed": p.Subscribed,
+				}).Info("Sending podcast to the update queue (manual update)")
+
+				updateQueue.Send(j)
+			}
 		}
 	}
 }
 
-func updatePodcasts(db *gorm.DB, updateQueue *update.UpdateQueue) error {
+func updateAllPodcasts(db *gorm.DB, updateQueue *update.UpdateQueue) error {
 	var subscribedPodcasts []models.Podcast
 	if res := db.Where("subscribed", true).Find(&subscribedPodcasts); res.Error != nil {
 		return errorx.InternalError.Wrap(res.Error, "error trying to get subscribed podcasts")

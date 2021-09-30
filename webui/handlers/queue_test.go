@@ -22,7 +22,7 @@ func TestQueueHandler_GET(t *testing.T) {
 	if err != nil {
 		assert.FailNow(err.Error())
 	}
-	mng := NewManager(db)
+	mng := NewManager(db, make(chan *models.Podcast))
 	method := "GET"
 
 	expectedQueue := []models.QueueEpisode{
@@ -79,7 +79,7 @@ func TestQueueHandler_PUT(t *testing.T) {
 	if err != nil {
 		assert.FailNow(err.Error())
 	}
-	mng := NewManager(db)
+	mng := NewManager(db, make(chan *models.Podcast))
 	method := "PUT"
 
 	expectedQueue := []models.QueueEpisode{
@@ -148,7 +148,7 @@ func TestQueueHandler_DELETE(t *testing.T) {
 	if err != nil {
 		assert.FailNow(err.Error())
 	}
-	mng := NewManager(db)
+	mng := NewManager(db, make(chan *models.Podcast))
 	method := "DELETE"
 
 	queueToStore := []models.QueueEpisode{
@@ -194,7 +194,7 @@ func TestAddToQueueHandler(t *testing.T) {
 	if err != nil {
 		assert.FailNow(err.Error())
 	}
-	mng := NewManager(db)
+	mng := NewManager(db, make(chan *models.Podcast))
 	method := "POST"
 
 	baseQueue := []models.QueueEpisode{
@@ -295,7 +295,7 @@ func TestDelFromQueueHandler(t *testing.T) {
 	if err != nil {
 		assert.FailNow(err.Error())
 	}
-	mng := NewManager(db)
+	mng := NewManager(db, make(chan *models.Podcast))
 	method := http.MethodDelete
 
 	baseQueue := []models.QueueEpisode{
