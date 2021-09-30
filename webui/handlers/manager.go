@@ -8,7 +8,7 @@ import (
 
 type Manager struct {
 	updateChannel chan *models.Podcast
-	db *gorm.DB
+	db            *gorm.DB
 }
 
 // NewManager returns a new Manager. The `Manager` is who provides the access to the handlers. The unique function of
@@ -17,7 +17,7 @@ type Manager struct {
 func NewManager(db *gorm.DB, manualUpdate chan *models.Podcast) *Manager {
 	m := Manager{
 		updateChannel: manualUpdate,
-		db: db,
+		db:            db,
 	}
 
 	return &m
