@@ -1,15 +1,15 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/webui/frontend"
-    schedule:
-      interval: "daily"
-    # Disable version updates for npm dependencies
-    open-pull-requests-limit: 10
-
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
       interval: "daily"
     # Allow up to 10 open pull requests for pip dependencies
     open-pull-requests-limit: 10
+
+  # - package-ecosystem: "npm"
+  #   directory: "/webui/frontend"
+  #   schedule:
+  #     interval: "daily"
+  #   # Disable version updates for npm dependencies
+  #   open-pull-requests-limit: 10
