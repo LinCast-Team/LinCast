@@ -278,7 +278,7 @@ func (m *Manager) GetPodcastHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	err := json.NewEncoder(w).Encode(p)
+	err := json.NewEncoder(w).Encode(&p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
@@ -349,7 +349,7 @@ func (m *Manager) GetEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	err := json.NewEncoder(w).Encode(eps)
+	err := json.NewEncoder(w).Encode(&eps)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
