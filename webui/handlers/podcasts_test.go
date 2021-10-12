@@ -405,13 +405,13 @@ func TestLatestEpisodesHandler(t *testing.T) {
 	to := from.Add(((time.Hour * 24) * 4) + time.Minute) // +1 minute to include the episode of the same day with time 00:00:...
 	toStr := to.Format(dateLayout)
 
-	_ep1Date := from.Add(time.Hour * 24)
-	_ep2Date := from.Add((time.Hour * 24) * 2)
-	_ep3Date := from.Add((time.Hour * 24) * 3)
-	_ep4Date := from.Add((time.Hour * 24) * 4)
-	_ep5Date := from.Add((time.Hour * 24) * 5)
-	_ep6Date := from.Add((time.Hour * 24) * 6)
-	_ep7Date := from.Add((time.Hour * 24) * 7)
+	_ep1Date := from.Add((time.Hour * 24) * 4)
+	_ep2Date := from.Add((time.Hour * 24) * 3)
+	_ep3Date := from.Add((time.Hour * 24) * 2)
+	_ep4Date := from.Add(time.Hour * 24)
+	_ep5Date := from.Add((time.Hour * 24) * 10)
+	_ep6Date := from.Add((time.Hour * 24) * 15)
+	_ep7Date := from.Add((time.Hour * 24) * 20)
 
 	eps := map[string][]models.Episode{
 		"includes": {
