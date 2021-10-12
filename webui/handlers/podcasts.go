@@ -515,3 +515,108 @@ func (m *Manager) EpisodeProgressHandler(w http.ResponseWriter, r *http.Request)
 		}
 	}
 }
+
+func (m *Manager) LatestEpisodesHandler(w http.ResponseWriter, r *http.Request) {
+	const dateLayout = "2006-01-02"
+	var from time.Time
+	var to time.Time
+
+	// Query parameter "from" processing
+	keys, ok := r.URL.Query()["from"]
+	if !ok || len(keys[0]) < 1 {
+		err := "query parameter 'from' is missing"
+
+		http.Error(w, err, http.StatusBadRequest)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"error":      err,
+		}).Error("Request rejected due to absence of the query parameter 'from'")
+
+		return
+	}
+
+	from, err := time.Parse(dateLayout, keys[0])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
+		log.WithFields(log.Fields{
+			"remoteAddr":   r.RemoteAddr,
+			"requestURI":   r.RequestURI,
+			"method":       r.Method,
+			"error":        err.Error(),
+			"queryContent": keys[0],
+		}).Error("The query parameter 'from' can't be parsed")
+
+		return
+	}
+
+	// Query parameter "to" processing
+	keys, ok = r.URL.Query()["to"]
+	if !ok || len(keys[0]) < 1 {
+		err := "query parameter 'to' is missing"
+
+		http.Error(w, err, http.StatusBadRequest)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"error":      err,
+		}).Error("Request rejected due to absence of the query parameter 'to'")
+
+		return
+	}
+
+	to, err = time.Parse(dateLayout, keys[0])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
+		log.WithFields(log.Fields{
+			"remoteAddr":   r.RemoteAddr,
+			"requestURI":   r.RequestURI,
+			"method":       r.Method,
+			"error":        err.Error(),
+			"queryContent": keys[0],
+		}).Error("The query parameter 'to' can't be parsed")
+
+		return
+	}
+
+	var eps []models.Episode
+
+	res := m.db.Where("published BETWEEN ? AND ?", from, to).Order("published DESC").Find(&eps)
+	if res.Error != nil {
+		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"error":      errorx.Decorate(res.Error, "unexpected error when trying to fetch episodes from db"),
+			"fromDate":   from.String(),
+			"toDate":     to.String(),
+		}).Error("Error when trying to get the latest episodes")
+
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	err = json.NewEncoder(w).Encode(&eps)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"requestURI": r.RequestURI,
+			"method":     r.Method,
+			"error":      errorx.EnsureStackTrace(err),
+		}).Error("Error when trying to encode the response to the request")
+
+		return
+	}
+}
