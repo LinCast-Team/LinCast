@@ -567,19 +567,39 @@ func compareEpisodes(expected *[]models.Episode, current *[]models.Episode, t *t
 
 	for i := range *expected {
 		// Check data of type time.Time independently, since it will throw a false positive (metadata diff).
-		if assert.True((*expected)[i].Updated.Equal((*current)[i].Updated), `The field "Updated" of the current episode %d does not match with the original`, i) {
+		if assert.True(
+			(*expected)[i].Updated.Equal((*current)[i].Updated),
+			`The field "Updated" of the current episode %d does not match with the original (expected "%s" - got "%s")`,
+			i,
+			(*expected)[i].Updated.String(),
+			(*current)[i].Updated.String()) {
 			(*current)[i].Updated = (*expected)[i].Updated
 		}
 
-		if assert.True((*expected)[i].Published.Equal((*current)[i].Published), `The field "Published" of the current episode %d does not match with the original`, i) {
+		if assert.True(
+			(*expected)[i].Published.Equal((*current)[i].Published),
+			`The field "Published" of the current episode %d does not match with the original (expected "%s" - got "%s")`,
+			i,
+			(*expected)[i].Published.String(),
+			(*current)[i].Published.String()) {
 			(*current)[i].Published = (*expected)[i].Published
 		}
 
-		if assert.True((*expected)[i].Model.UpdatedAt.Equal((*current)[i].Model.UpdatedAt), `The field "Model.UpdatedAt" of the current episode %d does not match with the original`, i) {
+		if assert.True(
+			(*expected)[i].Model.UpdatedAt.Equal((*current)[i].Model.UpdatedAt),
+			`The field "Model.UpdatedAt" of the current episode %d does not match with the original (expected "%s" - got "%s")`,
+			i,
+			(*expected)[i].Model.UpdatedAt.String(),
+			(*current)[i].Model.UpdatedAt.String()) {
 			(*current)[i].Model.UpdatedAt = (*expected)[i].Model.UpdatedAt
 		}
 
-		if assert.True((*expected)[i].Model.CreatedAt.Equal((*current)[i].Model.CreatedAt), `The field "Model.CreatedAt" of the current episode %d does not match with the original`, i) {
+		if assert.True(
+			(*expected)[i].Model.CreatedAt.Equal((*current)[i].Model.CreatedAt),
+			`The field "Model.CreatedAt" of the current episode %d does not match with the original (expected "%s" - got "%s")`,
+			i,
+			(*expected)[i].Model.CreatedAt.String(),
+			(*current)[i].Model.CreatedAt.String()) {
 			(*current)[i].Model.CreatedAt = (*expected)[i].Model.CreatedAt
 		}
 	}
