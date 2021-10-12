@@ -495,7 +495,6 @@ func TestLatestEpisodesHandler(t *testing.T) {
 		if r.Error != nil {
 			assert.FailNow(r.Error.Error())
 		}
-
 	}
 
 	for i := range eps["excludes"] {
@@ -503,7 +502,6 @@ func TestLatestEpisodesHandler(t *testing.T) {
 		if r.Error != nil {
 			assert.FailNow(r.Error.Error())
 		}
-
 	}
 
 	// This should return a successful response, since the query parameters "from" and "to" have expected values
