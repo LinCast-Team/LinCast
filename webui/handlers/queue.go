@@ -127,7 +127,7 @@ func (m *Manager) QueueHandler(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 
-			err := json.NewEncoder(w).Encode(q)
+			err := json.NewEncoder(w).Encode(&q)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 

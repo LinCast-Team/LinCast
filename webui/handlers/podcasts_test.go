@@ -388,6 +388,143 @@ func TestEpisodeProgressHandler_PUT(t *testing.T) {
 	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"), "Since the response should contain the description of the error, the correct 'Content-Type' headers should be set")
 }
 
+func TestLatestEpisodesHandler(t *testing.T) {
+	assert := assert2.New(t)
+	tempDir := t.TempDir()
+	db, err := database.New(tempDir, "test.db")
+	if err != nil {
+		assert.FailNow(err.Error())
+	}
+	mng := NewManager(db, make(chan *models.Podcast))
+
+	method := "GET"
+
+	dateLayout := "2006-01-02"
+	fromStr := "2021-05-18"
+	from, _ := time.Parse(dateLayout, fromStr)
+	to := from.Add(((time.Hour * 24) * 4) + time.Minute) // +1 minute to include the episode of the same day with time 00:00:...
+	toStr := to.Format(dateLayout)
+
+	_ep1Date := from.Add((time.Hour * 24) * 4)
+	_ep2Date := from.Add((time.Hour * 24) * 3)
+	_ep3Date := from.Add((time.Hour * 24) * 2)
+	_ep4Date := from.Add(time.Hour * 24)
+	_ep5Date := from.Add((time.Hour * 24) * 10)
+	_ep6Date := from.Add((time.Hour * 24) * 15)
+	_ep7Date := from.Add((time.Hour * 24) * 20)
+
+	eps := map[string][]models.Episode{
+		"includes": {
+			{
+				ParentPodcastID: 1,
+				Title:           "Test ep 1",
+				Description:     "The description of the random episode",
+				Link:            "https://some.website.com",
+				AuthorName:      "Martin",
+				GUID:            "1",
+				ImageURL:        "https://some.website.com/foo/bar.png",
+				Published:       _ep1Date,
+			},
+			{
+				ParentPodcastID: 2,
+				Title:           "Test ep 2",
+				Description:     "The description of the random episode",
+				Link:            "https://some.website.com",
+				AuthorName:      "Martin",
+				GUID:            "2",
+				ImageURL:        "https://some.website.com/foo/bar.png",
+				Published:       _ep2Date,
+			},
+			{
+				ParentPodcastID: 2,
+				Title:           "Test ep 3",
+				Description:     "The description of the random episode",
+				Link:            "https://some.website.com",
+				AuthorName:      "Martin",
+				GUID:            "3",
+				ImageURL:        "https://some.website.com/foo/bar.png",
+				Published:       _ep3Date,
+			},
+			{
+				ParentPodcastID: 3,
+				Title:           "Test ep 4",
+				Description:     "The description of the random episode",
+				Link:            "https://some.website.com",
+				AuthorName:      "Martin",
+				GUID:            "4",
+				ImageURL:        "https://some.website.com/foo/bar.png",
+				Published:       _ep4Date,
+			},
+		},
+		"excludes": {
+			{
+				ParentPodcastID: 3,
+				Title:           "Test ep 5",
+				Description:     "The description of the random episode",
+				Link:            "https://some.website.com",
+				AuthorName:      "Martin",
+				GUID:            "5",
+				ImageURL:        "https://some.website.com/foo/bar.png",
+				Published:       _ep5Date,
+			},
+			{
+				ParentPodcastID: 4,
+				Title:           "Test ep 6",
+				Description:     "The description of the random episode",
+				Link:            "https://some.website.com",
+				AuthorName:      "Martin",
+				GUID:            "6",
+				ImageURL:        "https://some.website.com/foo/bar.png",
+				Published:       _ep6Date,
+			},
+			{
+				ParentPodcastID: 5,
+				Title:           "Test ep 7",
+				Description:     "The description of the random episode",
+				Link:            "https://some.website.com",
+				AuthorName:      "Martin",
+				GUID:            "7",
+				ImageURL:        "https://some.website.com/foo/bar.png",
+				Published:       _ep7Date,
+			},
+		},
+	}
+
+	for i := range eps["includes"] {
+		r := db.Save(&eps["includes"][i])
+		if r.Error != nil {
+			assert.FailNow(r.Error.Error())
+		}
+	}
+
+	for i := range eps["excludes"] {
+		r := db.Save(&eps["excludes"][i])
+		if r.Error != nil {
+			assert.FailNow(r.Error.Error())
+		}
+	}
+
+	// This should return a successful response, since the query parameters "from" and "to" have expected values
+	r := testUtils.NewRequest(mng.LatestEpisodesHandler, method, "?from="+fromStr+"&to="+toStr, testUtils.NewBody(t, nil))
+
+	var response []models.Episode
+	err = json.NewDecoder(r.Body).Decode(&response)
+	if err != nil {
+		assert.FailNow(err.Error())
+	}
+
+	expectedEps := eps["includes"]
+
+	assert.Equal(http.StatusOK, r.StatusCode, "If the request is correct, the HTTP status code of the response should be 200 OK")
+	assert.Equal("application/json", r.Header.Get("Content-Type"), "The 'Content-Type' headers should have the content of a JSON response (since we expect a body)")
+	compareEpisodes(&expectedEps, &response, t)
+
+	// On this case, the request should be rejected due to the absence of one of the query parameters
+	r = testUtils.NewRequest(mng.LatestEpisodesHandler, method, "?from="+fromStr, testUtils.NewBody(t, nil))
+	assert.Equal(http.StatusBadRequest, r.StatusCode, "If the request contains does not have one of the required query parameters ('from' or 'to'), it should be rejected with a http status code 400 Bad Request")
+	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"), "Since the response should contain the description of the error, the correct 'Content-Type' headers should be set")
+}
+
 func addPodcastToDB(feedURL string, subscribed bool, db *gorm.DB, t *testing.T) {
 	p, _, err := podcasts.GetPodcastData(feedURL)
 	if err != nil {
@@ -430,19 +567,39 @@ func compareEpisodes(expected *[]models.Episode, current *[]models.Episode, t *t
 
 	for i := range *expected {
 		// Check data of type time.Time independently, since it will throw a false positive (metadata diff).
-		if assert.True((*expected)[i].Updated.Equal((*current)[i].Updated), `The field "Updated" of the current episode %d does not match with the original`, i) {
+		if assert.True(
+			(*expected)[i].Updated.Equal((*current)[i].Updated),
+			`The field "Updated" of the current episode %d does not match with the original (expected "%s" - got "%s")`,
+			i,
+			(*expected)[i].Updated.String(),
+			(*current)[i].Updated.String()) {
 			(*current)[i].Updated = (*expected)[i].Updated
 		}
 
-		if assert.True((*expected)[i].Published.Equal((*current)[i].Published), `The field "Published" of the current episode %d does not match with the original`, i) {
+		if assert.True(
+			(*expected)[i].Published.Equal((*current)[i].Published),
+			`The field "Published" of the current episode %d does not match with the original (expected "%s" - got "%s")`,
+			i,
+			(*expected)[i].Published.String(),
+			(*current)[i].Published.String()) {
 			(*current)[i].Published = (*expected)[i].Published
 		}
 
-		if assert.True((*expected)[i].Model.UpdatedAt.Equal((*current)[i].Model.UpdatedAt), `The field "Model.UpdatedAt" of the current episode %d does not match with the original`, i) {
+		if assert.True(
+			(*expected)[i].Model.UpdatedAt.Equal((*current)[i].Model.UpdatedAt),
+			`The field "Model.UpdatedAt" of the current episode %d does not match with the original (expected "%s" - got "%s")`,
+			i,
+			(*expected)[i].Model.UpdatedAt.String(),
+			(*current)[i].Model.UpdatedAt.String()) {
 			(*current)[i].Model.UpdatedAt = (*expected)[i].Model.UpdatedAt
 		}
 
-		if assert.True((*expected)[i].Model.CreatedAt.Equal((*current)[i].Model.CreatedAt), `The field "Model.CreatedAt" of the current episode %d does not match with the original`, i) {
+		if assert.True(
+			(*expected)[i].Model.CreatedAt.Equal((*current)[i].Model.CreatedAt),
+			`The field "Model.CreatedAt" of the current episode %d does not match with the original (expected "%s" - got "%s")`,
+			i,
+			(*expected)[i].Model.CreatedAt.String(),
+			(*current)[i].Model.CreatedAt.String()) {
 			(*current)[i].Model.CreatedAt = (*expected)[i].Model.CreatedAt
 		}
 	}
