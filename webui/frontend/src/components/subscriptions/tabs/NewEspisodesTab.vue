@@ -24,11 +24,11 @@
 </div>
 </template>
 
-<script>
-import { ref } from 'vue';
+<script lang='ts'>
+import { defineComponent, ref } from 'vue';
 import EpisodeItem from '@/components/library/EpisodeItem.vue';
 
-export default {
+export default defineComponent({
   components: {
     EpisodeItem,
   },
@@ -39,7 +39,7 @@ export default {
       episodes,
     };
   },
-};
+});
 </script>
 
 <style scoped>

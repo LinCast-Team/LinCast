@@ -7,6 +7,7 @@
 
 <script lang='ts'>
 import {
+  defineComponent,
   ref,
   SetupContext,
 } from 'vue';
@@ -15,7 +16,7 @@ interface Data {
   [key: string]: unknown;
 }
 
-export default {
+export default defineComponent({
   emits: [
     'tab-change',
   ],
@@ -32,7 +33,7 @@ export default {
       onTabChange,
     };
   },
-};
+});
 </script>
 
 <style lang='scss' scoped>

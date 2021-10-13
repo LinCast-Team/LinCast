@@ -12,13 +12,14 @@
 </template>
 
 <script lang='ts'>
+import { defineComponent } from 'vue';
 import WorkSignal from '@/components/shared/WorkSignal.vue';
 
-export default {
+export default defineComponent({
   components: {
     WorkSignal,
   },
-};
+});
 </script>
 
 <style lang='scss' scoped>

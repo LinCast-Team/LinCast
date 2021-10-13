@@ -112,8 +112,9 @@
 </div>
 </template>
 
-<script>
+<script lang='ts'>
 import {
+  defineComponent,
   ref,
   computed,
   onMounted,
@@ -123,7 +124,7 @@ import feather from 'feather-icons';
 
 // http://www.ivoox.com/tortulia-209-william-adams-parte-1_mf_60745571_feed_1.mp3
 
-export default {
+export default defineComponent({
   props: {
     audioSrc: {
       type: String,
@@ -156,12 +157,12 @@ export default {
   emits: ['open-request', 'close-request'],
   setup(_, context) {
     const playing = ref(false);
-    const audioElement = ref(null);
-    const currentTime = ref(0);
+    const audioElement = ref<HTMLAudioElement | null>(null);
+    const currentTime = ref<number | undefined>(0);
     const remainingTime = ref(0);
     const currentTimeStr = ref('00:00');
     const remainingTimeStr = ref('00:00');
-    const duration = ref(0);
+    const duration = ref<number | undefined>(0);
 
     const rotateCwIcon = computed(() => feather.icons['rotate-cw'].toSvg({ 'stroke-width': 1.5, class: 'w-8 h-8 md:w-12 md:h-12' }));
     const rotateCcwIcon = computed(() => feather.icons['rotate-ccw'].toSvg({ 'stroke-width': 1.5, class: 'w-8 h-8 md:w-12 md:h-12' }));
@@ -170,21 +171,23 @@ export default {
     const share2Icon = computed(() => feather.icons['share-2'].toSvg({ class: 'mx-6 md:mx-14' }));
     const moreVerticalIcon = computed(() => feather.icons['more-vertical'].toSvg({ class: 'mx-6 md:mx-12' }));
 
-    const secsToMMSS = (secs) => {
-      let minutes = Math.floor(secs / 60);
-      let seconds = Math.floor(secs - (minutes * 60));
+    const secsToMMSS = (secs: number) => {
+      const minutes = Math.floor(secs / 60);
+      const seconds = Math.floor(secs - (minutes * 60));
 
-      if (minutes < 10) {
-        minutes = `0${minutes}`;
-      }
-      if (seconds < 10) {
-        seconds = `0${seconds}`;
+      function c(n: number): string {
+        return n < 10 ? `0${n}` : `${n}`;
       }
 
-      return `${minutes}:${seconds}`;
+      return `${c(minutes)}:${c(seconds)}`;
     };
 
-    const calculatedProgress = computed(() => (currentTime.value * 100) / duration.value);
+    const calculatedProgress = computed((): number | undefined => {
+      if (!currentTime.value || !duration.value) {
+        return 0;
+      }
+      return (currentTime.value * 100) / duration.value;
+    });
 
     const playPause = () => {
       if (audioElement.value == null) {
@@ -201,8 +204,8 @@ export default {
       }
     };
 
-    const skipBackward = (secs) => {
-      if (audioElement.value == null) {
+    const skipBackward = (secs: number) => {
+      if (!audioElement.value || !currentTime.value) {
         return;
       }
 
@@ -215,8 +218,8 @@ export default {
       }
     };
 
-    const skipForward = (secs) => {
-      if (audioElement.value == null) {
+    const skipForward = (secs: number) => {
+      if (!audioElement.value || !duration.value || !currentTime.value) {
         return;
       }
 
@@ -230,16 +233,24 @@ export default {
     };
 
     const updateRemaining = () => {
+      if (!duration.value || !currentTime.value) {
+        return;
+      }
+
       remainingTime.value = Math.floor(duration.value) - Math.floor(currentTime.value);
       remainingTimeStr.value = secsToMMSS(remainingTime.value);
     };
 
     const updateDuration = () => {
-      duration.value = audioElement.value.duration;
+      duration.value = audioElement.value?.duration;
       updateRemaining();
     };
 
     const updateCurrentAndRemaining = () => {
+      if (!currentTime.value || !audioElement.value) {
+        return;
+      }
+
       currentTime.value = audioElement.value.currentTime;
       currentTimeStr.value = secsToMMSS(currentTime.value);
       updateRemaining();
@@ -258,6 +269,10 @@ export default {
     };
 
     onMounted(() => {
+      if (!audioElement.value) {
+        return;
+      }
+
       audioElement.value.addEventListener('durationchange', updateDuration);
       audioElement.value.addEventListener('timeupdate', updateCurrentAndRemaining);
       audioElement.value.addEventListener('play', setPlaying);
@@ -265,6 +280,10 @@ export default {
     });
 
     onBeforeUnmount(() => {
+      if (!audioElement.value) {
+        return;
+      }
+
       audioElement.value.removeEventListener('durationchange', updateDuration);
       audioElement.value.removeEventListener('timeupdate', updateCurrentAndRemaining);
       audioElement.value.removeEventListener('play', setPlaying);
@@ -294,7 +313,7 @@ export default {
       emitCloseEvent,
     };
   },
-};
+});
 </script>
 
 <style lang="scss">

@@ -21,12 +21,12 @@
   </div>
 </template>
 
-<script>
+<script lang='ts'>
+import { defineComponent, computed } from 'vue';
 import feather from 'feather-icons';
-import { computed } from 'vue';
 import lincastLogo from '@/assets/logo/logo_title.png';
 
-export default {
+export default defineComponent({
   setup() {
     const githubIcon = computed(() => feather.icons.github.toSvg({ 'stroke-width': 1.5, class: 'w-6 h-6 mx-1' }));
     const linkIcon = computed(() => feather.icons.link.toSvg({ 'stroke-width': 1.5, class: 'w-6 h-6 mx-1' }));
@@ -39,7 +39,7 @@ export default {
       twitterIcon,
     };
   },
-};
+});
 </script>
 
 <style lang='scss' scoped>

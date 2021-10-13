@@ -7,10 +7,10 @@
 </template>
 
 <script lang='ts'>
-import { computed } from 'vue';
+import { defineComponent, computed } from 'vue';
 import feather from 'feather-icons';
 
-export default {
+export default defineComponent({
   props: {
     text: {
       type: String,
@@ -25,7 +25,7 @@ export default {
       toolIcon,
     };
   },
-};
+});
 </script>
 
 <style lang="scss" scoped>

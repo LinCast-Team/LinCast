@@ -7,15 +7,13 @@
 
 <script lang='ts'>
 import feather from 'feather-icons';
-import {
-  computed,
-} from 'vue';
+import { defineComponent, computed } from 'vue';
 
 interface Data {
   [key: string]: unknown;
 }
 
-export default {
+export default defineComponent({
   props: {
     title: {
       type: String,
@@ -33,7 +31,7 @@ export default {
       icon,
     };
   },
-};
+});
 </script>
 
 <style>

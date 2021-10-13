@@ -7,10 +7,10 @@
 </template>
 
 <script lang='ts'>
-import { computed } from 'vue';
+import { defineComponent, computed } from 'vue';
 import feather from 'feather-icons';
 
-export default {
+export default defineComponent({
   props: {
     title: {
       type: String,
@@ -30,7 +30,7 @@ export default {
       moreIcon,
     };
   },
-};
+});
 </script>
 
 <style lang='scss' scoped>

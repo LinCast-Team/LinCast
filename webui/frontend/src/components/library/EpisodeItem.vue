@@ -23,12 +23,12 @@
   </div>
 </template>
 
-<script>
-import { computed } from 'vue';
+<script lang='ts'>
+import { defineComponent, computed } from 'vue';
 import feather from 'feather-icons';
 import defaultArtwork from '@/assets/resources/default_artwork.svg';
 
-export default {
+export default defineComponent({
   props: {
     imgSrc: {
       type: String,
@@ -67,7 +67,7 @@ export default {
       playIcon,
     };
   },
-};
+});
 </script>
 
 <style lang='scss'>

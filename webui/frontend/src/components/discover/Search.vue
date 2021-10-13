@@ -16,11 +16,16 @@
     </div>
 </template>
 
-<script>
-import { computed, ref, watch } from 'vue';
+<script lang='ts'>
+import {
+  defineComponent,
+  computed,
+  ref,
+  watch,
+} from 'vue';
 import feather from 'feather-icons';
 
-export default {
+export default defineComponent({
   emits: ['search-input', 'search-focus'],
   props: {
     searchMode: {
@@ -38,7 +43,7 @@ export default {
       context.emit('search-input', newVal);
     });
 
-    const onFocusChange = (val) => {
+    const onFocusChange = (val: boolean) => {
       context.emit('search-focus', val);
     };
 
@@ -49,5 +54,5 @@ export default {
       onFocusChange,
     };
   },
-};
+});
 </script>

@@ -10,22 +10,22 @@
 </template>
 
 <script lang="ts">
-// import { ref } from "vue";
+import { defineComponent } from 'vue';
+import defaultIcon from '@/assets/resources/default_artwork.svg';
 
-export default {
+export default defineComponent({
   props: {
     artworkSrc: {
       type: String,
       required: false,
-      default:
-        'http://static-2.ivoox.com/canales/1/5/3/4/7691470744351_XXL.jpg',
+      default: defaultIcon,
     },
     podcastTitle: {
       type: String,
       requied: true,
     },
   },
-};
+});
 </script>>
 
 <style>

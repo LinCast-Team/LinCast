@@ -6,10 +6,11 @@
   </div>
 </template>
 
-<script>
+<script lang='ts'>
+import { defineComponent } from 'vue';
 import defaultArtwork from '@/assets/resources/default_artwork.svg';
 
-export default {
+export default defineComponent({
   props: {
     imgSrc: {
       type: String,
@@ -25,7 +26,7 @@ export default {
       required: true,
     },
   },
-};
+});
 </script>
 
 <style>

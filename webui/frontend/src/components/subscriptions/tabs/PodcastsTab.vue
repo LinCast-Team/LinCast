@@ -15,17 +15,17 @@
   </div>
 </template>
 
-<script>
-import { ref } from 'vue';
+<script lang='ts'>
+import { defineComponent, ref } from 'vue';
 import PodcastItem from '@/components/library/PodcastItem.vue';
-import { getUserSubscriptions } from '@/store/api/subscriptions';
+import { getUserSubscriptions, Podcast } from '@/store/api/subscriptions';
 
-export default {
+export default defineComponent({
   components: {
     'podcast-item': PodcastItem,
   },
   setup() {
-    const podcasts = ref([]);
+    const podcasts = ref(new Array<Podcast>());
 
     getUserSubscriptions()
       .then((res) => {
@@ -39,7 +39,7 @@ export default {
       podcasts,
     };
   },
-};
+});
 </script>
 
 <style scoped>
