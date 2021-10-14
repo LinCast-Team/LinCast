@@ -1,0 +1,7 @@
+enum MutationTypes {
+  SET_SUBSCRIPTIONS = 'SET_SUBSCRIPTIONS',
+  SET_LATEST_EPISODES = 'SET_LATEST_EPISODES',
+  SET_PLAYBACK_INFO = 'SET_PLAYBACK_INFO',
+}
+
+export default MutationTypes;
