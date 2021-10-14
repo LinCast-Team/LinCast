@@ -8,6 +8,7 @@ export type Mutations<S = State> = {
   [MutationTypes.SET_SUBSCRIPTIONS](state: S, payload: Array<Podcast>): void;
   [MutationTypes.SET_LATEST_EPISODES](state: S, payload: Array<Episode>): void;
   [MutationTypes.SET_PLAYBACK_INFO](state: S, payload: PlaybackInfo): void;
+  [MutationTypes.SET_PROGRESS](state: S, payload: number): void;
 }
 
 export const mutations: MutationTree<State> & Mutations = {
@@ -19,5 +20,8 @@ export const mutations: MutationTree<State> & Mutations = {
   },
   [MutationTypes.SET_PLAYBACK_INFO](state, payload: PlaybackInfo) {
     state.playbackInfo = payload;
+  },
+  [MutationTypes.SET_PROGRESS](state, payload: number) {
+    state.playerProgress = payload;
   },
 };
