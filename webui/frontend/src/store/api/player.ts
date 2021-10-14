@@ -40,13 +40,9 @@ export const getEpisodeProgress = async (podcastID: number, episodeID: number): 
     throw new Error(`Request failed with status code ${response.status}`);
   }
 
-  interface ResponseBody {
-    progress: number;
-  }
+  const { progress } = await response.json() as { progress: number };
 
-  const data: ResponseBody = await response.json();
-
-  return data.progress;
+  return progress;
 };
 
 export const updateEpisodeProgress = async (podcastID: number, episodeID: number, newProgress: number) => {
