@@ -105,8 +105,8 @@ export const unsubscribe = async (podcastID: number) => {
   }
 };
 
-export const getLatestEpisodes = async (): Promise<Array<Episode>> => {
-  const response = await fetch('/api/v0/podcasts/latest_eps', {
+export const getLatestEpisodes = async (from: string, to: string): Promise<Array<Episode>> => {
+  const response = await fetch(`/api/v0/podcasts/latest_eps?from=${from}&to=${to}`, {
     method: 'GET',
   });
 
