@@ -1,4 +1,4 @@
-enum ActionType {
+enum ActionTypes {
   GET_SUBSCRIPTIONS = 'GET_SUBSCRIPTIONS',
   GET_LATEST_EPISODES = 'GET_LATEST_EPISODES',
   SET_PLAYBACK_INFO = 'SET_PLAYBACK_INFO',
@@ -7,4 +7,4 @@ enum ActionType {
   GET_PROGRESS = 'GET_PROGRESS',
 }
 
-export default ActionType;
+export default ActionTypes;
