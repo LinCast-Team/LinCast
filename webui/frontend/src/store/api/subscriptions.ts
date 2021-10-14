@@ -104,3 +104,17 @@ export const unsubscribe = async (podcastID: number) => {
     throw new Error(`Request failed with status code ${response.status}`);
   }
 };
+
+export const getLatestEpisodes = async (): Promise<Array<Episode>> => {
+  const response = await fetch('/api/v0/podcasts/latest_eps', {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed with status code ${response.status}`);
+  }
+
+  const data: Array<Episode> = await response.json();
+
+  return data;
+};
