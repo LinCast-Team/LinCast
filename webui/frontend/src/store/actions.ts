@@ -26,7 +26,7 @@ type AugmentedActionContext = {
 
 export interface Actions {
   [ActionTypes.GET_SUBSCRIPTIONS]({ commit }: AugmentedActionContext): Promise<Array<Podcast>>;
-  [ActionTypes.GET_LATEST_EPISODES]({ commit }: AugmentedActionContext): Promise<Array<Episode>>;
+  [ActionTypes.GET_LATEST_EPISODES]({ commit }: AugmentedActionContext, payload: { from: string; to: string }): Promise<Array<Episode>>;
   [ActionTypes.GET_PLAYBACK_INFO]({ commit }: AugmentedActionContext): Promise<PlaybackInfo>;
   [ActionTypes.SET_PLAYBACK_INFO]({ commit }: AugmentedActionContext, payload: PlaybackInfo): Promise<void>;
   [ActionTypes.GET_PROGRESS]({ commit, state }: AugmentedActionContext): Promise<number>;
@@ -40,8 +40,8 @@ export const actions: ActionTree<State, State> & Actions = {
 
     return data;
   },
-  async [ActionTypes.GET_LATEST_EPISODES]({ commit }) {
-    const data = await getLatestEpisodes();
+  async [ActionTypes.GET_LATEST_EPISODES]({ commit }, payload) {
+    const data = await getLatestEpisodes(payload.from, payload.to);
     commit(MutationTypes.SET_LATEST_EPISODES, data);
 
     return data;
