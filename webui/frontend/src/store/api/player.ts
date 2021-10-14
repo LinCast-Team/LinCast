@@ -1,3 +1,7 @@
+/**
+ * Interfaces and functions related with the functionality of the player.
+ */
+
 export interface PlaybackInfo {
   episodeID: string;
   podcastID: number;
@@ -22,6 +26,36 @@ export const updatePlaybackInfo = async (p: PlaybackInfo) => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(p),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed with status code ${response.status}`);
+  }
+};
+
+export const getEpisodeProgress = async (podcastID: number, episodeID: number): Promise<number> => {
+  const response = await fetch(`/api/v0/podcasts/${podcastID}/episodes/${episodeID}/progress`, { method: 'GET' });
+
+  if (!response.ok) {
+    throw new Error(`Request failed with status code ${response.status}`);
+  }
+
+  interface ResponseBody {
+    progress: number;
+  }
+
+  const data: ResponseBody = await response.json();
+
+  return data.progress;
+};
+
+export const updateEpisodeProgress = async (podcastID: number, episodeID: number, newProgress: number) => {
+  const response = await fetch(`/api/v0/podcasts/${podcastID}/episodes/${episodeID}/progress`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ progress: newProgress }),
   });
 
   if (!response.ok) {
