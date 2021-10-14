@@ -1,23 +1,22 @@
-export interface CurrentProgress {
-  progress: number;
+export interface PlaybackInfo {
   episodeID: string;
   podcastID: number;
 }
 
-export const getCurrentProgress = async (): Promise<CurrentProgress> => {
-  const response = await fetch('/api/v0/player/progress', { method: 'GET' });
+export const getPlaybackInfo = async (): Promise<PlaybackInfo> => {
+  const response = await fetch('/api/v0/player/playback_info', { method: 'GET' });
 
   if (!response.ok) {
     throw new Error(`Request failed with status code ${response.status}`);
   }
 
-  const data: CurrentProgress = await response.json();
+  const data: PlaybackInfo = await response.json();
 
   return data;
 };
 
-export const sendCurrentProgress = async (p: CurrentProgress) => {
-  const response = await fetch('/api/v0/player/progress', {
+export const updatePlaybackInfo = async (p: PlaybackInfo) => {
+  const response = await fetch('/api/v0/player/playback_info', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
