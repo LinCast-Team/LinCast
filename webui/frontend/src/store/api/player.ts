@@ -3,8 +3,8 @@
  */
 
 export interface PlaybackInfo {
-  episodeID: string;
   podcastID: number;
+  episodeID: number;
 }
 
 export const getPlaybackInfo = async (): Promise<PlaybackInfo> => {
