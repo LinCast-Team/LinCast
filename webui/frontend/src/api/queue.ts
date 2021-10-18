@@ -2,6 +2,7 @@ import {
   Queue,
   QueueEpisode,
 } from './types';
+import APIBase from './api-base';
 
 class PlayerQueueAPI extends APIBase {
   async getQueue(): Promise<Queue> {

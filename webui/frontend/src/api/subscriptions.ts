@@ -2,6 +2,7 @@ import {
   Podcast,
   Episode,
 } from './types';
+import APIBase from './api-base';
 
 class SubscriptionsAPI extends APIBase {
   async getSubscriptions(): Promise<Array<Podcast>> {

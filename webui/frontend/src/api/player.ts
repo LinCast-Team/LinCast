@@ -1,6 +1,7 @@
 import {
   PlaybackInfo,
 } from './types';
+import APIBase from './api-base';
 
 class PlayerAPI extends APIBase {
   async getPlayerPlaybackInfo(): Promise<PlaybackInfo> {
