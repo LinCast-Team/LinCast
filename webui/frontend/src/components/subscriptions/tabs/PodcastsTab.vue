@@ -18,7 +18,8 @@
 <script lang='ts'>
 import { defineComponent, ref } from 'vue';
 import PodcastItem from '@/components/library/PodcastItem.vue';
-import { getUserSubscriptions, Podcast } from '@/store/api/subscriptions';
+import { SubscriptionsAPI } from '@/api';
+import { Podcast } from '@/api/types';
 
 export default defineComponent({
   components: {
@@ -26,8 +27,9 @@ export default defineComponent({
   },
   setup() {
     const podcasts = ref(new Array<Podcast>());
+    const subsAPI = new SubscriptionsAPI();
 
-    getUserSubscriptions()
+    subsAPI.getSubscriptions()
       .then((res) => {
         podcasts.value = res;
       })

@@ -55,7 +55,7 @@ import Category from '@/components/discover/Category.vue';
 import Search from '@/components/discover/Search.vue';
 import Podcast from '@/components/discover/Podcast.vue';
 import WorkSignal from '@/components/shared/WorkSignal.vue';
-import { subscribe } from '@/store/api/subscriptions';
+import { SubscriptionsAPI } from '@/api';
 
 export default {
   components: {
@@ -67,6 +67,7 @@ export default {
   setup() {
     const searchMode = ref(false);
     const content = ref('');
+    const subsAPI = new SubscriptionsAPI();
 
     const onSearchInput = (input: string) => {
       content.value = input;
@@ -81,7 +82,7 @@ export default {
         return;
       }
 
-      subscribe(content.value)
+      subsAPI.subscribe(content.value)
         .then(() => {
           content.value = '';
         })
