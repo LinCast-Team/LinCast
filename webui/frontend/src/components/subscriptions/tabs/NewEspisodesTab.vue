@@ -1,6 +1,6 @@
 <template>
 <div class="flex px-2 py-5">
-  <div v-if="episodes.length > 0">
+  <div v-if="episodes?.length > 0">
     <h2 class="p-2 pt-3 text-secondary-dt">Today</h2>
     <!-- FIX Some props do not match with the fields of the object -->
     <episode-item
