@@ -1,8 +1,8 @@
 <template>
   <div class="flex p-2 py-5 justify-between">
-    <div v-if="podcasts.length > 0">
+    <div v-if="subscriptions?.length > 0">
       <podcast-item
-        v-for="p in podcasts"
+        v-for="p in subscriptions"
         :key="p.id"
         :title="p.title"
         :author="p.authorName"
@@ -16,7 +16,11 @@
 </template>
 
 <script lang='ts'>
-import { defineComponent, ref } from 'vue';
+import {
+  defineComponent,
+  inject,
+  ref,
+} from 'vue';
 import PodcastItem from '@/components/library/PodcastItem.vue';
 import { SubscriptionsAPI } from '@/api';
 import { Podcast } from '@/api/types';
@@ -26,19 +30,19 @@ export default defineComponent({
     'podcast-item': PodcastItem,
   },
   setup() {
-    const podcasts = ref(new Array<Podcast>());
+    const subscriptions = inject('subscriptions', ref<Podcast[]>());
     const subsAPI = new SubscriptionsAPI();
 
     subsAPI.getSubscriptions()
       .then((res) => {
-        podcasts.value = res;
+        subscriptions.value = res;
       })
       .catch((err) => {
         console.error(err);
       });
 
     return {
-      podcasts,
+      subscriptions,
     };
   },
 });
