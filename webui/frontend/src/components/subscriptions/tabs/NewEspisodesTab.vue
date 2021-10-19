@@ -25,18 +25,52 @@
 </template>
 
 <script lang='ts'>
-import { defineComponent, ref } from 'vue';
+import {
+  defineComponent,
+  ref,
+  inject,
+  Ref,
+} from 'vue';
+import dayjs from 'dayjs';
 import EpisodeItem from '@/components/library/EpisodeItem.vue';
+import { SubscriptionsAPI } from '@/api';
+import { Episode, Podcast } from '../../../api/types';
 
 export default defineComponent({
   components: {
     EpisodeItem,
   },
   setup() {
-    const episodes = ref([]);
+    const episodes = ref<Episode[]>();
+    const subscriptions = inject<Ref<Podcast[]>>('subscriptions');
+    const subsAPI = new SubscriptionsAPI();
+
+    const currentDate = dayjs();
+    const previousDate = currentDate.subtract(30, 'day');
+
+    subsAPI.getLatestSubscriptionsEpisodes(previousDate.format('YYYY-MM-DD'), currentDate.format('YYYY-MM-DD'))
+      .then((eps) => {
+        episodes.value = eps;
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+
+    const getPodcastName = (id: number): string | undefined => {
+      const podcast = subscriptions?.value.find((p) => p.id === id);
+      return podcast?.title;
+    };
+
+    const getPodcastArtwork = (id: number): string | undefined => {
+      const podcast = subscriptions?.value.find((p) => p.id === id);
+      return podcast?.imageURL;
+    };
 
     return {
       episodes,
+      subscriptions,
+      getPodcastName,
+      getPodcastArtwork,
     };
   },
 });
