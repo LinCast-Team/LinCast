@@ -12,6 +12,7 @@
     "animejs": "^3.2.1",
     "autoprefixer": "^9.8.8",
     "core-js": "^3.18.2",
+    "dayjs": "^1.10.7",
     "feather-icons": "^4.28.0",
     "postcss": "^7.0.39",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.0.2",
