@@ -21,10 +21,12 @@
 </template>
 
 <script lang='ts'>
-import { ref } from 'vue';
+import { ref, provide } from 'vue';
 import anime from 'animejs';
 import Player from '@/components/Player.vue';
 import NavigationBar from '@/components/NavigationBar.vue';
+import { Podcast } from './api/types';
+import { SubscriptionsAPI } from './api';
 
 export default {
   components: {
@@ -32,6 +34,18 @@ export default {
     NavigationBar,
   },
   setup() {
+    const subscriptions = ref<Podcast[]>();
+    const subsAPI = new SubscriptionsAPI();
+    provide('subscriptions', subscriptions);
+
+    subsAPI.getSubscriptions()
+      .then((subs) => {
+        subscriptions.value = subs;
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+
     const playerExpanded = ref(false);
 
     const openPlayer = () => {
@@ -89,6 +103,7 @@ export default {
       playerExpanded,
       openPlayer,
       closePlayer,
+      subscriptions,
     };
   },
 };
