@@ -11,12 +11,13 @@
 
   <img
     id="player__podcast-artwork"
-    :src="artworkSrc"
+    :src="artworkSrc || defaultArtwork"
     :alt="podcastTitle + '\'s artwork'"
     class="self-center rounded-md shadow-lg"
     :class="{
       'w-60 h-60 md:w-64 md:h-64 mx-auto': expanded,
       'w-12 h-12 flex-none m-4': !expanded,
+      'opacity-40': !artworkSrc,
     }"
   >
 
@@ -121,33 +122,13 @@ import {
   onBeforeUnmount,
 } from 'vue';
 import feather from 'feather-icons';
-
-// http://www.ivoox.com/tortulia-209-william-adams-parte-1_mf_60745571_feed_1.mp3
+import { PlayerAPI, SubscriptionsAPI } from '@/api';
+import { playerEventBus, PlayerEvents } from '@/events/player';
+import { Episode } from '@/api/types';
+import defaultArtwork from '@/assets/resources/default_artwork.svg';
 
 export default defineComponent({
   props: {
-    audioSrc: {
-      type: String,
-      required: true,
-    },
-    artworkSrc: {
-      type: String,
-      required: false,
-      default: '',
-    },
-    podcastTitle: {
-      type: String,
-      required: true,
-    },
-    episodeTitle: {
-      type: String,
-      required: true,
-    },
-    episodeDescription: {
-      type: String,
-      required: false,
-      default: '',
-    },
     expanded: {
       type: Boolean,
       required: false,
@@ -156,6 +137,9 @@ export default defineComponent({
   },
   emits: ['open-request', 'close-request'],
   setup(_, context) {
+    const playerAPI = new PlayerAPI();
+    const subsAPI = new SubscriptionsAPI();
+
     const playing = ref(false);
     const audioElement = ref<HTMLAudioElement | null>(null);
     const currentTime = ref<number | undefined>(0);
@@ -163,6 +147,36 @@ export default defineComponent({
     const currentTimeStr = ref('00:00');
     const remainingTimeStr = ref('00:00');
     const duration = ref<number | undefined>(0);
+
+    const audioSrc = ref('');
+    const artworkSrc = ref('');
+    const podcastTitle = ref('');
+    const episodeTitle = ref('');
+    const episodeDescription = ref('');
+
+    // Here we handle the request to play episodes
+    playerEventBus.on(PlayerEvents.PLAY_REQUEST, async (e) => {
+      const episode = e as Episode;
+
+      audioSrc.value = episode.enclosureURL;
+      episodeTitle.value = episode.title;
+      episodeDescription.value = episode.description;
+
+      const podcast = await subsAPI.getPodcastDetails(episode.parentPodcastID);
+
+      if (podcast === undefined) {
+        throw new Error(`Unable to find the podcast with ID '${episode.id}'`);
+      }
+
+      artworkSrc.value = podcast.imageURL;
+      podcastTitle.value = podcast.title;
+
+      if (audioElement.value == null) {
+        throw new Error('Unable to load the audio because the referenced audio element is null');
+      }
+
+      audioElement.value.load();
+    });
 
     const rotateCwIcon = computed(() => feather.icons['rotate-cw'].toSvg({ 'stroke-width': 1.5, class: 'w-8 h-8 md:w-12 md:h-12' }));
     const rotateCcwIcon = computed(() => feather.icons['rotate-ccw'].toSvg({ 'stroke-width': 1.5, class: 'w-8 h-8 md:w-12 md:h-12' }));
@@ -311,6 +325,14 @@ export default defineComponent({
       skipBackward,
       emitOpenEvent,
       emitCloseEvent,
+
+      // Player elements
+      audioSrc,
+      artworkSrc,
+      podcastTitle,
+      episodeTitle,
+      episodeDescription,
+      defaultArtwork,
     };
   },
 });
