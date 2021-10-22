@@ -192,8 +192,10 @@ export default defineComponent({
 
       if (!playing.value) {
         audioElement.value.play();
+        playerEventBus.emit(PlayerEvents.PLAYBACK_STATUS_CHANGE, 'play');
       } else {
         audioElement.value.pause();
+        playerEventBus.emit(PlayerEvents.PLAYBACK_STATUS_CHANGE, 'pause');
       }
     };
 
@@ -264,6 +266,8 @@ export default defineComponent({
       currentTime.value = audioElement.value.currentTime;
       currentTimeStr.value = secsToMMSS(currentTime.value);
       updateRemaining();
+
+      playerEventBus.emit(PlayerEvents.PROGRESS_CHANGE, currentTime.value);
     };
 
     const setPlaying = () => { playing.value = true; };
@@ -278,6 +282,25 @@ export default defineComponent({
       context.emit('close-request');
     };
 
+    const onEnded = (_event: Event) => {
+      artworkSrc.value = '';
+      podcastTitle.value = '';
+      episodeTitle.value = '';
+      audioSrc.value = '';
+      episodeDescription.value = '';
+
+      if (audioElement.value == null) {
+        throw new Error('audioElement null, unable to reset the audio src');
+      }
+
+      audioElement.value.load();
+      playerEventBus.emit(PlayerEvents.PLAYBACK_END);
+    };
+
+    const onError = (err: ErrorEvent) => {
+      playerEventBus.emit(PlayerEvents.ERROR, err.message);
+    };
+
     onMounted(() => {
       if (!audioElement.value) {
         return;
@@ -287,6 +310,8 @@ export default defineComponent({
       audioElement.value.addEventListener('timeupdate', updateCurrentAndRemaining);
       audioElement.value.addEventListener('play', setPlaying);
       audioElement.value.addEventListener('pause', setPaused);
+      audioElement.value.addEventListener('ended', onEnded);
+      audioElement.value.addEventListener('error', onError);
     });
 
     onBeforeUnmount(() => {
@@ -298,6 +323,8 @@ export default defineComponent({
       audioElement.value.removeEventListener('timeupdate', updateCurrentAndRemaining);
       audioElement.value.removeEventListener('play', setPlaying);
       audioElement.value.removeEventListener('pause', setPaused);
+      audioElement.value.removeEventListener('ended', onEnded);
+      audioElement.value.removeEventListener('error', onError);
     });
 
     return {
