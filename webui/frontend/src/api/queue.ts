@@ -11,7 +11,8 @@ class PlayerQueueAPI extends APIBase {
     });
 
     if (!response.ok) {
-      throw new Error(`Request failed with status code ${response.status}`);
+      const body = await response.text();
+      throw new Error(`Request failed with status code ${response.status}: ${body}`);
     }
 
     const data: Queue = await response.json();
@@ -25,7 +26,8 @@ class PlayerQueueAPI extends APIBase {
     });
 
     if (!response.ok) {
-      throw new Error(`Request failed with status code ${response.status}`);
+      const body = await response.text();
+      throw new Error(`Request failed with status code ${response.status}: ${body}`);
     }
   }
 
@@ -39,7 +41,8 @@ class PlayerQueueAPI extends APIBase {
     });
 
     if (!response.ok) {
-      throw new Error(`Request failed with status code ${response.status}`);
+      const body = await response.text();
+      throw new Error(`Request failed with status code ${response.status}: ${body}`);
     }
   }
 
@@ -53,7 +56,8 @@ class PlayerQueueAPI extends APIBase {
     });
 
     if (!response.ok) {
-      throw new Error(`Request failed with status code ${response.status}`);
+      const body = await response.text();
+      throw new Error(`Request failed with status code ${response.status}: ${body}`);
     }
   }
 
@@ -63,7 +67,8 @@ class PlayerQueueAPI extends APIBase {
     });
 
     if (!response.ok) {
-      throw new Error(`Request failed with status code ${response.status}`);
+      const body = await response.text();
+      throw new Error(`Request failed with status code ${response.status}: ${body}`);
     }
   }
 }

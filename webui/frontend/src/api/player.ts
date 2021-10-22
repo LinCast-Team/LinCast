@@ -8,7 +8,8 @@ class PlayerAPI extends APIBase {
     const response = await fetch(`${this.BASE_PATH}/player/playback_info`, { method: 'GET' });
 
     if (!response.ok) {
-      throw new Error(`Request failed with status code ${response.status}`);
+      const body = await response.text();
+      throw new Error(`Request failed with status code ${response.status}: ${body}`);
     }
 
     const data: PlaybackInfo = await response.json();
@@ -26,7 +27,8 @@ class PlayerAPI extends APIBase {
     });
 
     if (!response.ok) {
-      throw new Error(`Request failed with status code ${response.status}`);
+      const body = await response.text();
+      throw new Error(`Request failed with status code ${response.status}: ${body}`);
     }
   }
 
@@ -34,7 +36,8 @@ class PlayerAPI extends APIBase {
     const response = await fetch(`${this.BASE_PATH}/podcasts/${podcastID}/episodes/${episodeID}/progress`, { method: 'GET' });
 
     if (!response.ok) {
-      throw new Error(`Request failed with status code ${response.status}`);
+      const body = await response.text();
+      throw new Error(`Request failed with status code ${response.status}: ${body}`);
     }
 
     const { progress } = await response.json() as { progress: number };
@@ -52,7 +55,8 @@ class PlayerAPI extends APIBase {
     });
 
     if (!response.ok) {
-      throw new Error(`Request failed with status code ${response.status}`);
+      const body = await response.text();
+      throw new Error(`Request failed with status code ${response.status}: ${body}`);
     }
   }
 }
