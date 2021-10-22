@@ -51,7 +51,7 @@ class PlayerAPI extends APIBase {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ progress: newProgress }),
+      body: JSON.stringify({ progress: Math.round(newProgress) }),
     });
 
     if (!response.ok) {
