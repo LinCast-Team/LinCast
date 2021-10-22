@@ -140,6 +140,8 @@ export default defineComponent({
     const playerAPI = new PlayerAPI();
     const subsAPI = new SubscriptionsAPI();
 
+    const currentEpisode = ref<Episode | null>(null);
+
     const playing = ref(false);
     const audioElement = ref<HTMLAudioElement | null>(null);
     const currentTime = ref(0);
@@ -154,9 +156,8 @@ export default defineComponent({
     const episodeTitle = ref('');
     const episodeDescription = ref('');
 
-    // Here we handle the request to play episodes
-    playerEventBus.on(PlayerEvents.PLAY_REQUEST, async (e) => {
-      const episode = e as Episode;
+    const playEpisode = async (episode: Episode) => {
+      currentEpisode.value = episode;
 
       audioSrc.value = episode.enclosureURL;
       episodeTitle.value = episode.title;
@@ -165,7 +166,7 @@ export default defineComponent({
       const podcast = await subsAPI.getPodcastDetails(episode.parentPodcastID);
 
       if (podcast === undefined) {
-        throw new Error(`Unable to find the podcast with ID '${episode.id}'`);
+        throw new Error(`Unable to find the podcast with ID '${episode.ID}'`);
       }
 
       artworkSrc.value = podcast.imageURL;
@@ -176,6 +177,14 @@ export default defineComponent({
       }
 
       audioElement.value.load();
+      audioElement.value.currentTime = episode.currentProgress;
+    };
+
+    // Here we handle the request to play episodes
+    playerEventBus.on(PlayerEvents.PLAY_REQUEST, async (e) => {
+      const episode = e as Episode;
+
+      await playEpisode(episode);
     });
 
     const rotateCwIcon = computed(() => feather.icons['rotate-cw'].toSvg({ 'stroke-width': 1.5, class: 'w-8 h-8 md:w-12 md:h-12' }));
@@ -263,6 +272,15 @@ export default defineComponent({
         throw new Error('audioElement null, unable to update the duration and remaining time of the playback');
       }
 
+      if (currentEpisode.value == null) {
+        throw new Error('The variable that contains the episode that is being played shouldn\'t be null');
+      }
+
+      playerAPI.updateEpisodeProgress(currentEpisode.value.parentPodcastID, currentEpisode.value.ID, currentTime.value)
+        .catch((err) => {
+          throw err;
+        });
+
       currentTime.value = audioElement.value.currentTime;
       currentTimeStr.value = secsToMMSS(currentTime.value);
       updateRemaining();
@@ -288,6 +306,9 @@ export default defineComponent({
       episodeTitle.value = '';
       audioSrc.value = '';
       episodeDescription.value = '';
+      currentEpisode.value = null;
+
+      // TODO send a request to set the episode as played.
 
       if (audioElement.value == null) {
         throw new Error('audioElement null, unable to reset the audio src');
@@ -299,9 +320,10 @@ export default defineComponent({
 
     const onError = (err: ErrorEvent) => {
       playerEventBus.emit(PlayerEvents.ERROR, err.message);
+      throw err;
     };
 
-    onMounted(() => {
+    onMounted(async () => {
       if (!audioElement.value) {
         return;
       }
@@ -312,6 +334,19 @@ export default defineComponent({
       audioElement.value.addEventListener('pause', setPaused);
       audioElement.value.addEventListener('ended', onEnded);
       audioElement.value.addEventListener('error', onError);
+
+      // Restore the status of the player
+      const playbackInfo = await playerAPI.getPlayerPlaybackInfo();
+
+      // TODO use the endpoint that returns details about a specific episode (depends of https://github.com/LinCast-Team/LinCast/issues/182)
+      const podcastEpisodes = await subsAPI.getEpisodes(playbackInfo.podcastID);
+      const episode = podcastEpisodes.find((e) => e.ID === playbackInfo.episodeID);
+
+      if (episode == null) {
+        throw new Error('Episode to be played not found');
+      }
+
+      await playEpisode(episode);
     });
 
     onBeforeUnmount(() => {
