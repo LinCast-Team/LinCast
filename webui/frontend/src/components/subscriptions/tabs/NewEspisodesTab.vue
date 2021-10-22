@@ -50,7 +50,7 @@ export default defineComponent({
         episodes.value = eps;
       })
       .catch((err) => {
-        console.error(err);
+        throw err;
       });
 
     const getPodcastName = (id: number): string | undefined => {
