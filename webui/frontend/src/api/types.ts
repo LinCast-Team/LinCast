@@ -36,7 +36,7 @@ export interface Episode {
   published: Date;
   updated: Date;
   played: boolean;
-  currentProgress: Date;
+  currentProgress: number;
 }
 
 export interface PlaybackInfo {
