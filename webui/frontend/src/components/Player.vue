@@ -11,12 +11,13 @@
 
   <img
     id="player__podcast-artwork"
-    :src="artworkSrc"
+    :src="artworkSrc || defaultArtwork"
     :alt="podcastTitle + '\'s artwork'"
     class="self-center rounded-md shadow-lg"
     :class="{
       'w-60 h-60 md:w-64 md:h-64 mx-auto': expanded,
       'w-12 h-12 flex-none m-4': !expanded,
+      'opacity-40': !artworkSrc,
     }"
   >
 
@@ -121,33 +122,13 @@ import {
   onBeforeUnmount,
 } from 'vue';
 import feather from 'feather-icons';
-
-// http://www.ivoox.com/tortulia-209-william-adams-parte-1_mf_60745571_feed_1.mp3
+import { PlayerAPI, SubscriptionsAPI } from '@/api';
+import { playerEventBus, PlayerEvents } from '@/events/player';
+import { Episode } from '@/api/types';
+import defaultArtwork from '@/assets/resources/default_artwork.svg';
 
 export default defineComponent({
   props: {
-    audioSrc: {
-      type: String,
-      required: true,
-    },
-    artworkSrc: {
-      type: String,
-      required: false,
-      default: '',
-    },
-    podcastTitle: {
-      type: String,
-      required: true,
-    },
-    episodeTitle: {
-      type: String,
-      required: true,
-    },
-    episodeDescription: {
-      type: String,
-      required: false,
-      default: '',
-    },
     expanded: {
       type: Boolean,
       required: false,
@@ -156,13 +137,55 @@ export default defineComponent({
   },
   emits: ['open-request', 'close-request'],
   setup(_, context) {
+    const playerAPI = new PlayerAPI();
+    const subsAPI = new SubscriptionsAPI();
+
+    const currentEpisode = ref<Episode | null>(null);
+
     const playing = ref(false);
     const audioElement = ref<HTMLAudioElement | null>(null);
-    const currentTime = ref<number | undefined>(0);
+    const currentTime = ref(0);
     const remainingTime = ref(0);
     const currentTimeStr = ref('00:00');
     const remainingTimeStr = ref('00:00');
-    const duration = ref<number | undefined>(0);
+    const duration = ref(0);
+
+    const audioSrc = ref('');
+    const artworkSrc = ref('');
+    const podcastTitle = ref('');
+    const episodeTitle = ref('');
+    const episodeDescription = ref('');
+
+    const playEpisode = async (episode: Episode) => {
+      currentEpisode.value = episode;
+
+      audioSrc.value = episode.enclosureURL;
+      episodeTitle.value = episode.title;
+      episodeDescription.value = episode.description;
+
+      const podcast = await subsAPI.getPodcastDetails(episode.parentPodcastID);
+
+      if (podcast === undefined) {
+        throw new Error(`Unable to find the podcast with ID '${episode.ID}'`);
+      }
+
+      artworkSrc.value = podcast.imageURL;
+      podcastTitle.value = podcast.title;
+
+      if (audioElement.value == null) {
+        throw new Error('Unable to load the audio because the referenced audio element is null');
+      }
+
+      audioElement.value.load();
+      audioElement.value.currentTime = episode.currentProgress;
+    };
+
+    // Here we handle the request to play episodes
+    playerEventBus.on(PlayerEvents.PLAY_REQUEST, async (e) => {
+      const episode = e as Episode;
+
+      await playEpisode(episode);
+    });
 
     const rotateCwIcon = computed(() => feather.icons['rotate-cw'].toSvg({ 'stroke-width': 1.5, class: 'w-8 h-8 md:w-12 md:h-12' }));
     const rotateCcwIcon = computed(() => feather.icons['rotate-ccw'].toSvg({ 'stroke-width': 1.5, class: 'w-8 h-8 md:w-12 md:h-12' }));
@@ -171,42 +194,23 @@ export default defineComponent({
     const share2Icon = computed(() => feather.icons['share-2'].toSvg({ class: 'mx-6 md:mx-14' }));
     const moreVerticalIcon = computed(() => feather.icons['more-vertical'].toSvg({ class: 'mx-6 md:mx-12' }));
 
-    const secsToMMSS = (secs: number) => {
-      const minutes = Math.floor(secs / 60);
-      const seconds = Math.floor(secs - (minutes * 60));
-
-      function c(n: number): string {
-        return n < 10 ? `0${n}` : `${n}`;
-      }
-
-      return `${c(minutes)}:${c(seconds)}`;
-    };
-
-    const calculatedProgress = computed((): number | undefined => {
-      if (!currentTime.value || !duration.value) {
-        return 0;
-      }
-      return (currentTime.value * 100) / duration.value;
-    });
-
     const playPause = () => {
       if (audioElement.value == null) {
-        console.log('AudioElement null');
-        return;
+        throw new Error('audioElement null, unable to resume/pause the reproduction');
       }
 
       if (!playing.value) {
-        console.log('Play clicked');
         audioElement.value.play();
+        playerEventBus.emit(PlayerEvents.PLAYBACK_STATUS_CHANGE, 'play');
       } else {
-        console.log('Pause clicked');
         audioElement.value.pause();
+        playerEventBus.emit(PlayerEvents.PLAYBACK_STATUS_CHANGE, 'pause');
       }
     };
 
     const skipBackward = (secs: number) => {
-      if (!audioElement.value || !currentTime.value) {
-        return;
+      if (audioElement.value == null) {
+        throw new Error('audioElement null, unable to skip backward');
       }
 
       if (currentTime.value <= secs) {
@@ -219,8 +223,8 @@ export default defineComponent({
     };
 
     const skipForward = (secs: number) => {
-      if (!audioElement.value || !duration.value || !currentTime.value) {
-        return;
+      if (audioElement.value == null) {
+        throw new Error('audioElement null, unable to skip forward');
       }
 
       if ((currentTime.value + secs) >= duration.value) {
@@ -232,9 +236,22 @@ export default defineComponent({
       }
     };
 
+    const secsToMMSS = (secs: number) => {
+      const minutes = Math.floor(secs / 60);
+      const seconds = Math.floor(secs - (minutes * 60));
+
+      function c(n: number): string {
+        return n < 10 ? `0${n}` : `${n}`;
+      }
+
+      return `${c(minutes)}:${c(seconds)}`;
+    };
+
+    const calculatedProgress = computed((): number => (currentTime.value * 100) / duration.value);
+
     const updateRemaining = () => {
-      if (!duration.value || !currentTime.value) {
-        return;
+      if (audioElement.value == null) {
+        throw new Error('audioElement null, unable to update the remaining time of the playback');
       }
 
       remainingTime.value = Math.floor(duration.value) - Math.floor(currentTime.value);
@@ -242,18 +259,33 @@ export default defineComponent({
     };
 
     const updateDuration = () => {
-      duration.value = audioElement.value?.duration;
+      if (audioElement.value == null) {
+        throw new Error('audioElement null, unable to update the duration of the playback');
+      }
+
+      duration.value = audioElement.value.duration;
       updateRemaining();
     };
 
     const updateCurrentAndRemaining = () => {
-      if (!currentTime.value || !audioElement.value) {
-        return;
+      if (audioElement.value == null) {
+        throw new Error('audioElement null, unable to update the duration and remaining time of the playback');
       }
+
+      if (currentEpisode.value == null) {
+        throw new Error('The variable that contains the episode that is being played shouldn\'t be null');
+      }
+
+      playerAPI.updateEpisodeProgress(currentEpisode.value.parentPodcastID, currentEpisode.value.ID, currentTime.value)
+        .catch((err) => {
+          throw err;
+        });
 
       currentTime.value = audioElement.value.currentTime;
       currentTimeStr.value = secsToMMSS(currentTime.value);
       updateRemaining();
+
+      playerEventBus.emit(PlayerEvents.PROGRESS_CHANGE, currentTime.value);
     };
 
     const setPlaying = () => { playing.value = true; };
@@ -268,7 +300,30 @@ export default defineComponent({
       context.emit('close-request');
     };
 
-    onMounted(() => {
+    const onEnded = (_event: Event) => {
+      artworkSrc.value = '';
+      podcastTitle.value = '';
+      episodeTitle.value = '';
+      audioSrc.value = '';
+      episodeDescription.value = '';
+      currentEpisode.value = null;
+
+      // TODO send a request to set the episode as played.
+
+      if (audioElement.value == null) {
+        throw new Error('audioElement null, unable to reset the audio src');
+      }
+
+      audioElement.value.load();
+      playerEventBus.emit(PlayerEvents.PLAYBACK_END);
+    };
+
+    const onError = (err: ErrorEvent) => {
+      playerEventBus.emit(PlayerEvents.ERROR, err.message);
+      throw err;
+    };
+
+    onMounted(async () => {
       if (!audioElement.value) {
         return;
       }
@@ -277,6 +332,21 @@ export default defineComponent({
       audioElement.value.addEventListener('timeupdate', updateCurrentAndRemaining);
       audioElement.value.addEventListener('play', setPlaying);
       audioElement.value.addEventListener('pause', setPaused);
+      audioElement.value.addEventListener('ended', onEnded);
+      audioElement.value.addEventListener('error', onError);
+
+      // Restore the status of the player
+      const playbackInfo = await playerAPI.getPlayerPlaybackInfo();
+
+      // TODO use the endpoint that returns details about a specific episode (depends of https://github.com/LinCast-Team/LinCast/issues/182)
+      const podcastEpisodes = await subsAPI.getEpisodes(playbackInfo.podcastID);
+      const episode = podcastEpisodes.find((e) => e.ID === playbackInfo.episodeID);
+
+      if (episode == null) {
+        throw new Error('Episode to be played not found');
+      }
+
+      await playEpisode(episode);
     });
 
     onBeforeUnmount(() => {
@@ -288,6 +358,8 @@ export default defineComponent({
       audioElement.value.removeEventListener('timeupdate', updateCurrentAndRemaining);
       audioElement.value.removeEventListener('play', setPlaying);
       audioElement.value.removeEventListener('pause', setPaused);
+      audioElement.value.removeEventListener('ended', onEnded);
+      audioElement.value.removeEventListener('error', onError);
     });
 
     return {
@@ -311,6 +383,14 @@ export default defineComponent({
       skipBackward,
       emitOpenEvent,
       emitCloseEvent,
+
+      // Player elements
+      audioSrc,
+      artworkSrc,
+      podcastTitle,
+      episodeTitle,
+      episodeDescription,
+      defaultArtwork,
     };
   },
 });

@@ -50,16 +50,16 @@ export default defineComponent({
         episodes.value = eps;
       })
       .catch((err) => {
-        console.error(err);
+        throw err;
       });
 
     const getPodcastName = (id: number): string | undefined => {
-      const podcast = subscriptions?.value.find((p) => p.id === id);
+      const podcast = subscriptions?.value.find((p) => p.ID === id);
       return podcast?.title;
     };
 
     const getPodcastArtwork = (id: number): string | undefined => {
-      const podcast = subscriptions?.value.find((p) => p.id === id);
+      const podcast = subscriptions?.value.find((p) => p.ID === id);
       return podcast?.imageURL;
     };
 

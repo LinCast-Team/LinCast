@@ -11,7 +11,8 @@ class SubscriptionsAPI extends APIBase {
     });
 
     if (!response.ok) {
-      throw new Error(`Request failed with status code ${response.status}`);
+      const body = await response.text();
+      throw new Error(`Request failed with status code ${response.status}: ${body}`);
     }
 
     const data: Array<Podcast> = await response.json();
@@ -25,7 +26,8 @@ class SubscriptionsAPI extends APIBase {
     });
 
     if (!response.ok) {
-      throw new Error(`Request failed with status code ${response.status}`);
+      const body = await response.text();
+      throw new Error(`Request failed with status code ${response.status}: ${body}`);
     }
 
     const data: Podcast = await response.json();
@@ -39,7 +41,8 @@ class SubscriptionsAPI extends APIBase {
     });
 
     if (!response.ok) {
-      throw new Error(`Request failed with status code ${response.status}`);
+      const body = await response.text();
+      throw new Error(`Request failed with status code ${response.status}: ${body}`);
     }
 
     const data: Array<Episode> = await response.json();
@@ -57,7 +60,8 @@ class SubscriptionsAPI extends APIBase {
     });
 
     if (!response.ok) {
-      throw new Error(`Request failed with status code ${response.status}`);
+      const body = await response.text();
+      throw new Error(`Request failed with status code ${response.status}: ${body}`);
     }
   }
 
@@ -67,7 +71,8 @@ class SubscriptionsAPI extends APIBase {
     });
 
     if (!response.ok) {
-      throw new Error(`Request failed with status code ${response.status}`);
+      const body = await response.text();
+      throw new Error(`Request failed with status code ${response.status}: ${body}`);
     }
   }
 
@@ -77,7 +82,8 @@ class SubscriptionsAPI extends APIBase {
     });
 
     if (!response.ok) {
-      throw new Error(`Request failed with status code ${response.status}`);
+      const body = await response.text();
+      throw new Error(`Request failed with status code ${response.status}: ${body}`);
     }
 
     const data: Array<Episode> = await response.json();
