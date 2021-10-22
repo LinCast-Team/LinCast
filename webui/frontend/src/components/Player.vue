@@ -142,11 +142,11 @@ export default defineComponent({
 
     const playing = ref(false);
     const audioElement = ref<HTMLAudioElement | null>(null);
-    const currentTime = ref<number | undefined>(0);
+    const currentTime = ref(0);
     const remainingTime = ref(0);
     const currentTimeStr = ref('00:00');
     const remainingTimeStr = ref('00:00');
-    const duration = ref<number | undefined>(0);
+    const duration = ref(0);
 
     const audioSrc = ref('');
     const artworkSrc = ref('');
@@ -185,42 +185,21 @@ export default defineComponent({
     const share2Icon = computed(() => feather.icons['share-2'].toSvg({ class: 'mx-6 md:mx-14' }));
     const moreVerticalIcon = computed(() => feather.icons['more-vertical'].toSvg({ class: 'mx-6 md:mx-12' }));
 
-    const secsToMMSS = (secs: number) => {
-      const minutes = Math.floor(secs / 60);
-      const seconds = Math.floor(secs - (minutes * 60));
-
-      function c(n: number): string {
-        return n < 10 ? `0${n}` : `${n}`;
-      }
-
-      return `${c(minutes)}:${c(seconds)}`;
-    };
-
-    const calculatedProgress = computed((): number | undefined => {
-      if (!currentTime.value || !duration.value) {
-        return 0;
-      }
-      return (currentTime.value * 100) / duration.value;
-    });
-
     const playPause = () => {
       if (audioElement.value == null) {
-        console.log('AudioElement null');
-        return;
+        throw new Error('audioElement null, unable to resume/pause the reproduction');
       }
 
       if (!playing.value) {
-        console.log('Play clicked');
         audioElement.value.play();
       } else {
-        console.log('Pause clicked');
         audioElement.value.pause();
       }
     };
 
     const skipBackward = (secs: number) => {
-      if (!audioElement.value || !currentTime.value) {
-        return;
+      if (audioElement.value == null) {
+        throw new Error('audioElement null, unable to skip backward');
       }
 
       if (currentTime.value <= secs) {
@@ -233,8 +212,8 @@ export default defineComponent({
     };
 
     const skipForward = (secs: number) => {
-      if (!audioElement.value || !duration.value || !currentTime.value) {
-        return;
+      if (audioElement.value == null) {
+        throw new Error('audioElement null, unable to skip forward');
       }
 
       if ((currentTime.value + secs) >= duration.value) {
@@ -246,9 +225,22 @@ export default defineComponent({
       }
     };
 
+    const secsToMMSS = (secs: number) => {
+      const minutes = Math.floor(secs / 60);
+      const seconds = Math.floor(secs - (minutes * 60));
+
+      function c(n: number): string {
+        return n < 10 ? `0${n}` : `${n}`;
+      }
+
+      return `${c(minutes)}:${c(seconds)}`;
+    };
+
+    const calculatedProgress = computed((): number => (currentTime.value * 100) / duration.value);
+
     const updateRemaining = () => {
-      if (!duration.value || !currentTime.value) {
-        return;
+      if (audioElement.value == null) {
+        throw new Error('audioElement null, unable to update the remaining time of the playback');
       }
 
       remainingTime.value = Math.floor(duration.value) - Math.floor(currentTime.value);
@@ -256,13 +248,17 @@ export default defineComponent({
     };
 
     const updateDuration = () => {
-      duration.value = audioElement.value?.duration;
+      if (audioElement.value == null) {
+        throw new Error('audioElement null, unable to update the duration of the playback');
+      }
+
+      duration.value = audioElement.value.duration;
       updateRemaining();
     };
 
     const updateCurrentAndRemaining = () => {
-      if (!currentTime.value || !audioElement.value) {
-        return;
+      if (audioElement.value == null) {
+        throw new Error('audioElement null, unable to update the duration and remaining time of the playback');
       }
 
       currentTime.value = audioElement.value.currentTime;
