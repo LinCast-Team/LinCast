@@ -1,4 +1,7 @@
-enum PlayerEvents {
+import mitt from 'mitt';
+
+export enum PlayerEvents {
+  PLAY_REQUEST = 'PLAYER/PLAY_REQUEST',
   PLAYBACK_STATUS_CHANGE = 'PLAYER/PLAYBACK_STATUS_CHANGE',
   PLAYBACK_END = 'PLAYER/PLAYBACK_END',
   PLAYBACK_START = 'PLAYER/PLAYBACK_START',
@@ -7,4 +10,4 @@ enum PlayerEvents {
   ERROR = 'PLAYER/ERROR',
 }
 
-export default PlayerEvents;
+export const playerEventBus = mitt();
