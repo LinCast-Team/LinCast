@@ -1,5 +1,5 @@
 export interface Podcast {
-  id: number;
+  ID: number;
   subscribed: boolean;
   authorName: string;
   authorEmail: string;
@@ -19,7 +19,7 @@ export interface Podcast {
 }
 
 export interface Episode {
-  id: number;
+  ID: number;
   parentPodcastID: number;
   title: string;
   description: string;
