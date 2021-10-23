@@ -49,7 +49,7 @@
   </div>
 </template>
 <script lang='ts'>
-import { ref, computed } from 'vue';
+import { ref, computed, defineComponent } from 'vue';
 import feather from 'feather-icons';
 import Category from '@/components/discover/Category.vue';
 import Search from '@/components/discover/Search.vue';
@@ -57,7 +57,7 @@ import Podcast from '@/components/discover/Podcast.vue';
 import WorkSignal from '@/components/shared/WorkSignal.vue';
 import { SubscriptionsAPI } from '@/api';
 
-export default {
+export default defineComponent({
   components: {
     Category,
     Search,
@@ -101,7 +101,7 @@ export default {
       smileIcon,
     };
   },
-};
+});
 </script>
 <style lang="scss">
 @import '@/assets/css/_palette.scss';
