@@ -107,7 +107,7 @@
       <div v-html="skipForwardIcon"></div>
     </button>
   </div>
-  <div id="player__episode-description" v-if="episodeDescription !== ''" v-show="expanded" class="m-4 p-2 rounded-xl text-primary-dt bg-secondary-dt">
+  <div id="player__episode-description" v-if="episodeDescription !== ''" v-show="expanded" class="m-4 p-2 rounded-xl text-primary-dt bg-secondary-dt text-left">
     {{ episodeDescription }}
   </div>
 </div>
