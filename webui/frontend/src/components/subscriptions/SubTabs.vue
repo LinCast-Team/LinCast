@@ -1,5 +1,5 @@
 <template>
-   <div class="flex justify-evenly border-b-2 border-gray-700 w-100 h-100">
+   <div class="flex justify-evenly sticky pt-3 top-0 border-b-2 border-gray-700 w-100 h-100">
       <button @click="onTabChange('PodcastsTab')" class="text-secondary-dt w-28 h-8" :class="{ 'activeTab':activeTab === 'PodcastsTab' }">Podcasts</button>
       <button @click="onTabChange('NewEpisodesTab')" class="text-secondary-dt w-28 h-8" :class="{ 'activeTab':activeTab === 'NewEpisodesTab' }">New Episodes</button>
     </div>
@@ -38,6 +38,10 @@ export default defineComponent({
 
 <style lang='scss' scoped>
 @import "@/assets/css/_palette.scss";
+
+div {
+  background-color: $bg-primary;
+}
 
 .activeTab {
   color: $primary-accent;

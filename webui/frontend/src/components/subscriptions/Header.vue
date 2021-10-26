@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-row justify-between m-2 p-2">
+  <div class="flex flex-row justify-between py-2 px-4">
     <span @click="$router.go(-1)" v-html="backIcon"></span>
     <h2 class="text-primary-dt text-xl font-semibold">{{ title }}</h2>
     <span v-html="moreIcon"></span>

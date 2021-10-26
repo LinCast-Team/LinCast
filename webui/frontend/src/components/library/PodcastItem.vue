@@ -1,9 +1,9 @@
 <template>
-  <div class="flex flex-col p-0.5">
-      <img :src="imgSrc" :alt="title + '\'s artwork'" class="rounded-md w-28 h-28 mb-1">
+  <li class="flex flex-col w-28 p-1 text-center float-left place-self-center">
+      <img :src="imgSrc" :alt="title + '\'s artwork'" class="rounded-md w-24 h-24 m-1 self-center">
       <h1 class="truncate text-primary-dt">{{ title }}</h1>
       <h3 class="truncate text-secondary-dt text-sm">{{ author }}</h3>
-  </div>
+  </li>
 </template>
 
 <script lang='ts'>
