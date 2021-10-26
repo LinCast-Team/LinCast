@@ -6,13 +6,14 @@
 </template>
 
 <script lang="ts">
+import { defineComponent } from 'vue';
 import SubscriptionsPreview from '@/components/home/SubscriptionsPreview.vue';
 import ForYou from '@/components/home/ForYou.vue';
 
-export default {
+export default defineComponent({
   components: {
     SubscriptionsPreview,
     ForYou,
   },
-};
+});
 </script>

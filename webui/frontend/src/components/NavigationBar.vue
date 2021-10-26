@@ -6,11 +6,11 @@
   </div>
 </template>
 
-<script>
-import { computed } from 'vue';
+<script lang='ts'>
+import { defineComponent, computed } from 'vue';
 import feather from 'feather-icons';
 
-export default {
+export default defineComponent({
   setup() {
     const homeIcon = computed(() => feather.icons.home.toSvg({ class: '' }));
     const searchIcon = computed(() => feather.icons.search.toSvg({ class: '' }));
@@ -22,7 +22,7 @@ export default {
       bookmarkIcon,
     };
   },
-};
+});
 </script>
 
 <style lang="scss" scoped>

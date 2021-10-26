@@ -7,10 +7,11 @@
         </div>
     </div>
 </template>
-<script>
+<script lang='ts'>
+import { defineComponent } from 'vue';
 import defaultIcon from '@/assets/resources/default_artwork.svg';
 
-export default {
+export default defineComponent({
   props: {
     title: {
       type: String,
@@ -26,10 +27,7 @@ export default {
       default: defaultIcon,
     },
   },
-  setup() {
-    return {};
-  },
-};
+});
 </script>
 
 <style>

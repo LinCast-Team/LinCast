@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col w-full py-3 px-4">
+  <li class="flex flex-col w-full py-3 px-4">
       <div class="flex justify-between">
         <div class="flex">
           <img :src="imgSrc" :alt="title + '\'s artwork'" class="rounded-md w-12 h-12 self-center">
@@ -20,15 +20,15 @@
         </div>
         <a class="flex align-middle py-0.5 px-2.5 border rounded-2xl play-btn" href="#">Play<div class="ml-1 self-center" v-html="playIcon"></div></a>
       </div>
-  </div>
+  </li>
 </template>
 
-<script>
-import { computed } from 'vue';
+<script lang='ts'>
+import { defineComponent, computed } from 'vue';
 import feather from 'feather-icons';
 import defaultArtwork from '@/assets/resources/default_artwork.svg';
 
-export default {
+export default defineComponent({
   props: {
     imgSrc: {
       type: String,
@@ -67,7 +67,7 @@ export default {
       playIcon,
     };
   },
-};
+});
 </script>
 
 <style lang='scss'>

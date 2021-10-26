@@ -7,12 +7,7 @@
   <div id="player-container" class="fixed bottom-0 right-0 left-0 flex flex-col">
     <player
       id="player"
-      :audioSrc="'http://www.ivoox.com/tortulia-209-william-adams-parte-1_mf_60745571_feed_1.mp3'"
-      :artworkSrc="'https://picsum.photos/1200'"
-      :podcastTitle="'La tortulia podcast'"
-      :episodeTitle="'India vs China'"
       :expanded="playerExpanded"
-      :episodeDescription="'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam porttitor vitae velit ac rutrum. Etiam vitae ligula ac dui vestibulum dapibus. Sed fringilla nunc et volutpat euismod. Nullam suscipit, augue non mattis porttitor, magna mauris vehicula velit, ut tristique lacus arcu eu odio. Phasellus mauris nunc, ultricies sit amet leo at, suscipit sagittis metus. In condimentum nulla tristique, eleifend felis eget, dapibus tellus. Fusce tincidunt, turpis non euismod varius, nulla justo congue lectus, et vestibulum dolor purus tincidunt leo. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam iaculis vitae arcu sed rutrum. Donec elementum tempus cursus. Duis eu nisl pharetra, venenatis velit vitae, porttitor lectus. Nullam euismod imperdiet condimentum.'"
       @openRequest="openPlayer"
       @closeRequest="closePlayer"
     />
@@ -21,10 +16,12 @@
 </template>
 
 <script lang='ts'>
-import { ref } from 'vue';
+import { ref, provide } from 'vue';
 import anime from 'animejs';
 import Player from '@/components/Player.vue';
 import NavigationBar from '@/components/NavigationBar.vue';
+import { Podcast } from './api/types';
+import { SubscriptionsAPI } from './api';
 
 export default {
   components: {
@@ -32,9 +29,23 @@ export default {
     NavigationBar,
   },
   setup() {
+    const subscriptions = ref<Podcast[]>();
+    const subsAPI = new SubscriptionsAPI();
+    provide('subscriptions', subscriptions);
+
+    subsAPI.getSubscriptions()
+      .then((subs) => {
+        subscriptions.value = subs;
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+
     const playerExpanded = ref(false);
 
     const openPlayer = () => {
+      console.log('Player open request launched');
+
       const tl = anime.timeline({
         targets: '#player-container',
         easing: 'easeOutExpo',
@@ -89,6 +100,7 @@ export default {
       playerExpanded,
       openPlayer,
       closePlayer,
+      subscriptions,
     };
   },
 };
