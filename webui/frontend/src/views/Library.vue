@@ -5,12 +5,12 @@
         <h3 class="text-primary-dt text-xl font-semibold">Recently</h3>
         <div v-html="settingsIcon"></div>
       </div>
-      <div class="flex flex-row my-2 overflow-x-auto">
+      <div v-if="recentPodcasts" class="flex flex-row my-2 overflow-x-auto">
         <recent-podcast
-          v-for="rp in recentPodcasts"
-          :title="rp.title"
-          :key="rp.key"
-          imgSrc='https://picsum.photos/600'
+          v-for="p in recentPodcasts"
+          :title="p.title"
+          :key="p.ID"
+          :imgSrc='p.imageURL'
         />
       </div>
       <div class="w-full bg-gray-500 opacity-25" style="height: 1px"></div>
@@ -26,27 +26,52 @@
 </template>
 
 <script lang='ts'>
-import { ref, computed } from 'vue';
+import {
+  ref,
+  computed,
+  defineComponent,
+} from 'vue';
 import feather from 'feather-icons';
+import dayjs from 'dayjs';
 import Item from '@/components/library/Item.vue';
 import RecentPodcast from '@/components/library/RecentPodcast.vue';
 import LinCastInfo from '@/components/library/LinCastInfo.vue';
+import { SubscriptionsAPI } from '@/api';
+import { Podcast } from '@/api/types';
 
-export default {
+export default defineComponent({
   components: {
     Item,
     RecentPodcast,
     'lincast-info': LinCastInfo,
   },
   setup() {
-    const recentPodcasts = ref([
-      { title: 'Sample Podcast 1', key: 11 },
-      { title: 'Sample Podcast 2', key: 12 },
-      { title: 'Sample Podcast 3', key: 13 },
-      { title: 'Sample Podcast 4', key: 14 },
-      { title: 'Sample Podcast 5', key: 15 },
-      { title: 'Sample Podcast 6', key: 16 },
-    ]);
+    const subsAPI = new SubscriptionsAPI();
+    const recentPodcasts = ref(new Array<Podcast>());
+
+    const setRecentPodcasts = async () => {
+      const currentDate = dayjs();
+      const previousDate = currentDate.subtract(30, 'day');
+
+      const subscriptions = await subsAPI.getSubscriptions();
+      const latestEps = await subsAPI.getLatestSubscriptionsEpisodes(previousDate.format('YYYY-MM-DD'), currentDate.format('YYYY-MM-DD'));
+      const podcasts: Podcast[] = [];
+
+      latestEps.forEach((ep) => {
+        let parentPodcast = podcasts.find((p) => p.ID === ep.parentPodcastID);
+
+        if (parentPodcast == null) {
+          parentPodcast = subscriptions.find((p) => p.ID === ep.parentPodcastID);
+          if (parentPodcast) {
+            podcasts.push(parentPodcast);
+          }
+        }
+      });
+
+      recentPodcasts.value = podcasts;
+    };
+
+    setRecentPodcasts();
 
     const settingsIcon = computed(() => feather.icons.settings.toSvg({ 'stroke-width': 1.5, class: 'text-secondary-dt w-7 h-7 mx-4' }));
 
@@ -55,7 +80,7 @@ export default {
       settingsIcon,
     };
   },
-};
+});
 </script>
 
 <style>

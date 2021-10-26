@@ -10,13 +10,13 @@
 </template>
 
 <script lang='ts'>
-import { ref } from 'vue';
+import { ref, defineComponent } from 'vue';
 import LCHeader from '@/components/subscriptions/Header.vue';
 import SubTabs from '@/components/subscriptions/SubTabs.vue';
 import PodcastsTab from '../components/subscriptions/tabs/PodcastsTab.vue';
 import NewEpisodesTab from '../components/subscriptions/tabs/NewEspisodesTab.vue';
 
-export default {
+export default defineComponent({
   components: {
     'lc-header': LCHeader,
     SubTabs,
@@ -29,7 +29,7 @@ export default {
       activeTab,
     };
   },
-};
+});
 </script>
 
 <style lang='scss' scoped>
