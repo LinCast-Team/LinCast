@@ -1,25 +1,25 @@
 <template>
-  <li class="flex flex-col w-full py-3 px-4">
-      <div class="flex justify-between">
-        <div class="flex">
-          <img :src="imgSrc" :alt="title + '\'s artwork'" class="rounded-md w-12 h-12 self-center">
-          <div class="ml-3">
-            <h1 class="truncate text-primary-dt text-xl">{{ title }}</h1>
-            <h2 class="truncate text-secondary-dt">{{ author }}</h2>
-          </div>
+  <li class="flex flex-col py-3 px-4">
+    <div class="flex justify-between">
+      <div class="flex">
+        <img :src="imgSrc" :alt="title + '\'s artwork'" class="rounded-md w-12 h-12 self-center">
+        <div class="ml-3">
+          <h1 class="truncate text-primary-dt text-xl">{{ title }}</h1>
+          <h2 class="truncate text-secondary-dt">{{ author }}</h2>
         </div>
-        <p class="truncate text-secondary-dt mt-1 text-sm">{{ duration }}</p>
       </div>
-      <p class="truncate text-primary-dt my-3">{{ resume }}</p>
-      <div class="flex justify-between">
-        <div class="flex space-x-2">
-          <div v-html="bookmarkIcon"></div>
-          <div v-html="checkIcon"></div>
-          <div v-html="arrowdowncircleIcon"></div>
-          <div v-html="moreverticalIcon"></div>
-        </div>
-        <a class="flex align-middle py-0.5 px-2.5 border rounded-2xl play-btn" href="#">Play<div class="ml-1 self-center" v-html="playIcon"></div></a>
+      <p class="truncate text-secondary-dt mt-1 text-sm">{{ duration }}</p>
+    </div>
+    <p class="truncate text-primary-dt my-3">{{ resume }}</p>
+    <div class="flex justify-between">
+      <div class="flex space-x-2">
+        <div v-html="bookmarkIcon"></div>
+        <div v-html="checkIcon"></div>
+        <div v-html="arrowdowncircleIcon"></div>
+        <div v-html="moreverticalIcon"></div>
       </div>
+      <a class="flex align-middle py-0.5 px-2.5 border rounded-2xl play-btn" href="#">Play<div class="ml-1 self-center" v-html="playIcon"></div></a>
+    </div>
   </li>
 </template>
 
