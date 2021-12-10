@@ -2,9 +2,9 @@
   <li class="flex flex-col py-3 px-4">
     <div class="flex">
       <img :src="imgSrc" :alt="title + '\'s artwork'" class="rounded-md w-14 h-14 self-center">
-      <div class="ml-3 truncate">
-        <h1 class="text-primary-dt text-xl">{{ title }}</h1>
-        <h2 class="text-secondary-dt">{{ author }}</h2>
+      <div class="ml-3 w-4/5" style="">
+        <h1 class="truncate text-primary-dt text-xl">{{ title }}</h1>
+        <h2 class="truncate text-secondary-dt">{{ author }}</h2>
       </div>
     </div>
     <p class="truncate text-primary-dt my-3">{{ resume }}</p>
