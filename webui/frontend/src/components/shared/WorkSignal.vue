@@ -29,8 +29,6 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import "@/assets/css/_palette.scss";
-
 .muted {
   color: rgba($color: $text-secondary, $alpha: 0.3)
 }

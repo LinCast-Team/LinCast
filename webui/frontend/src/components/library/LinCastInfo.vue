@@ -43,8 +43,6 @@ export default defineComponent({
 </script>
 
 <style lang='scss' scoped>
-@import "@/assets/css/_palette.scss";
-
 .btn-bg {
   background-color: $primary-accent;
 }

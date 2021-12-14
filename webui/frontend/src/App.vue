@@ -107,8 +107,6 @@ export default {
 </script>
 
 <style lang="scss">
-@import "@/assets/css/_palette.scss";
-
 body {
   @apply bg-primary-dt;
 }
@@ -117,43 +115,5 @@ body {
   background-color: #222529
 }
 
-// ========== Color Palette Dark Theme ===========
 
-// Background color
-
-.bg-primary-dt {
-  background-color: $bg-primary;
-}
-
-.bg-secondary-dt {
-  background-color: $bg-secondary;
-}
-
-.bg-accent-dt {
-  background-color: $bg-accent;
-}
-
-// Text color
-
-.text-primary-dt {
-  color: $text-primary;
-}
-
-.text-secondary-dt {
-  color: $text-secondary;
-}
-
-// Primary Accent
-
-.primary-accent {
-  color: $primary-accent;
-}
-
-.secondary-accent {
-  color: $secondary-accent;
-}
-
-.link {
-  color: $primary-accent;
-}
 </style>

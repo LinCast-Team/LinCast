@@ -69,8 +69,6 @@ export default defineComponent({
 </script>
 
 <style lang='scss'>
-@import "@/assets/css/_palette.scss";
-
 .play-btn {
   background-color: $primary-accent;
   color: $text-primary;
