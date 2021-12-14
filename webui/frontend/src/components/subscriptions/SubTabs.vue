@@ -37,8 +37,6 @@ export default defineComponent({
 </script>
 
 <style lang='scss' scoped>
-@import "@/assets/css/_palette.scss";
-
 div {
   background-color: $bg-primary;
 }
