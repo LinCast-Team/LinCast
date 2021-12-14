@@ -13,8 +13,8 @@ const Template = (args, { argTypes }) => ({
 
 export const FirstStory = Template.bind({});
 FirstStory.args = {
-  title: '',
-  author: '',
-  resume: '',
-  duration: '',
+  title: 'Hello world!',
+  author: 'Martin',
+  resume: 'Something really, really boring.',
+  duration: '01:12:24',
 };

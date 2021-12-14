@@ -20,7 +20,19 @@ module.exports = {
     config.module.rules.push(
       {
         test: /\.scss$/,
-        use: ['style-loader', 'css-loader', 'sass-loader'],
+        use: [
+          'style-loader',
+          'css-loader',
+          {
+            loader: 'sass-loader',
+            options: { /* Styles automatically applied on stories */
+              prependData: `
+              @import "@/assets/css/_palette.scss";
+              @import "@/assets/css/styles.scss";
+              `
+            }
+          }
+        ],
         include: path.resolve(__dirname, '../'),
       },
       // {
