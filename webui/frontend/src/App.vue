@@ -114,6 +114,4 @@ body {
 .bg-real-gray {
   background-color: #222529
 }
-
-
 </style>
