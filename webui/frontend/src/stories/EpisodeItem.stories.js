@@ -5,10 +5,12 @@ export default {
   component: EpisodeItem,
 };
 
-const Template = (args, { argTypes }) => ({
+const Template = (args) => ({
   components: { EpisodeItem },
-  props: Object.keys(argTypes),
-  template: '<EpisodeItem v-bind="$props"/>',
+  setup() {
+    return { args };
+  },
+  template: '<EpisodeItem v-bind="args"/>',
 });
 
 export const FirstStory = Template.bind({});
