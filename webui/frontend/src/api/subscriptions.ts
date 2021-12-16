@@ -21,7 +21,7 @@ class SubscriptionsAPI extends APIBase {
   }
 
   async getPodcastDetails(podcastID: number): Promise<Podcast> {
-    const response = await fetch(`${this.BASE_PATH}/podcasts/${podcastID}/details`, {
+    const response = await fetch(`${this.BASE_PATH}/podcasts/${podcastID}`, {
       method: 'GET',
     });
 
