@@ -1,4 +1,4 @@
-package strings
+package safe
 
 import (
 	"strings"
