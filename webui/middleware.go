@@ -9,7 +9,8 @@ import (
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.WithFields(log.Fields{
-			"URI":           r.RequestURI,
+			"URLpath":       r.URL.Path,
+			"userAgent":     r.UserAgent(),
 			"method":        r.Method,
 			"remoteAddr":    r.RemoteAddr,
 			"tls":           r.TLS != nil,
