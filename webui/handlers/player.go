@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"lincast/models"
+	"lincast/utils/safe"
 
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
@@ -28,7 +29,7 @@ func (m *Manager) PlayerPlaybackInfoHandler(w http.ResponseWriter, r *http.Reque
 
 					log.WithFields(log.Fields{
 						"remoteAddr": r.RemoteAddr,
-						"requestURI": r.RequestURI,
+						"requestURI": safe.Sanitize(r.RequestURI),
 						"method":     r.Method,
 					}).Warning("The client requested the player's playback info, but no episode is being played")
 
@@ -39,7 +40,7 @@ func (m *Manager) PlayerPlaybackInfoHandler(w http.ResponseWriter, r *http.Reque
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
-					"requestURI": r.RequestURI,
+					"requestURI": safe.Sanitize(r.RequestURI),
 					"method":     r.Method,
 					"error":      errorx.EnsureStackTrace(res.Error),
 				}).Error("Error when trying to get the player's playback info")
@@ -55,7 +56,7 @@ func (m *Manager) PlayerPlaybackInfoHandler(w http.ResponseWriter, r *http.Reque
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
-					"requestURI": r.RequestURI,
+					"requestURI": safe.Sanitize(r.RequestURI),
 					"method":     r.Method,
 					"error":      errorx.EnsureStackTrace(err),
 				}).Error("Error when trying to decode the request's body")
@@ -71,7 +72,7 @@ func (m *Manager) PlayerPlaybackInfoHandler(w http.ResponseWriter, r *http.Reque
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
-					"requestURI": r.RequestURI,
+					"requestURI": safe.Sanitize(r.RequestURI),
 					"method":     r.Method,
 					"error":      errorx.EnsureStackTrace(err),
 				}).Error("Error when trying to decode the request's body")
@@ -87,7 +88,7 @@ func (m *Manager) PlayerPlaybackInfoHandler(w http.ResponseWriter, r *http.Reque
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
-					"requestURI": r.RequestURI,
+					"requestURI": safe.Sanitize(r.RequestURI),
 					"method":     r.Method,
 					"error":      errorx.EnsureStackTrace(err),
 				}).Error("Error when trying to update the player's playback info")
@@ -104,7 +105,7 @@ func (m *Manager) PlayerPlaybackInfoHandler(w http.ResponseWriter, r *http.Reque
 
 					log.WithFields(log.Fields{
 						"remoteAddr": r.RemoteAddr,
-						"requestURI": r.RequestURI,
+						"requestURI": safe.Sanitize(r.RequestURI),
 						"method":     r.Method,
 						"error":      errorx.EnsureStackTrace(err),
 					}).Error("Error when trying to add the first entry of the table that stores the player's playback info")

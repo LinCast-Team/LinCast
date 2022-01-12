@@ -27,7 +27,7 @@ func (m *Manager) QueueHandler(w http.ResponseWriter, r *http.Request) {
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
-					"requestURI": r.RequestURI,
+					"requestURI": safe.Sanitize(r.RequestURI),
 					"method":     r.Method,
 					"error":      errorx.EnsureStackTrace(err),
 				}).Error("Error when trying to decode the request's body")
@@ -44,7 +44,7 @@ func (m *Manager) QueueHandler(w http.ResponseWriter, r *http.Request) {
 
 						log.WithFields(log.Fields{
 							"remoteAddr": r.RemoteAddr,
-							"requestURI": r.RequestURI,
+							"requestURI": safe.Sanitize(r.RequestURI),
 							"method":     r.Method,
 						}).Error("The user tried to use a repeated position. Request rejected")
 
@@ -61,7 +61,7 @@ func (m *Manager) QueueHandler(w http.ResponseWriter, r *http.Request) {
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
-					"requestURI": r.RequestURI,
+					"requestURI": safe.Sanitize(r.RequestURI),
 					"method":     r.Method,
 					"error":      errorx.EnsureStackTrace(err),
 				}).Error("Error when trying to clean the queue (before set the new content)")
@@ -75,7 +75,7 @@ func (m *Manager) QueueHandler(w http.ResponseWriter, r *http.Request) {
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
-					"requestURI": r.RequestURI,
+					"requestURI": safe.Sanitize(r.RequestURI),
 					"method":     r.Method,
 					"error":      errorx.EnsureStackTrace(err),
 				}).Error("Error when trying to set the new queue")
@@ -95,7 +95,7 @@ func (m *Manager) QueueHandler(w http.ResponseWriter, r *http.Request) {
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
-					"requestURI": r.RequestURI,
+					"requestURI": safe.Sanitize(r.RequestURI),
 					"method":     r.Method,
 					"error":      errorx.EnsureStackTrace(res.Error),
 				}).Error("Error when trying to clean the queue")
@@ -116,7 +116,7 @@ func (m *Manager) QueueHandler(w http.ResponseWriter, r *http.Request) {
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
-					"requestURI": r.RequestURI,
+					"requestURI": safe.Sanitize(r.RequestURI),
 					"method":     r.Method,
 					"error":      errorx.EnsureStackTrace(res.Error),
 				}).Error("Error when trying to fetch the queue from the database")
@@ -133,7 +133,7 @@ func (m *Manager) QueueHandler(w http.ResponseWriter, r *http.Request) {
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
-					"requestURI": r.RequestURI,
+					"requestURI": safe.Sanitize(r.RequestURI),
 					"method":     r.Method,
 					"error":      errorx.EnsureStackTrace(err),
 				}).Error("Error when trying to encode the response")
@@ -153,7 +153,7 @@ func (m *Manager) AddToQueueHandler(w http.ResponseWriter, r *http.Request) {
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": r.RequestURI,
+			"requestURI": safe.Sanitize(r.RequestURI),
 			"method":     r.Method,
 			"error":      err.Error(),
 		}).Error("Request rejected due to absence of parameter 'append'")
@@ -169,7 +169,7 @@ func (m *Manager) AddToQueueHandler(w http.ResponseWriter, r *http.Request) {
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": r.RequestURI,
+			"requestURI": safe.Sanitize(r.RequestURI),
 			"method":     r.Method,
 			"error":      errorx.EnsureStackTrace(err),
 		}).Error("The variable 'append' is not present in the request or the value cannot be parsed")
@@ -185,7 +185,7 @@ func (m *Manager) AddToQueueHandler(w http.ResponseWriter, r *http.Request) {
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": r.RequestURI,
+			"requestURI": safe.Sanitize(r.RequestURI),
 			"method":     r.Method,
 			"error":      errorx.EnsureStackTrace(err),
 		}).Error("Error when trying to decode the request's body")
@@ -208,9 +208,8 @@ func (m *Manager) AddToQueueHandler(w http.ResponseWriter, r *http.Request) {
 
 					log.WithFields(log.Fields{
 						"remoteAddr": r.RemoteAddr,
-						"requestURI": r.RequestURI,
+						"requestURI": safe.Sanitize(r.RequestURI),
 						"method":     r.Method,
-						"appendStr":  appendStr,
 						"error":      errorx.EnsureStackTrace(res.Error),
 					}).Error("Error when trying to add an episode to the queue")
 
@@ -226,9 +225,8 @@ func (m *Manager) AddToQueueHandler(w http.ResponseWriter, r *http.Request) {
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
-					"requestURI": r.RequestURI,
+					"requestURI": safe.Sanitize(r.RequestURI),
 					"method":     r.Method,
-					"appendStr":  appendStr,
 					"error":      errorx.EnsureStackTrace(res.Error),
 				}).Error("Error when trying to find the last position in the queue")
 
@@ -244,9 +242,8 @@ func (m *Manager) AddToQueueHandler(w http.ResponseWriter, r *http.Request) {
 
 			log.WithFields(log.Fields{
 				"remoteAddr": r.RemoteAddr,
-				"requestURI": r.RequestURI,
+				"requestURI": safe.Sanitize(r.RequestURI),
 				"method":     r.Method,
-				"appendStr":  appendStr,
 				"error":      errorx.EnsureStackTrace(res.Error),
 			}).Error("Error when trying to add an episode to the queue")
 
@@ -260,9 +257,8 @@ func (m *Manager) AddToQueueHandler(w http.ResponseWriter, r *http.Request) {
 
 			log.WithFields(log.Fields{
 				"remoteAddr": r.RemoteAddr,
-				"requestURI": r.RequestURI,
+				"requestURI": safe.Sanitize(r.RequestURI),
 				"method":     r.Method,
-				"appendStr":  appendStr,
 				"error":      errorx.EnsureStackTrace(res.Error),
 			}).Error("Error when trying to update the position of the episodes that are already in the queue")
 
@@ -276,9 +272,8 @@ func (m *Manager) AddToQueueHandler(w http.ResponseWriter, r *http.Request) {
 
 			log.WithFields(log.Fields{
 				"remoteAddr": r.RemoteAddr,
-				"requestURI": r.RequestURI,
+				"requestURI": safe.Sanitize(r.RequestURI),
 				"method":     r.Method,
-				"appendStr":  appendStr,
 				"error":      errorx.EnsureStackTrace(res.Error),
 			}).Error("Error when trying to add an episode to the queue")
 
@@ -302,7 +297,7 @@ response:
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": r.RequestURI,
+			"requestURI": safe.Sanitize(r.RequestURI),
 			"method":     r.Method,
 			"error":      errorx.EnsureStackTrace(err),
 		}).Error("Error when trying to encode the response")
@@ -320,7 +315,7 @@ func (m *Manager) DelFromQueueHandler(w http.ResponseWriter, r *http.Request) {
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": r.RequestURI,
+			"requestURI": safe.Sanitize(r.RequestURI),
 			"method":     r.Method,
 			"error":      err.Error(),
 		}).Error("Request rejected due to absence of parameter 'id'")
@@ -332,16 +327,16 @@ func (m *Manager) DelFromQueueHandler(w http.ResponseWriter, r *http.Request) {
 
 	id := safe.SafeParseInt(idStr)
 	if id == safe.DefaultAllocate {
-		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values or can't be parsed", idStr)
+		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values or can't be parsed", safe.Sanitize(idStr))
 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": r.RequestURI,
+			"requestURI": safe.Sanitize(r.RequestURI),
 			"method":     r.Method,
 			"error":      err.Error(),
-			"givenID":    idStr,
+			"givenID":    safe.Sanitize(idStr),
 		}).Error("The variable 'id' is not present in the request or the value cannot be parsed")
 
 		return
@@ -353,7 +348,7 @@ func (m *Manager) DelFromQueueHandler(w http.ResponseWriter, r *http.Request) {
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": r.RequestURI,
+			"requestURI": safe.Sanitize(r.RequestURI),
 			"method":     r.Method,
 			"error":      errorx.Decorate(res.Error, res.Error.Error()),
 			"usedID":     id,
@@ -369,7 +364,7 @@ func (m *Manager) DelFromQueueHandler(w http.ResponseWriter, r *http.Request) {
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": r.RequestURI,
+			"requestURI": safe.Sanitize(r.RequestURI),
 			"method":     r.Method,
 			"error":      errorx.Decorate(res.Error, errmsg),
 			"usedID":     id,
