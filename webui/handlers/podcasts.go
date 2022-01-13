@@ -25,8 +25,6 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      err.Error(),
 		}).Error("Error when trying to decode the body of the request")
 
@@ -43,11 +41,8 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 
 		log.WithFields(log.Fields{
 			"remoteAddr":  r.RemoteAddr,
-			"requestURI":  safe.Sanitize(r.RequestURI),
-			"method":      r.Method,
-			"request.url": u.URL,
 			"error":       errorx.EnsureStackTrace(err),
-		}).Error("Error when trying to get the feed of the podcast")
+		}).Error("Unable to get the feed of the podcast")
 
 		return
 	}
@@ -60,11 +55,8 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 
 		log.WithFields(log.Fields{
 			"remoteAddr":  r.RemoteAddr,
-			"requestURI":  safe.Sanitize(r.RequestURI),
-			"method":      r.Method,
-			"request.url": u.URL,
 			"error":       errorx.EnsureStackTrace(err),
-		}).Error("Error when checking if the feed url is already in the database")
+		}).Error("Error when checking if the URL of the podcast's feed is already in the database")
 
 		return
 	}
@@ -79,9 +71,6 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 
 			log.WithFields(log.Fields{
 				"remoteAddr":  r.RemoteAddr,
-				"requestURI":  safe.Sanitize(r.RequestURI),
-				"method":      r.Method,
-				"request.url": u.URL,
 				"error":       errorx.EnsureStackTrace(err),
 			}).Error("Error when trying to store the new subscribed podcast")
 
@@ -96,9 +85,6 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 
 			log.WithFields(log.Fields{
 				"remoteAddr":  r.RemoteAddr,
-				"requestURI":  safe.Sanitize(r.RequestURI),
-				"method":      r.Method,
-				"request.url": u.URL,
 				"error":       errorx.EnsureStackTrace(err),
 			}).Error("Error when trying to update the subscription of a podcast")
 
@@ -112,9 +98,6 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 
 			log.WithFields(log.Fields{
 				"remoteAddr":  r.RemoteAddr,
-				"requestURI":  safe.Sanitize(r.RequestURI),
-				"method":      r.Method,
-				"request.url": u.URL,
 				"error":       errorx.EnsureStackTrace(err),
 			}).Error("Error when trying to get the ID of the updated podcast")
 
@@ -132,9 +115,6 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 		{ // Avoid blocking if, for some reason, the channel is busy
 			log.WithFields(log.Fields{
 				"remoteAddr":  r.RemoteAddr,
-				"requestURI":  safe.Sanitize(r.RequestURI),
-				"method":      r.Method,
-				"request.url": u.URL,
 				"podcastID":   p.ID,
 				"podcastFeed": p.FeedLink,
 			}).Warning("The channel used to update the recently subscribed podcasts is busy; skipping feed...")
@@ -151,8 +131,6 @@ func (m *Manager) UnsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Req
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      err.Error(),
 		}).Error("Request rejected due to absence of parameter 'id'")
 
@@ -163,16 +141,13 @@ func (m *Manager) UnsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Req
 
 	id := safe.SafeParseInt(idStr)
 	if id == safe.DefaultAllocate {
-		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values or can't be parsed", safe.Sanitize(idStr))
+		err := errorx.IllegalArgument.New("value over the limit of int values or can't be parsed")
 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      err.Error(),
-			"givenID":    safe.Sanitize(idStr),
 		}).Error("Cannot parse the ID of the podcast to unsubscribe")
 	}
 
@@ -182,8 +157,6 @@ func (m *Manager) UnsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Req
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      errorx.EnsureStackTrace(res.Error),
 			"usedID":     id,
 		}).Error("Unexpected error when trying to change the subscription status of the podcast")
@@ -196,8 +169,6 @@ func (m *Manager) UnsubscribeToPodcastHandler(w http.ResponseWriter, r *http.Req
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      errorx.Decorate(res.Error, "the podcast with the given ID does not exist"),
 			"usedID":     id,
 		}).Error("Error when trying to change the subscription status of the podcast")
@@ -216,10 +187,8 @@ func (m *Manager) GetUserPodcastsHandler(w http.ResponseWriter, r *http.Request)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      errorx.EnsureStackTrace(res.Error),
-		}).Error("Error when trying to get subscribed podcasts from db")
+		}).Error("Error when trying to get subscriptions from db")
 
 		return
 	}
@@ -233,8 +202,6 @@ func (m *Manager) GetUserPodcastsHandler(w http.ResponseWriter, r *http.Request)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      errorx.EnsureStackTrace(err),
 		}).Error("Error when trying to encode the response to the request")
 
@@ -247,16 +214,13 @@ func (m *Manager) GetPodcastHandler(w http.ResponseWriter, r *http.Request) {
 
 	id := safe.SafeParseInt(idStr)
 	if id == safe.DefaultAllocate {
-		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values or can't be parsed", safe.Sanitize(idStr))
+		err := errorx.IllegalArgument.New("value is over the limit of int values or can't be parsed")
 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      err.Error(),
-			"givenID":    safe.Sanitize(idStr),
 		}).Error("The given ID cannot be parsed")
 
 		return
@@ -269,8 +233,6 @@ func (m *Manager) GetPodcastHandler(w http.ResponseWriter, r *http.Request) {
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      errorx.Decorate(res.Error, "the podcast with the given ID does not exist"),
 			"givenID":    id,
 		}).Error("Error when trying to get the requested podcast")
@@ -287,10 +249,8 @@ func (m *Manager) GetPodcastHandler(w http.ResponseWriter, r *http.Request) {
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      errorx.EnsureStackTrace(err),
-		}).Error("Error when trying to encode the response to the request")
+		}).Error("Error when trying to encode the response")
 
 		return
 	}
@@ -301,16 +261,13 @@ func (m *Manager) GetEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 
 	id := safe.SafeParseInt(idStr)
 	if id == safe.DefaultAllocate {
-		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values or can't be parsed", safe.Sanitize(idStr))
+		err := errorx.IllegalArgument.New("value is over the limit of int values or can't be parsed")
 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      err.Error(),
-			"givenID":    safe.Sanitize(idStr),
 		}).Error("The given ID cannot be parsed")
 
 		return
@@ -324,8 +281,6 @@ func (m *Manager) GetEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      errorx.Decorate(res.Error, "unexpected error when trying to fetch episodes from db"),
 			"givenID":    id,
 		}).Error("Error when trying to get the requested episodes")
@@ -340,8 +295,6 @@ func (m *Manager) GetEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      errorx.Decorate(res.Error, errmsg),
 			"givenID":    id,
 		}).Error("Error when trying to get the requested episodes")
@@ -358,8 +311,6 @@ func (m *Manager) GetEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      errorx.EnsureStackTrace(err),
 		}).Error("Error when trying to encode the response to the request")
 
@@ -373,16 +324,13 @@ func (m *Manager) EpisodeProgressHandler(w http.ResponseWriter, r *http.Request)
 
 	podcastID := safe.SafeParseInt(podcastIDStr)
 	if podcastID == safe.DefaultAllocate {
-		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values or can't be parsed", safe.Sanitize(podcastIDStr))
+		err := errorx.IllegalArgument.New("value is over the limit of int values or can't be parsed")
 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      err.Error(),
-			"givenID":    safe.Sanitize(podcastIDStr),
 		}).Error("The given podcastID cannot be parsed")
 
 		return
@@ -390,16 +338,13 @@ func (m *Manager) EpisodeProgressHandler(w http.ResponseWriter, r *http.Request)
 
 	episodeID := safe.SafeParseInt(epIDStr)
 	if episodeID == safe.DefaultAllocate {
-		err := errorx.IllegalArgument.New("the value '%s' is over the limit of int values or can't be parsed", safe.Sanitize(epIDStr))
+		err := errorx.IllegalArgument.New("value is over the limit of int values or can't be parsed")
 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      err.Error(),
-			"givenID":    safe.Sanitize(epIDStr),
 		}).Error("The given episodeID cannot be parsed")
 
 		return
@@ -417,8 +362,6 @@ func (m *Manager) EpisodeProgressHandler(w http.ResponseWriter, r *http.Request)
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
-					"requestURI": safe.Sanitize(r.RequestURI),
-					"method":     r.Method,
 					"error":      res.Error.Error(),
 					"podcastID":  podcastID,
 					"episodeID":  episodeID,
@@ -434,8 +377,6 @@ func (m *Manager) EpisodeProgressHandler(w http.ResponseWriter, r *http.Request)
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
-					"requestURI": safe.Sanitize(r.RequestURI),
-					"method":     r.Method,
 					"podcastID":  podcastID,
 					"episodeID":  episodeID,
 				}).Error(e)
@@ -452,8 +393,6 @@ func (m *Manager) EpisodeProgressHandler(w http.ResponseWriter, r *http.Request)
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
-					"requestURI": safe.Sanitize(r.RequestURI),
-					"method":     r.Method,
 					"error":      errorx.EnsureStackTrace(err),
 				}).Error("Error when trying to encode the response to the request")
 
@@ -474,8 +413,6 @@ func (m *Manager) EpisodeProgressHandler(w http.ResponseWriter, r *http.Request)
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
-					"requestURI": safe.Sanitize(r.RequestURI),
-					"method":     r.Method,
 					"error":      err.Error(),
 				}).Error("Error when trying to decode the body of the request")
 
@@ -488,8 +425,6 @@ func (m *Manager) EpisodeProgressHandler(w http.ResponseWriter, r *http.Request)
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
-					"requestURI": safe.Sanitize(r.RequestURI),
-					"method":     r.Method,
 					"error":      res.Error.Error(),
 					"podcastID":  podcastID,
 					"episodeID":  episodeID,
@@ -505,8 +440,6 @@ func (m *Manager) EpisodeProgressHandler(w http.ResponseWriter, r *http.Request)
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
-					"requestURI": safe.Sanitize(r.RequestURI),
-					"method":     r.Method,
 					"podcastID":  podcastID,
 					"episodeID":  episodeID,
 				}).Error(e)
@@ -533,8 +466,6 @@ func (m *Manager) LatestEpisodesHandler(w http.ResponseWriter, r *http.Request) 
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      err,
 		}).Error("Request rejected due to absence of the query parameter 'from'")
 
@@ -547,10 +478,7 @@ func (m *Manager) LatestEpisodesHandler(w http.ResponseWriter, r *http.Request) 
 
 		log.WithFields(log.Fields{
 			"remoteAddr":   r.RemoteAddr,
-			"requestURI":   safe.Sanitize(r.RequestURI),
-			"method":       r.Method,
 			"error":        err.Error(),
-			"queryContent": safe.Sanitize(keys[0]),
 		}).Error("The query parameter 'from' can't be parsed")
 
 		return
@@ -565,8 +493,6 @@ func (m *Manager) LatestEpisodesHandler(w http.ResponseWriter, r *http.Request) 
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      err,
 		}).Error("Request rejected due to absence of the query parameter 'to'")
 
@@ -579,10 +505,7 @@ func (m *Manager) LatestEpisodesHandler(w http.ResponseWriter, r *http.Request) 
 
 		log.WithFields(log.Fields{
 			"remoteAddr":   r.RemoteAddr,
-			"requestURI":   safe.Sanitize(r.RequestURI),
-			"method":       r.Method,
 			"error":        err.Error(),
-			"queryContent": safe.Sanitize(keys[0]),
 		}).Error("The query parameter 'to' can't be parsed")
 
 		return
@@ -596,8 +519,6 @@ func (m *Manager) LatestEpisodesHandler(w http.ResponseWriter, r *http.Request) 
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      errorx.Decorate(res.Error, "unexpected error when trying to fetch episodes from db"),
 			"fromDate":   from.String(),
 			"toDate":     to.String(),
@@ -615,8 +536,6 @@ func (m *Manager) LatestEpisodesHandler(w http.ResponseWriter, r *http.Request) 
 
 		log.WithFields(log.Fields{
 			"remoteAddr": r.RemoteAddr,
-			"requestURI": safe.Sanitize(r.RequestURI),
-			"method":     r.Method,
 			"error":      errorx.EnsureStackTrace(err),
 		}).Error("Error when trying to encode the response to the request")
 
