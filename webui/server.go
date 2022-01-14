@@ -88,6 +88,7 @@ func newRouter(devMode, logRequests bool, handlersManager *handlers.Manager) *mu
 	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}", handlersManager.GetPodcastHandler).Methods("GET")
 	router.HandleFunc("/api/v0/podcasts/{id:[0-9]+}/episodes", handlersManager.GetEpisodesHandler).Methods("GET")
 	router.HandleFunc("/api/v0/podcasts/{pID:[0-9]+}/episodes/{epID:[0-9]+}/progress", handlersManager.EpisodeProgressHandler).Methods("GET", "PUT")
+	router.HandleFunc("/api/v0/podcasts/{pID:[0-9]+}/episodes/{epID:[0-9]+}/status", handlersManager.SetEpisodeStatusHandler).Methods("PUT")
 	router.HandleFunc("/api/v0/podcasts/latest_eps", handlersManager.LatestEpisodesHandler).Methods("GET")
 	router.HandleFunc("/api/v0/player/playback_info", handlersManager.PlayerPlaybackInfoHandler).Methods("GET", "PUT")
 	router.HandleFunc("/api/v0/player/queue", handlersManager.QueueHandler).Methods("GET", "PUT", "DELETE")
