@@ -546,6 +546,13 @@ func addOfflinePodcastToDB(p *models.Podcast, db *gorm.DB, t *testing.T) {
 	}
 }
 
+func addOfflineEpisodeToDB(ep *models.Episode, db *gorm.DB, t *testing.T) {
+	res := db.Save(ep)
+	if res.Error != nil {
+		assert2.FailNow(t, res.Error.Error())
+	}
+}
+
 func addEpisodesToDB(originalFeed *gofeed.Feed, parentPodcastID uint, db *gorm.DB, t *testing.T) {
 	eps, err := podcasts.GetEpisodes(originalFeed)
 	if err != nil {
