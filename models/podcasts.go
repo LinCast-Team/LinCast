@@ -21,7 +21,7 @@ type Podcast struct {
 	FeedType    string    `json:"feedType"`
 	FeedVersion string    `json:"feedVersion"`
 	Language    string    `json:"language"`
-	Updated     time.Time `json:"updated"` // Use the field gofeed.Feed.UpdatedParsed
+	Updated     time.Time `json:"updated"` // Mirror of gofeed.Feed.UpdatedParsed
 	LastCheck   time.Time `json:"lastCheck"`
 	Added       time.Time `json:"added"`
 
@@ -43,8 +43,8 @@ type Episode struct {
 	EnclosureLength string        `json:"enclosureLength"`
 	EnclosureType   string        `json:"enclosureType"`
 	Season          string        `json:"season"`    // Comes from gofeed.Item.ITunesExt.Season - can be empty
-	Published       time.Time     `json:"published"` // Use the field gofeed.Item.PublishedParsed
-	Updated         time.Time     `json:"updated"`   // Use the field gofeed.Item.UpdatedParsed
+	Published       time.Time     `json:"published"` // Mirror of gofeed.Item.PublishedParsed
+	Updated         time.Time     `json:"updated"`   // Mirror of gofeed.Item.UpdatedParsed
 	Played          bool          `json:"played"`
 	CurrentProgress time.Duration `json:"currentProgress"`
 
