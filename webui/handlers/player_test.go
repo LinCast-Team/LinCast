@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -93,4 +94,45 @@ func TestPlayerPlaybackInfoHandler_PUT(t *testing.T) {
 
 	assert.Equal(http.StatusBadRequest, r.StatusCode, "Since the request has an unexpected content, it should be rejected by using the HTTP status code 400 Bad Request")
 	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"), "Since the response should contain the description of the error, the expected 'Content-Type' headers are 'text/plain; charset=utf-8'")
+}
+
+func TestSetEpisodeStatusHandler(t *testing.T) {
+	assert := assert2.New(t)
+	tempDir := t.TempDir()
+	db, err := database.New(tempDir, "test.db")
+	if err != nil {
+		assert.FailNow(err.Error())
+	}
+	mng := NewManager(db, make(chan *models.Podcast))
+	method := "GET"
+
+	p := new(models.Podcast)
+	addOfflinePodcastToDB(p, db, t)
+
+	ep := new(models.Episode) // Played == false
+	ep.ParentPodcastID = p.ID
+	addOfflineEpisodeToDB(ep, db, t)
+
+	vars := map[string]string{
+		"pID":  fmt.Sprint(p.ID),
+		"epID": fmt.Sprint(ep.ID),
+	}
+
+	body := map[string]bool{
+		"played": true,
+	}
+
+	r := testUtils.NewRequestWithVars(mng.SetEpisodeStatusHandler, method, "/api/v0/podcasts/{pID:[0-9]+}/episodes/{epID:[0-9]+}/status", vars, testUtils.NewBody(t, body))
+
+	var epFromDB models.Episode
+	res := db.First(&epFromDB)
+	if res.Error != nil {
+		assert.FailNow(res.Error.Error())
+	}
+
+	if assert.Equal(http.StatusCreated, r.StatusCode, "If the field 'played' of the episode is updated, the response should have a status code 201") {
+		assert.Equal(fmt.Sprintf("/api/v0/podcasts/%d/episodes/%d", p.ID, ep.ID), r.Header.Get("Location"), "If the field 'played' of the episode is "+
+			"updated, the response should contain the 'Location' header with the correct value")
+	}
+	assert.Equal(body["played"], epFromDB.Played, "The 'played' field should be updated on the database")
 }
