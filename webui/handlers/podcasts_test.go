@@ -274,6 +274,69 @@ func TestGetEpisodesHandler(t *testing.T) {
 	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"))
 }
 
+func TestEpisodeDetailsHandler(t *testing.T) {
+	assert := assert2.New(t)
+	tempDir := t.TempDir()
+	db, err := database.New(tempDir, "test.db")
+	if err != nil {
+		assert.FailNow(err.Error())
+	}
+	mng := NewManager(db, make(chan *models.Podcast))
+
+	method := "GET"
+
+	dummyEp := models.Episode {
+		ParentPodcastID: 76,
+		Title: "LinCast Podcast",
+		Description: "Some really boring description.",
+		Link: "https://example.org/",
+		GUID: "abcde1",
+		CurrentProgress: 189 * time.Minute,
+		Played: true,
+	}
+
+	res := db.Save(&dummyEp)
+	if res.Error != nil {
+		assert.FailNow(res.Error.Error())
+	}
+
+	vars := map[string]string{
+		"pID":  fmt.Sprint(dummyEp.ParentPodcastID),
+		"epID": fmt.Sprint(dummyEp.ID),
+	}
+
+	r := testUtils.NewRequestWithVars(mng.EpisodeDetailsHandler, method, "", vars, testUtils.NewBody(t, nil))
+
+	var receivedEp models.Episode
+	err = json.NewDecoder(r.Body).Decode(&receivedEp)
+	if err != nil {
+		assert.FailNow(err.Error())
+	}
+
+	// Fields of type time.Time should be overwritten to avoid false positives (metadata diff)
+	dummyEp.CreatedAt = time.Time{}
+	dummyEp.UpdatedAt = time.Time{}
+	dummyEp.Published = time.Time{}
+	receivedEp.CreatedAt = time.Time{}
+	receivedEp.UpdatedAt = time.Time{}
+	receivedEp.Published = time.Time{}
+
+	if assert.Equal(http.StatusOK, r.StatusCode) {
+		assert.Equal("application/json", r.Header.Get("Content-Type"), "The Content-Type headers should indicate that the content is of type JSON")
+		assert.Equal(dummyEp, receivedEp, "The episode returned as a response should equal to the stored one")
+	}
+
+	vars = map[string]string{
+		"pID":  fmt.Sprint(999999),
+		"epID": fmt.Sprint(999999999),
+	}
+
+	r = testUtils.NewRequestWithVars(mng.EpisodeProgressHandler, method, "", vars, testUtils.NewBody(t, nil))
+
+	assert.Equal(http.StatusBadRequest, r.StatusCode, "If the request contains the ID of a podcast or episode that does not exist, it should be rejected with a http status code 400 Bad Request")
+	assert.Equal("text/plain; charset=utf-8", r.Header.Get("Content-Type"), "Since the response should contain the description of the error, the correct 'Content-Type' headers should be set")
+}
+
 func TestEpisodeProgressHandler_GET(t *testing.T) {
 	assert := assert2.New(t)
 	tempDir := t.TempDir()
