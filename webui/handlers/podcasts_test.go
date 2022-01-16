@@ -285,14 +285,14 @@ func TestEpisodeDetailsHandler(t *testing.T) {
 
 	method := "GET"
 
-	dummyEp := models.Episode {
+	dummyEp := models.Episode{
 		ParentPodcastID: 76,
-		Title: "LinCast Podcast",
-		Description: "Some really boring description.",
-		Link: "https://example.org/",
-		GUID: "abcde1",
+		Title:           "LinCast Podcast",
+		Description:     "Some really boring description.",
+		Link:            "https://example.org/",
+		GUID:            "abcde1",
 		CurrentProgress: 189 * time.Minute,
-		Played: true,
+		Played:          true,
 	}
 
 	res := db.Save(&dummyEp)
