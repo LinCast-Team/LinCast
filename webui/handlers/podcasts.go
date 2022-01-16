@@ -40,8 +40,8 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
-			"remoteAddr":  r.RemoteAddr,
-			"error":       errorx.EnsureStackTrace(err),
+			"remoteAddr": r.RemoteAddr,
+			"error":      errorx.EnsureStackTrace(err),
 		}).Error("Unable to get the feed of the podcast")
 
 		return
@@ -54,8 +54,8 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		log.WithFields(log.Fields{
-			"remoteAddr":  r.RemoteAddr,
-			"error":       errorx.EnsureStackTrace(err),
+			"remoteAddr": r.RemoteAddr,
+			"error":      errorx.EnsureStackTrace(err),
 		}).Error("Error when checking if the URL of the podcast's feed is already in the database")
 
 		return
@@ -70,8 +70,8 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 
 			log.WithFields(log.Fields{
-				"remoteAddr":  r.RemoteAddr,
-				"error":       errorx.EnsureStackTrace(err),
+				"remoteAddr": r.RemoteAddr,
+				"error":      errorx.EnsureStackTrace(err),
 			}).Error("Error when trying to store the new subscribed podcast")
 
 			return
@@ -84,8 +84,8 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 
 			log.WithFields(log.Fields{
-				"remoteAddr":  r.RemoteAddr,
-				"error":       errorx.EnsureStackTrace(err),
+				"remoteAddr": r.RemoteAddr,
+				"error":      errorx.EnsureStackTrace(err),
 			}).Error("Error when trying to update the subscription of a podcast")
 
 			return
@@ -97,8 +97,8 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 
 			log.WithFields(log.Fields{
-				"remoteAddr":  r.RemoteAddr,
-				"error":       errorx.EnsureStackTrace(err),
+				"remoteAddr": r.RemoteAddr,
+				"error":      errorx.EnsureStackTrace(err),
 			}).Error("Error when trying to get the ID of the updated podcast")
 
 			return
@@ -318,6 +318,84 @@ func (m *Manager) GetEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (m *Manager) EpisodeDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	podcastIDStr := mux.Vars(r)["pID"]
+	epIDStr := mux.Vars(r)["epID"]
+
+	podcastID := safe.SafeParseInt(podcastIDStr)
+	if podcastID == safe.DefaultAllocate {
+		err := errorx.IllegalArgument.New("value is over the limit of int values or can't be parsed")
+
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"error":      err.Error(),
+		}).Error("The given podcastID cannot be parsed")
+
+		return
+	}
+
+	episodeID := safe.SafeParseInt(epIDStr)
+	if episodeID == safe.DefaultAllocate {
+		err := errorx.IllegalArgument.New("value is over the limit of int values or can't be parsed")
+
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"error":      err.Error(),
+		}).Error("The given episodeID cannot be parsed")
+
+		return
+	}
+
+	var ep models.Episode
+
+	res := m.db.Model(&models.Episode{}).Where("id = ? AND parent_podcast_id = ?", episodeID, podcastID).Find(&ep)
+	if res.Error != nil {
+		http.Error(w, res.Error.Error(), http.StatusInternalServerError)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"error":      res.Error.Error(),
+			"podcastID":  podcastID,
+			"episodeID":  episodeID,
+		}).Error("Error when trying to get the requested episode")
+
+		return
+	}
+
+	if res.RowsAffected == 0 {
+		e := "the requested episode does not exist"
+
+		http.Error(w, e, http.StatusBadRequest)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"podcastID":  podcastID,
+			"episodeID":  episodeID,
+		}).Error(e)
+
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	err := json.NewEncoder(w).Encode(&ep)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		log.WithFields(log.Fields{
+			"remoteAddr": r.RemoteAddr,
+			"error":      errorx.EnsureStackTrace(err),
+		}).Error("Error when trying to encode the response to the request")
+
+		return
+	}
+}
+
 func (m *Manager) EpisodeProgressHandler(w http.ResponseWriter, r *http.Request) {
 	podcastIDStr := mux.Vars(r)["pID"]
 	epIDStr := mux.Vars(r)["epID"]
@@ -477,8 +555,8 @@ func (m *Manager) LatestEpisodesHandler(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
-			"remoteAddr":   r.RemoteAddr,
-			"error":        err.Error(),
+			"remoteAddr": r.RemoteAddr,
+			"error":      err.Error(),
 		}).Error("The query parameter 'from' can't be parsed")
 
 		return
@@ -504,8 +582,8 @@ func (m *Manager) LatestEpisodesHandler(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
-			"remoteAddr":   r.RemoteAddr,
-			"error":        err.Error(),
+			"remoteAddr": r.RemoteAddr,
+			"error":      err.Error(),
 		}).Error("The query parameter 'to' can't be parsed")
 
 		return
