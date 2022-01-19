@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -193,12 +194,14 @@ func setupLogger(filename string, devMode bool) {
 }
 
 func handleCmdArgs() {
-	serviceCmd := flag.String("service", "", "Manage the service of LinCast. Commands: 'install', "+
+	serviceCmd := flag.String("service", "", "Manage the service of LinCast. Commands: 'install', " +
 		"'uninstall', 'start', 'stop', 'restart' and 'status'.")
 	flag.Parse()
 
 	if *serviceCmd == "" {
-		return
+		fmt.Printf("The flag to manage the service can't be used without the action to perform. " +
+			"\nSee --help for better understanding.\n")
+		os.Exit(1)
 	}
 
 	manageService(*serviceCmd)
