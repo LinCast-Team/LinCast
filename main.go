@@ -2,8 +2,10 @@ package main
 
 import (
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
+	"syscall"
 	"time"
 
 	"lincast/database"
@@ -36,6 +38,8 @@ const (
 
 /* -------------------------------------------------------------------------- */
 
+var shutdownSignal = make(chan os.Signal)
+
 func main() {
 	devMode := os.Getenv("DEV_MODE") != ""
 
@@ -43,28 +47,29 @@ func main() {
 
 	log.Info("Starting LinCast")
 
-	if r := run(devMode); r != nil {
-		log.Panicln("Error on run:", errorx.Decorate(r, "error on run"))
-	}
+	run(devMode)
 }
 
-func run(devMode bool) error {
+func run(devMode bool) {
+	// Subscribe to signals related with the stop of the program
+	signal.Notify(shutdownSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGQUIT)
+
 	wd, err := os.Getwd()
 	if err != nil {
-		return errorx.InternalError.Wrap(err, "error when trying to get the working directory")
+		log.WithError(err).Panicln("Error when trying to get the working directory")
 	}
 
 	dbPath := filepath.Join(wd, "data/")
 	err = os.MkdirAll(dbPath, os.ModePerm)
 	if err != nil {
-		return errorx.InternalError.Wrap(err, "error when trying to make the directory where the database"+
-			" will be stored")
+		log.WithError(err).Panicln("Error when trying to make the directory where the database will be stored")
 	}
 
 	db, err := database.New(dbPath, dbFilename)
 	if err != nil {
-		return errorx.InternalError.Wrap(errorx.EnsureStackTrace(err), "error when trying to initialize"+
-			" the database in the path '%s'", filepath.Join(dbPath, dbFilename))
+		log.WithError(errorx.EnsureStackTrace(err)).WithField(
+			"path", filepath.Join(dbPath, dbFilename),
+		).Panicln("Error when trying to initialize the database")
 	}
 
 	manualFeedUpd := make(chan *models.Podcast)
@@ -72,22 +77,26 @@ func run(devMode bool) error {
 	// Run the loop that updates the subscribed podcasts.
 	go runUpdateQueue(db, updateFreq, manualFeedUpd)
 
-	// Make a new instance of the server.
-	sv := webui.New(serverPort, serverLocal, devMode, serverLogs, db, manualFeedUpd)
+	go func() {
+		// Make a new instance of the server.
+		sv := webui.New(serverPort, serverLocal, devMode, serverLogs, db, manualFeedUpd)
 
-	log.WithFields(log.Fields{
-		"port":        serverPort,
-		"localServer": serverLocal,
-		"devMode":     devMode,
-		"logRequests": serverLogs,
-	}).Info("Starting server")
+		log.WithFields(log.Fields{
+			"port":        serverPort,
+			"localServer": serverLocal,
+			"devMode":     devMode,
+			"logRequests": serverLogs,
+		}).Info("Starting server")
 
-	err = sv.ListenAndServe()
-	if err != nil {
-		return errorx.InternalError.Wrap(err, "error on server ListenAndServe")
-	}
+		err = sv.ListenAndServe()
+		if err != nil {
+			log.WithError(
+				errorx.InternalError.Wrap(err, "error on server ListenAndServe"),
+			).Panicln("")
+		}
+	}()
 
-	return nil
+	<-shutdownSignal
 }
 
 func runUpdateQueue(db *gorm.DB, updateInterval time.Duration, manualFeedUpd chan *models.Podcast) {
