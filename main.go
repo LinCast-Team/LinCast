@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -41,6 +42,8 @@ const (
 var shutdownSignal = make(chan os.Signal)
 
 func main() {
+	handleCmdArgs()
+
 	devMode := os.Getenv("DEV_MODE") != ""
 
 	setupLogger(logsFilename, devMode)
@@ -187,4 +190,18 @@ func setupLogger(filename string, devMode bool) {
 		MaxBackups: 3,
 		MaxSize:    50,
 	})
+}
+
+func handleCmdArgs() {
+	serviceCmd := flag.String("service", "", "Manage the service of LinCast. Commands: 'install', "+
+		"'uninstall', 'start', 'stop', 'restart' and 'status'.")
+	flag.Parse()
+
+	if *serviceCmd == "" {
+		return
+	}
+
+	manageService(*serviceCmd)
+
+	os.Exit(0)
 }
