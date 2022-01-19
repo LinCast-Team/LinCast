@@ -1,9 +1,12 @@
 package main
 
 import (
+	"flag"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
+	"syscall"
 	"time"
 
 	"lincast/database"
@@ -19,55 +22,57 @@ import (
 
 /* -------------------------------- Constants ------------------------------- */
 
-// Default filenames (should be read of the configurations in the future).
+// All this constants should be read from the configs file (see #94)
 const (
+	// Default filenames
 	dbFilename   = "podcasts.sqlite"
 	logsFilename = "lincast.log"
-)
 
-// Default settings of the server (should be read of the configurations in the future).
-const (
+	// Default settings of the server
 	serverPort  = 8080
 	serverLocal = true
 	serverLogs  = true
-)
 
-// Default settings related with feeds' refresh (should be read of the configurations in the future).
-const (
+	// Default settings related with feeds' refresh
 	updateFreq = time.Minute * 30
 )
 
 /* -------------------------------------------------------------------------- */
 
+var shutdownSignal = make(chan os.Signal)
+
 func main() {
+	handleCmdArgs()
+
 	devMode := os.Getenv("DEV_MODE") != ""
 
 	setupLogger(logsFilename, devMode)
 
 	log.Info("Starting LinCast")
 
-	if r := run(devMode); r != nil {
-		log.Panicln("Error on run:", errorx.Decorate(r, "error on run"))
-	}
+	run(devMode)
 }
 
-func run(devMode bool) error {
+func run(devMode bool) {
+	// Subscribe to signals related with the stop of the program
+	signal.Notify(shutdownSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGQUIT)
+
 	wd, err := os.Getwd()
 	if err != nil {
-		return errorx.InternalError.Wrap(err, "error when trying to get the working directory")
+		log.WithError(err).Panicln("Error when trying to get the working directory")
 	}
 
 	dbPath := filepath.Join(wd, "data/")
 	err = os.MkdirAll(dbPath, os.ModePerm)
 	if err != nil {
-		return errorx.InternalError.Wrap(err, "error when trying to make the directory where the database"+
-			" will be stored")
+		log.WithError(err).Panicln("Error when trying to make the directory where the database will be stored")
 	}
 
 	db, err := database.New(dbPath, dbFilename)
 	if err != nil {
-		return errorx.InternalError.Wrap(errorx.EnsureStackTrace(err), "error when trying to initialize"+
-			" the database in the path '%s'", filepath.Join(dbPath, dbFilename))
+		log.WithError(errorx.EnsureStackTrace(err)).WithField(
+			"path", filepath.Join(dbPath, dbFilename),
+		).Panicln("Error when trying to initialize the database")
 	}
 
 	manualFeedUpd := make(chan *models.Podcast)
@@ -75,22 +80,26 @@ func run(devMode bool) error {
 	// Run the loop that updates the subscribed podcasts.
 	go runUpdateQueue(db, updateFreq, manualFeedUpd)
 
-	// Make a new instance of the server.
-	sv := webui.New(serverPort, serverLocal, devMode, serverLogs, db, manualFeedUpd)
+	go func() {
+		// Make a new instance of the server.
+		sv := webui.New(serverPort, serverLocal, devMode, serverLogs, db, manualFeedUpd)
 
-	log.WithFields(log.Fields{
-		"port":        serverPort,
-		"localServer": serverLocal,
-		"devMode":     devMode,
-		"logRequests": serverLogs,
-	}).Info("Starting server")
+		log.WithFields(log.Fields{
+			"port":        serverPort,
+			"localServer": serverLocal,
+			"devMode":     devMode,
+			"logRequests": serverLogs,
+		}).Info("Starting server")
 
-	err = sv.ListenAndServe()
-	if err != nil {
-		return errorx.InternalError.Wrap(err, "error on server ListenAndServe")
-	}
+		err = sv.ListenAndServe()
+		if err != nil {
+			log.WithError(
+				errorx.InternalError.Wrap(err, "error on server ListenAndServe"),
+			).Panicln("")
+		}
+	}()
 
-	return nil
+	<-shutdownSignal
 }
 
 func runUpdateQueue(db *gorm.DB, updateInterval time.Duration, manualFeedUpd chan *models.Podcast) {
@@ -181,4 +190,19 @@ func setupLogger(filename string, devMode bool) {
 		MaxBackups: 3,
 		MaxSize:    50,
 	})
+}
+
+func handleCmdArgs() {
+	serviceCmd := flag.String("service", "", "Manage the service of LinCast. Commands: 'install', " +
+		"'uninstall', 'start', 'stop', 'restart' and 'status'.")
+	flag.Parse()
+
+	// No content means that the flag is not in use
+	if *serviceCmd == "" {
+		return
+	}
+
+	manageService(*serviceCmd)
+
+	os.Exit(0)
 }
