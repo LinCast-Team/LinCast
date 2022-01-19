@@ -19,21 +19,18 @@ import (
 
 /* -------------------------------- Constants ------------------------------- */
 
-// Default filenames (should be read of the configurations in the future).
+// All this constants should be read from the configs file (see #94)
 const (
+	// Default filenames
 	dbFilename   = "podcasts.sqlite"
 	logsFilename = "lincast.log"
-)
 
-// Default settings of the server (should be read of the configurations in the future).
-const (
+	// Default settings of the server
 	serverPort  = 8080
 	serverLocal = true
 	serverLogs  = true
-)
 
-// Default settings related with feeds' refresh (should be read of the configurations in the future).
-const (
+	// Default settings related with feeds' refresh
 	updateFreq = time.Minute * 30
 )
 
