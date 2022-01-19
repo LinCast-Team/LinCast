@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -198,10 +197,9 @@ func handleCmdArgs() {
 		"'uninstall', 'start', 'stop', 'restart' and 'status'.")
 	flag.Parse()
 
+	// No content means that the flag is not in use
 	if *serviceCmd == "" {
-		fmt.Printf("The flag to manage the service can't be used without the action to perform. " +
-			"\nSee --help for better understanding.\n")
-		os.Exit(1)
+		return
 	}
 
 	manageService(*serviceCmd)
