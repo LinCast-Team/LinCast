@@ -22,50 +22,32 @@
 </template>
 
 <script lang='ts'>
-import {
-  defineComponent,
-  ref,
-  inject,
-  Ref,
-} from 'vue';
-import dayjs from 'dayjs';
+import { defineComponent } from 'vue';
+import { storeToRefs } from 'pinia';
 import EpisodeItem from '@/components/library/EpisodeItem.vue';
-import { SubscriptionsAPI } from '@/api';
-import { Episode, Podcast } from '../../../api/types';
+import { useSubscriptionsStore } from '@/store/subscriptions';
 
 export default defineComponent({
   components: {
     EpisodeItem,
   },
   setup() {
-    const episodes = ref<Episode[]>();
-    const subscriptions = inject<Ref<Podcast[]>>('subscriptions');
-    const subsAPI = new SubscriptionsAPI();
-
-    const currentDate = dayjs();
-    const previousDate = currentDate.subtract(30, 'day');
-
-    subsAPI.getLatestSubscriptionsEpisodes(previousDate.format('YYYY-MM-DD'), currentDate.format('YYYY-MM-DD'))
-      .then((eps) => {
-        episodes.value = eps;
-      })
-      .catch((err) => {
-        throw err;
-      });
+    const store = useSubscriptionsStore();
+    const { podcasts, episodes } = storeToRefs(store);
 
     const getPodcastName = (id: number): string | undefined => {
-      const podcast = subscriptions?.value.find((p) => p.ID === id);
+      const podcast = podcasts.value.find((p) => p.ID === id);
       return podcast?.title;
     };
 
     const getPodcastArtwork = (id: number): string | undefined => {
-      const podcast = subscriptions?.value.find((p) => p.ID === id);
+      const podcast = podcasts.value.find((p) => p.ID === id);
       return podcast?.imageURL;
     };
 
     return {
       episodes,
-      subscriptions,
+      podcasts,
       getPodcastName,
       getPodcastArtwork,
     };
