@@ -5,7 +5,7 @@ import {
 import APIBase from './api-base';
 
 class PlayerQueueAPI extends APIBase {
-  async getQueue(): Promise<Queue> {
+  static async getQueue(): Promise<Queue> {
     const response = await fetch(`${this.BASE_PATH}/player/queue`, {
       method: 'GET',
     });
@@ -20,7 +20,7 @@ class PlayerQueueAPI extends APIBase {
     return data;
   }
 
-  async clearQueue() {
+  static async clearQueue() {
     const response = await fetch(`${this.BASE_PATH}/player/queue`, {
       method: 'DELETE',
     });
@@ -31,7 +31,7 @@ class PlayerQueueAPI extends APIBase {
     }
   }
 
-  async overwriteQueue(newQueue: Queue) {
+  static async overwriteQueue(newQueue: Queue) {
     const response = await fetch(`${this.BASE_PATH}/player/queue`, {
       method: 'PUT',
       headers: {
@@ -46,7 +46,7 @@ class PlayerQueueAPI extends APIBase {
     }
   }
 
-  async addToQueue(episode: QueueEpisode, append: boolean) {
+  static async addToQueue(episode: QueueEpisode, append: boolean) {
     const response = await fetch(`${this.BASE_PATH}/player/queue/add?append=${append}`, {
       method: 'POST',
       headers: {
@@ -61,7 +61,7 @@ class PlayerQueueAPI extends APIBase {
     }
   }
 
-  async removeFromQueue(id: number) {
+  static async removeFromQueue(id: number) {
     const response = await fetch(`${this.BASE_PATH}/player/queue/remove?id=${id}`, {
       method: 'DELETE',
     });
