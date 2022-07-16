@@ -1,4 +1,6 @@
 name: golangci-lint
+permissions: read-all
+
 on:
   push:
     tags:
