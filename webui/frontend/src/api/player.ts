@@ -4,7 +4,7 @@ import {
 import APIBase from './api-base';
 
 class PlayerAPI extends APIBase {
-  async getPlayerPlaybackInfo(): Promise<PlaybackInfo> {
+  static async getPlayerPlaybackInfo(): Promise<PlaybackInfo> {
     const response = await fetch(`${this.BASE_PATH}/player/playback_info`, { method: 'GET' });
 
     if (!response.ok) {
@@ -17,7 +17,7 @@ class PlayerAPI extends APIBase {
     return data;
   }
 
-  async postPlayerPlaybackInfo(p: PlaybackInfo) {
+  static async postPlayerPlaybackInfo(p: PlaybackInfo) {
     const response = await fetch(`${this.BASE_PATH}/player/playback_info`, {
       method: 'PUT',
       headers: {
@@ -32,7 +32,7 @@ class PlayerAPI extends APIBase {
     }
   }
 
-  async getEpisodeProgress(podcastID: number, episodeID: number) {
+  static async getEpisodeProgress(podcastID: number, episodeID: number) {
     const response = await fetch(`${this.BASE_PATH}/podcasts/${podcastID}/episodes/${episodeID}/progress`, { method: 'GET' });
 
     if (!response.ok) {
@@ -45,7 +45,7 @@ class PlayerAPI extends APIBase {
     return progress;
   }
 
-  async updateEpisodeProgress(podcastID: number, episodeID: number, newProgress: number) {
+  static async updateEpisodeProgress(podcastID: number, episodeID: number, newProgress: number) {
     const response = await fetch(`${this.BASE_PATH}/podcasts/${podcastID}/episodes/${episodeID}/progress`, {
       method: 'PUT',
       headers: {

@@ -5,8 +5,8 @@ import {
 import APIBase from './api-base';
 
 class SubscriptionsAPI extends APIBase {
-  async getSubscriptions(): Promise<Array<Podcast>> {
-    const response = await fetch(`${this.BASE_PATH}/user/subscriptions`, {
+  static async getSubscriptions(): Promise<Array<Podcast>> {
+    const response = await fetch(`${SubscriptionsAPI.BASE_PATH}/user/subscriptions`, {
       method: 'GET',
     });
 
@@ -20,7 +20,7 @@ class SubscriptionsAPI extends APIBase {
     return data;
   }
 
-  async getPodcastDetails(podcastID: number): Promise<Podcast> {
+  static async getPodcastDetails(podcastID: number): Promise<Podcast> {
     const response = await fetch(`${this.BASE_PATH}/podcasts/${podcastID}`, {
       method: 'GET',
     });
@@ -35,7 +35,7 @@ class SubscriptionsAPI extends APIBase {
     return data;
   }
 
-  async getEpisodes(podcastID: number): Promise<Array<Episode>> {
+  static async getEpisodes(podcastID: number): Promise<Array<Episode>> {
     const response = await fetch(`${this.BASE_PATH}/podcasts/${podcastID}/episodes`, {
       method: 'GET',
     });
@@ -50,7 +50,7 @@ class SubscriptionsAPI extends APIBase {
     return data;
   }
 
-  async subscribe(feedURL: string) {
+  static async subscribe(feedURL: string) {
     const response = await fetch(`${this.BASE_PATH}/podcasts/subscribe`, {
       method: 'POST',
       headers: {
@@ -65,7 +65,7 @@ class SubscriptionsAPI extends APIBase {
     }
   }
 
-  async unsubscribe(podcastID: number) {
+  static async unsubscribe(podcastID: number) {
     const response = await fetch(`${this.BASE_PATH}/podcasts/unsubscribe?id=${podcastID}`, {
       method: 'PUT',
     });
@@ -76,7 +76,7 @@ class SubscriptionsAPI extends APIBase {
     }
   }
 
-  async getLatestSubscriptionsEpisodes(from: string, to: string): Promise<Array<Episode>> {
+  static async getLatestSubscriptionsEpisodes(from: string, to: string): Promise<Array<Episode>> {
     const response = await fetch(`${this.BASE_PATH}/podcasts/latest_eps?from=${from}&to=${to}`, {
       method: 'GET',
     });
