@@ -10,7 +10,7 @@ require (
 	github.com/mmcdole/gofeed v1.1.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
-	gopkg.in/natefinch/lumberjack.v2 v2.0.0
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/driver/sqlite v1.2.6
 	gorm.io/gorm v1.22.5
 )
