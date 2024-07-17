@@ -9,7 +9,7 @@ require (
 	github.com/kardianos/service v1.2.1
 	github.com/mmcdole/gofeed v1.3.0
 	github.com/sirupsen/logrus v1.8.1
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.9.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gorm.io/driver/sqlite v1.2.6
 	gorm.io/gorm v1.24.6
