@@ -1,4 +1,4 @@
-package webui
+package api
 
 import (
 	"io"
@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"lincast/webui/handlers"
+	"lincast/api/handlers"
 
 	assert2 "github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -21,6 +21,7 @@ func (s *ServerTestSuite) SetupTest() {}
 
 func (s *ServerTestSuite) BeforeTest(_, _ string) {}
 
+// TODO Update this test
 func (s *ServerTestSuite) TestIndex() {
 	assert := assert2.New(s.T())
 

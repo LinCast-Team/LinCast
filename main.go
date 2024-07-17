@@ -12,7 +12,7 @@ import (
 	"lincast/database"
 	"lincast/models"
 	"lincast/update"
-	"lincast/webui"
+	"lincast/api"
 
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
@@ -39,7 +39,7 @@ const (
 
 /* -------------------------------------------------------------------------- */
 
-var shutdownSignal = make(chan os.Signal)
+var shutdownSignal = make(chan os.Signal, 1)
 
 func main() {
 	handleCmdArgs()
@@ -82,7 +82,7 @@ func run(devMode bool) {
 
 	go func() {
 		// Make a new instance of the server.
-		sv := webui.New(serverPort, serverLocal, devMode, serverLogs, db, manualFeedUpd)
+		sv := api.New(serverPort, serverLocal, devMode, serverLogs, db, manualFeedUpd)
 
 		log.WithFields(log.Fields{
 			"port":        serverPort,

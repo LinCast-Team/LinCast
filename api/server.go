@@ -1,39 +1,18 @@
-package webui
+package api
 
 import (
-	"embed"
-	"io/fs"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
 	"lincast/models"
-	"lincast/webui/handlers"
+	"lincast/api/handlers"
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
-
-const frontendPath = "frontend/dist"
-
-//go:embed frontend/dist
-var _embededFrontend embed.FS
-
-func getFileSystem(devMode bool) http.FileSystem {
-	if devMode {
-		return http.FS(os.DirFS(frontendPath))
-	}
-
-	fsys, err := fs.Sub(_embededFrontend, frontendPath)
-	if err != nil {
-		log.WithError(err).Panic("Error when trying to get a subfs of the embedded frontend")
-	}
-
-	return http.FS(fsys)
-}
 
 // New returns a new instance of the server. To execute it, the method `ListenAndServe` must be called.
 func New(port uint16, localServer bool, devMode bool, logRequests bool, db *gorm.DB, manualUpdate chan *models.Podcast) *http.Server {
@@ -69,7 +48,7 @@ func New(port uint16, localServer bool, devMode bool, logRequests bool, db *gorm
 }
 
 // newRouter returns a new instance of the router with their paths already set.
-func newRouter(devMode, logRequests bool, handlersManager *handlers.Manager) *mux.Router {
+func newRouter(_, logRequests bool, handlersManager *handlers.Manager) *mux.Router {
 	router := mux.NewRouter()
 
 	if logRequests {
@@ -95,7 +74,6 @@ func newRouter(devMode, logRequests bool, handlersManager *handlers.Manager) *mu
 	router.HandleFunc("/api/v0/player/queue", handlersManager.QueueHandler).Methods("GET", "PUT", "DELETE")
 	router.HandleFunc("/api/v0/player/queue/add", handlersManager.AddToQueueHandler).Methods("POST")
 	router.HandleFunc("/api/v0/player/queue/remove", handlersManager.DelFromQueueHandler).Methods("DELETE")
-	router.PathPrefix("/").Handler(http.FileServer(getFileSystem(devMode)))
 
 	return router
 }
