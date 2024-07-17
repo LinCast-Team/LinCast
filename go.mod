@@ -8,7 +8,7 @@ require (
 	github.com/joomcode/errorx v1.1.0
 	github.com/kardianos/service v1.2.1
 	github.com/mmcdole/gofeed v1.3.0
-	github.com/sirupsen/logrus v1.8.1
+	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gorm.io/driver/sqlite v1.5.6
