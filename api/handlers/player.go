@@ -9,7 +9,7 @@ import (
 	"lincast/models"
 	"lincast/utils/safe"
 
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi/v5"
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -78,7 +78,7 @@ func (m *Manager) PlayerPlaybackInfoHandler(w http.ResponseWriter, r *http.Reque
 			// of the player.
 			res := m.db.Model(&models.PlaybackInfo{}).Where("id = ?", 1).Updates(&p)
 			if res.Error != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
@@ -93,7 +93,7 @@ func (m *Manager) PlayerPlaybackInfoHandler(w http.ResponseWriter, r *http.Reque
 			if res.RowsAffected == 0 {
 				res = m.db.Create(&p)
 				if res.Error != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
+					http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 
 					log.WithFields(log.Fields{
 						"remoteAddr": r.RemoteAddr,
@@ -109,9 +109,9 @@ func (m *Manager) PlayerPlaybackInfoHandler(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func (m *Manager) SetEpisodeStatusHandler(w http.ResponseWriter, r *http.Request)  {
-	podcastIDStr := mux.Vars(r)["pID"]
-	epIDStr := mux.Vars(r)["epID"]
+func (m *Manager) SetEpisodeStatusHandler(w http.ResponseWriter, r *http.Request) {
+	podcastIDStr := chi.URLParam(r, "pID")
+	epIDStr := chi.URLParam(r, "epID")
 
 	podcastID := safe.SafeParseInt(podcastIDStr)
 	if podcastID == safe.DefaultAllocate {
@@ -173,7 +173,7 @@ func (m *Manager) SetEpisodeStatusHandler(w http.ResponseWriter, r *http.Request
 
 	if res.RowsAffected == 0 {
 		err := "episode not found"
-		
+
 		http.Error(w, err, http.StatusBadRequest)
 
 		log.WithFields(log.Fields{
