@@ -9,10 +9,10 @@ import (
 	"syscall"
 	"time"
 
+	"lincast/api"
 	"lincast/database"
 	"lincast/models"
 	"lincast/update"
-	"lincast/api"
 
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
@@ -22,19 +22,22 @@ import (
 
 /* -------------------------------- Constants ------------------------------- */
 
-// All this constants should be read from the configs file (see #94)
-const (
+// All this constants should be read from the configs file too (see #94)
+var (
+	devMode = flag.Bool("dev-mode", false, "Enable API's dev mode")
+
 	// Default filenames
-	dbFilename   = "podcasts.sqlite"
-	logsFilename = "lincast.log"
+	logToFile    = flag.Bool("log-to-file", false, "Log to a file")
+	dbFilename   = flag.String("db-filename", "podcasts.sqlite", "Database filename")
+	logsFilename = flag.String("logs-filename", "lincast.log", "Logs filename")
 
 	// Default settings of the server
-	serverPort  = 8080
-	serverLocal = true
-	serverLogs  = true
+	serverPort  = flag.Uint("port", 8080, "Server's listening port")
+	serverLocal = flag.Bool("local", true, "If the server should only listen to local requests (localhost)")
+	serverLogs  = flag.Bool("log", true, "Whether server should log information or not")
 
 	// Default settings related with feeds' refresh
-	updateFreq = time.Minute * 30
+	updateFreq = flag.Duration("update-freq", time.Minute*30, "Server feed update frequency")
 )
 
 /* -------------------------------------------------------------------------- */
@@ -42,15 +45,17 @@ const (
 var shutdownSignal = make(chan os.Signal, 1)
 
 func main() {
+	flag.Parse()
+
 	handleCmdArgs()
 
-	devMode := os.Getenv("DEV_MODE") != ""
-
-	setupLogger(logsFilename, devMode)
+	if *logToFile {
+		setupLoggingToFile(*logsFilename, *devMode)
+	}
 
 	log.Info("Starting LinCast")
 
-	run(devMode)
+	run(*devMode)
 }
 
 func run(devMode bool) {
@@ -68,21 +73,21 @@ func run(devMode bool) {
 		log.WithError(err).Panicln("Error when trying to make the directory where the database will be stored")
 	}
 
-	db, err := database.New(dbPath, dbFilename)
+	db, err := database.New(dbPath, *dbFilename)
 	if err != nil {
 		log.WithError(errorx.EnsureStackTrace(err)).WithField(
-			"path", filepath.Join(dbPath, dbFilename),
+			"path", filepath.Join(dbPath, *dbFilename),
 		).Panicln("Error when trying to initialize the database")
 	}
 
 	manualFeedUpd := make(chan *models.Podcast)
 
 	// Run the loop that updates the subscribed podcasts.
-	go runUpdateQueue(db, updateFreq, manualFeedUpd)
+	go runUpdateQueue(db, *updateFreq, manualFeedUpd)
 
 	go func() {
 		// Make a new instance of the server.
-		sv := api.New(serverPort, serverLocal, devMode, serverLogs, db, manualFeedUpd)
+		sv := api.New(*serverPort, *serverLocal, devMode, *serverLogs, db, manualFeedUpd)
 
 		log.WithFields(log.Fields{
 			"port":        serverPort,
@@ -171,7 +176,7 @@ func updateAllPodcasts(db *gorm.DB, updateQueue *update.UpdateQueue) error {
 	return nil
 }
 
-func setupLogger(filename string, devMode bool) {
+func setupLoggingToFile(filename string, devMode bool) {
 	log.SetReportCaller(true)
 
 	if devMode {
@@ -193,7 +198,7 @@ func setupLogger(filename string, devMode bool) {
 }
 
 func handleCmdArgs() {
-	serviceCmd := flag.String("service", "", "Manage the service of LinCast. Commands: 'install', " +
+	serviceCmd := flag.String("service", "", "Manage the service of LinCast. Commands: 'install', "+
 		"'uninstall', 'start', 'stop', 'restart' and 'status'.")
 	flag.Parse()
 

@@ -53,7 +53,7 @@ func (m *Manager) QueueHandler(w http.ResponseWriter, r *http.Request) {
 
 			// First we delete all the rows of the table.
 			if res := m.db.Unscoped().Where("1 = 1").Delete(&models.QueueEpisode{}); res.Error != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,
@@ -65,7 +65,7 @@ func (m *Manager) QueueHandler(w http.ResponseWriter, r *http.Request) {
 
 			// And later we introduce the new elements of the queue.
 			if res := m.db.Create(&q); res.Error != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, res.Error.Error(), http.StatusInternalServerError)
 
 				log.WithFields(log.Fields{
 					"remoteAddr": r.RemoteAddr,

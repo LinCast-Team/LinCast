@@ -9,7 +9,7 @@ import (
 	"lincast/podcasts"
 	"lincast/utils/safe"
 
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi/v5"
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
 )
@@ -210,7 +210,7 @@ func (m *Manager) GetUserPodcastsHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (m *Manager) GetPodcastHandler(w http.ResponseWriter, r *http.Request) {
-	idStr := mux.Vars(r)["id"]
+	idStr := chi.URLParam(r, "id")
 
 	id := safe.SafeParseInt(idStr)
 	if id == safe.DefaultAllocate {
@@ -257,7 +257,7 @@ func (m *Manager) GetPodcastHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Manager) GetEpisodesHandler(w http.ResponseWriter, r *http.Request) {
-	idStr := mux.Vars(r)["id"]
+	idStr := chi.URLParam(r, "id")
 
 	id := safe.SafeParseInt(idStr)
 	if id == safe.DefaultAllocate {
@@ -319,8 +319,8 @@ func (m *Manager) GetEpisodesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Manager) EpisodeDetailsHandler(w http.ResponseWriter, r *http.Request) {
-	podcastIDStr := mux.Vars(r)["pID"]
-	epIDStr := mux.Vars(r)["epID"]
+	podcastIDStr := chi.URLParam(r, "pID")
+	epIDStr := chi.URLParam(r, "epID")
 
 	podcastID := safe.SafeParseInt(podcastIDStr)
 	if podcastID == safe.DefaultAllocate {
@@ -397,8 +397,8 @@ func (m *Manager) EpisodeDetailsHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (m *Manager) EpisodeProgressHandler(w http.ResponseWriter, r *http.Request) {
-	podcastIDStr := mux.Vars(r)["pID"]
-	epIDStr := mux.Vars(r)["epID"]
+	podcastIDStr := chi.URLParam(r, "pID")
+	epIDStr := chi.URLParam(r, "epID")
 
 	podcastID := safe.SafeParseInt(podcastIDStr)
 	if podcastID == safe.DefaultAllocate {
