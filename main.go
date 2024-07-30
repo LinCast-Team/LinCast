@@ -27,6 +27,7 @@ var (
 	devMode = flag.Bool("dev-mode", false, "Enable API's dev mode")
 
 	// Default filenames
+	logToFile    = flag.Bool("log-to-file", false, "Log to a file")
 	dbFilename   = flag.String("db-filename", "podcasts.sqlite", "Database filename")
 	logsFilename = flag.String("logs-filename", "lincast.log", "Logs filename")
 
@@ -48,7 +49,9 @@ func main() {
 
 	handleCmdArgs()
 
-	setupLogger(*logsFilename, *devMode)
+	if *logToFile {
+		setupLoggingToFile(*logsFilename, *devMode)
+	}
 
 	log.Info("Starting LinCast")
 
@@ -173,7 +176,7 @@ func updateAllPodcasts(db *gorm.DB, updateQueue *update.UpdateQueue) error {
 	return nil
 }
 
-func setupLogger(filename string, devMode bool) {
+func setupLoggingToFile(filename string, devMode bool) {
 	log.SetReportCaller(true)
 
 	if devMode {
