@@ -3,7 +3,6 @@ module lincast
 go 1.22
 
 require (
-	github.com/NYTimes/gziphandler v1.1.1
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/joomcode/errorx v1.1.1
 	github.com/kardianos/service v1.2.2
