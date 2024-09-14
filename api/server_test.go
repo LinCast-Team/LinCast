@@ -5,12 +5,16 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
+	"time"
 
 	"lincast/api/handlers"
+	"lincast/models"
 
 	assert2 "github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/gorm"
 )
 
 type ServerTestSuite struct {
@@ -29,7 +33,7 @@ func (s *ServerTestSuite) TestIndex() {
 	// Should return the file `index.html`.
 	req := httptest.NewRequest("GET", "/", nil)
 
-	newRouter(false, false, &handlers.Manager{}).ServeHTTP(res, req)
+	createRouter(&handlers.Manager{}).ServeHTTP(res, req)
 
 	// Read the body of the response.
 	responseBody, err := io.ReadAll(res.Body)
@@ -60,4 +64,39 @@ func (s *ServerTestSuite) TearDownTest() {}
 
 func TestServerTestSuite(t *testing.T) {
 	suite.Run(t, new(ServerTestSuite))
+}
+
+func (s *ServerTestSuite) TestNewServer() {
+	assert := assert2.New(s.T())
+
+	// Mock dependencies
+	db := &gorm.DB{}
+	manualUpdate := make(chan *models.Podcast)
+
+	// Test cases
+	tests := []struct {
+		port        uint
+		localServer bool
+		devMode     bool
+		logRequests bool
+	}{
+		{8080, true, false, false},
+		{8081, false, true, true},
+		{8082, false, false, true},
+		{8083, true, true, false},
+	}
+
+	for _, tt := range tests {
+		server := New(tt.port, tt.localServer, tt.devMode, tt.logRequests, db, manualUpdate)
+
+		expectedAddr := "127.0.0.1:" + strconv.Itoa(int(tt.port))
+		if !tt.localServer {
+			expectedAddr = ":" + strconv.Itoa(int(tt.port))
+		}
+
+		assert.Equal(expectedAddr, server.Addr, "server address should match the expected address")
+		assert.Equal(time.Second*15, server.ReadTimeout, "server read timeout should be 15 seconds")
+		assert.Equal(time.Second*15, server.WriteTimeout, "server write timeout should be 15 seconds")
+		assert.Equal(8000, server.MaxHeaderBytes, "server max header bytes should be 8KB")
+	}
 }
