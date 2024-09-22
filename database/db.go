@@ -50,27 +50,33 @@ func New(path, filename string) (*gorm.DB, error) {
 }
 
 func migrate(db *gorm.DB) {
-	err := db.AutoMigrate(&models.Podcast{})
+	err := db.AutoMigrate(&models.User{})
 	if err != nil {
-		log.WithError(errorx.EnsureStackTrace(err)).Panic("error on execution pf the automatic migration of the table " +
-			"that contains the podcasts")
+		log.WithError(errorx.EnsureStackTrace(err)).Panic("error when executing the automatic migration of the table that contains the users")
+	}
+
+	err = db.AutoMigrate(&models.Podcast{})
+	if err != nil {
+		log.WithError(errorx.EnsureStackTrace(err)).Panic("error on execution pf the automatic migration of the table that contains the podcasts")
 	}
 
 	err = db.AutoMigrate(&models.Episode{})
 	if err != nil {
-		log.WithError(errorx.EnsureStackTrace(err)).Panic("error when executing the automatic migration of the table " +
-			"that contains the episodes")
+		log.WithError(errorx.EnsureStackTrace(err)).Panic("error when executing the automatic migration of the table that contains the episodes")
 	}
 
 	err = db.AutoMigrate(&models.PlaybackInfo{})
 	if err != nil {
-		log.WithError(errorx.EnsureStackTrace(err)).Panic("error when executing the automatic migration of the table " +
-			"that contains the current progress of the player")
+		log.WithError(errorx.EnsureStackTrace(err)).Panic("error when executing the automatic migration of the table that contains the current progress of the player")
 	}
 
 	err = db.AutoMigrate(&models.QueueEpisode{})
 	if err != nil {
-		log.WithError(errorx.EnsureStackTrace(err)).Panic("error when executing the automatic migration of the table " +
-			"that contains the queue of the player")
+		log.WithError(errorx.EnsureStackTrace(err)).Panic("error when executing the automatic migration of the table that contains the queue of the player")
+	}
+
+	err = db.AutoMigrate(&models.EpisodeProgress{})
+	if err != nil {
+		log.WithError(errorx.EnsureStackTrace(err)).Panic("error when executing the automatic migration of the table related with episode progress")
 	}
 }

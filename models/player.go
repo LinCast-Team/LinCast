@@ -8,7 +8,7 @@ import (
 // played by the player.
 type PlaybackInfo struct {
 	EpisodeID int `json:"episodeID"`
-	PodcastID int `json:"podcastID"`
+	UserID    int `json:"userID"`
 
 	gorm.Model `json:"-"`
 }
