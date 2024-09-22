@@ -1,4 +1,4 @@
-package daos
+package repositories
 
 import (
 	"lincast/models"
