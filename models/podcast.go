@@ -26,10 +26,10 @@ type Podcast struct {
 	Added         time.Time `json:"added"`
 	Episodes      []Episode `json:"episodes"`
 
-	AddedBy       User      `json:"addedBy" gorm:"foreignKey:AddedByID"`
+	AddedBy       User      `json:"-" gorm:"foreignKey:AddedByID"`
 	AddedByID     uint      `json:"addedByID"`
 	
-	LastUpdatedBy User      `json:"lastUpdatedBy" gorm:"foreignKey:LastUpdatedByID"`
+	LastUpdatedBy User      `json:"-" gorm:"foreignKey:LastUpdatedByID"`
 	LastUpdatedByID uint     `json:"lastUpdatedByID"`
 
 	gorm.Model
