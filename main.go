@@ -20,9 +20,7 @@ import (
 	"gorm.io/gorm"
 )
 
-/* -------------------------------- Constants ------------------------------- */
-
-// All this constants should be read from the configs file too (see #94)
+// All this constants should be also read from the configs file too (see #94)
 var (
 	devMode = flag.Bool("dev-mode", false, "Enable API's dev mode")
 
@@ -40,8 +38,6 @@ var (
 	updateFreq = flag.Duration("update-freq", time.Minute*30, "Server feed update frequency")
 )
 
-/* -------------------------------------------------------------------------- */
-
 var shutdownSignal = make(chan os.Signal, 1)
 
 func main() {
@@ -53,7 +49,7 @@ func main() {
 		setupLoggingToFile(*logsFilename, *devMode)
 	}
 
-	log.Info("Starting LinCast")
+	log.Debugln("Starting LinCast")
 
 	run(*devMode)
 }
@@ -90,17 +86,17 @@ func run(devMode bool) {
 		sv := api.New(*serverPort, *serverLocal, devMode, *serverLogs, db, manualFeedUpd)
 
 		log.WithFields(log.Fields{
-			"port":        serverPort,
-			"localServer": serverLocal,
+			"port":        *serverPort,
+			"localServer": *serverLocal,
 			"devMode":     devMode,
-			"logRequests": serverLogs,
+			"logRequests": *serverLogs,
 		}).Info("Starting server")
 
 		err = sv.ListenAndServe()
 		if err != nil {
 			log.WithError(
-				errorx.InternalError.Wrap(err, "error on server ListenAndServe"),
-			).Panicln("")
+				errorx.EnsureStackTrace(err),
+			).Panicln("Error when trying to start the server")
 		}
 	}()
 
