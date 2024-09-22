@@ -6,24 +6,24 @@ import (
 	"gorm.io/gorm"
 )
 
-type PodcastDao interface {
-	Create(podcast models.Podcast) error
+type PodcastRepository interface {
 	GetById(id uint) (*models.Podcast, error)
+	Create(podcast models.Podcast) error
 	Update(podcast models.Podcast) error
 	Delete(id uint) error
 }
 
-type podcastDao struct {
+type podcastRepository struct {
 	db *gorm.DB
 }
 
-func NewPodcastsDAO(db *gorm.DB) PodcastDao {
-	return &podcastDao{
+func NewPodcastRepository(db *gorm.DB) PodcastRepository {
+	return &podcastRepository{
 		db,
 	}
 }
 
-func (dao *podcastDao) GetById(id uint) (*models.Podcast, error) {
+func (dao *podcastRepository) GetById(id uint) (*models.Podcast, error) {
 	var p models.Podcast
 
 	if err := dao.db.First(&p, id).Error; err != nil {
@@ -33,7 +33,7 @@ func (dao *podcastDao) GetById(id uint) (*models.Podcast, error) {
 	return &p, nil
 }
 
-func (dao *podcastDao) Create(podcast models.Podcast) error {
+func (dao *podcastRepository) Create(podcast models.Podcast) error {
 	if err := dao.db.Create(podcast).Error; err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func (dao *podcastDao) Create(podcast models.Podcast) error {
 	return nil
 }
 
-func (dao *podcastDao) Update(podcast models.Podcast) error {
+func (dao *podcastRepository) Update(podcast models.Podcast) error {
 	if err := dao.db.Save(podcast).Error; err != nil {
 		return nil
 	}
@@ -49,7 +49,7 @@ func (dao *podcastDao) Update(podcast models.Podcast) error {
 	return nil
 }
 
-func (dao *podcastDao) Delete(id uint) error {
+func (dao *podcastRepository) Delete(id uint) error {
 	if err := dao.db.Delete(&models.Podcast{}, id).Error; err != nil {
 		return err
 	}
