@@ -29,7 +29,7 @@ func GetPodcastData(feedURL string) (parsedPodcast *models.Podcast, originalFeed
 	}
 
 	p := &models.Podcast{
-		Subscribed:  false,
+		// Subscribed:  false,
 		AuthorName:  feed.Author.Name,
 		AuthorEmail: feed.Author.Email,
 		Title:       feed.Title,

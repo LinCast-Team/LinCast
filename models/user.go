@@ -11,6 +11,7 @@ type User struct {
 	Player          PlaybackInfo      `json:"player"`
 	Queue           []QueueEpisode    `json:"queue"`
 	EpisodeProgress []EpisodeProgress `json:"episodeProgress"`
+	SubscribedTo    []*Podcast         `json:"subscribedTo" gorm:"many2many:subscriptions;"`
 
 	gorm.Model
 }

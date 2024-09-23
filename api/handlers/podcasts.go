@@ -63,7 +63,7 @@ func (m *Manager) SubscribeToPodcastHandler(w http.ResponseWriter, r *http.Reque
 
 	// If alreadyOnDB equals to 0, then the feed is not in db.
 	if alreadyOnDB == 0 {
-		p.Subscribed = true
+		// p.Subscribed = true
 
 		res = m.db.Create(&p)
 		if res.Error != nil {
