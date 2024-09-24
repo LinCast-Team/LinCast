@@ -1,7 +1,6 @@
 package repositories
 
 import (
-	"errors"
 	"lincast/models"
 
 	"gorm.io/gorm"
@@ -74,14 +73,18 @@ func (pr *podcastRepository) GetByFeed(feedUrl string) (*models.Podcast, error) 
 }
 
 func (pr *podcastRepository) UpdateSubscriptionStatus(userID uint, podcastID uint, subscribed bool) error {
-	return errors.New("not implemented")
-
-	/*
-	// TODO Check if this does work
-	// Update the subscription status of a user to a podcast, by using the variable subscribed to give the value
-	if err := pr.db.Model(&models.User{Model: gorm.Model{ID: userID}}).Preload("SubscribedTo").Delete("subscribedTo", "podcast_id = ?", podcastID).Error; err != nil {
-		return err
+	user := models.User{Model: gorm.Model{ID: userID}}
+	podcast := []models.Podcast{
+		{
+			Model: gorm.Model{ID: podcastID},
+		},
 	}
 
-	return nil*/
+	association := pr.db.Model(&user).Association("SubscribedTo")
+
+	if subscribed {
+		return association.Delete(&podcast)
+	} else {
+		return association.Append(&podcast)
+	}
 }
