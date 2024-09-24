@@ -139,9 +139,9 @@ func runUpdateQueue(db *gorm.DB, updateInterval time.Duration, manualFeedUpd cha
 				j := update.NewJob(p)
 
 				log.WithFields(log.Fields{
-					"podcastFeed":       p.FeedLink,
-					"podcastID":         p.ID,
-					"podcastSubscribed": p.Subscribed,
+					"podcastFeed": p.FeedLink,
+					"podcastID":   p.ID,
+					// "podcastSubscribed": p.Subscribed,
 				}).Info("Sending podcast to the update queue (manual update)")
 
 				updateQueue.Send(j)
@@ -161,9 +161,9 @@ func updateAllPodcasts(db *gorm.DB, updateQueue *update.UpdateQueue) error {
 		j := update.NewJob(&p)
 
 		log.WithFields(log.Fields{
-			"podcastFeed":       p.FeedLink,
-			"podcastID":         p.ID,
-			"podcastSubscribed": p.Subscribed,
+			"podcastFeed": p.FeedLink,
+			"podcastID":   p.ID,
+			// "podcastSubscribed": p.Subscribed,
 		}).Info("Sending podcast to the update queue")
 
 		updateQueue.Send(j)
