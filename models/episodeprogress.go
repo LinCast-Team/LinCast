@@ -5,13 +5,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// QueueEpisode represents an episode of the queue.
-type QueueEpisode struct {
+type EpisodeProgress struct {
 	EpisodeID uint      `json:"episodeID"`
 	Episode   Episode   `json:"episode" gorm:"foreignKey:EpisodeID"`
-	Position  uint      `json:"position"`
-	User      User      `json:"-" gorm:"foreignKey:UserID"`
 	UserID    uuid.UUID `json:"userID"`
+	User      User      `json:"-" gorm:"foreignKey:UserID"`
+	Progress  uint      `json:"progress"`
 
 	gorm.Model
 }

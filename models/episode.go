@@ -6,31 +6,9 @@ import (
 	"gorm.io/gorm"
 )
 
-// Podcast is the structure that represents a podcast.
-type Podcast struct {
-	Subscribed  bool      `json:"subscribed"`
-	AuthorName  string    `json:"authorName"`
-	AuthorEmail string    `json:"authorEmail"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	Categories  string    `json:"categories"`
-	ImageURL    string    `json:"imageURL"`
-	ImageTitle  string    `json:"imageTitle"`
-	Link        string    `json:"link"`
-	FeedLink    string    `json:"feedLink"`
-	FeedType    string    `json:"feedType"`
-	FeedVersion string    `json:"feedVersion"`
-	Language    string    `json:"language"`
-	Updated     time.Time `json:"updated"` // Mirror of gofeed.Feed.UpdatedParsed
-	LastCheck   time.Time `json:"lastCheck"`
-	Added       time.Time `json:"added"`
-
-	gorm.Model
-}
-
 // Episode is the structure that represent an episode of a podcast.
 type Episode struct {
-	ParentPodcastID uint          `json:"parentPodcastID"`
+	PodcastID       uint          `json:"podcastID" gorm:"foreignKey:PodcastID"`
 	Title           string        `json:"title"`
 	Description     string        `json:"description"`
 	Link            string        `json:"link"`
@@ -47,6 +25,10 @@ type Episode struct {
 	Updated         time.Time     `json:"updated"`   // Mirror of gofeed.Item.UpdatedParsed
 	Played          bool          `json:"played"`
 	CurrentProgress time.Duration `json:"currentProgress"`
+
+	QueuesAddedTo   []QueueEpisode    `json:"queuesAddedTo"`
+	BeingPlayedOn   []PlaybackInfo    `json:"beingPlayedOn"`
+	EpisodeProgress []EpisodeProgress `json:"episodeProgress"`
 
 	gorm.Model
 }
