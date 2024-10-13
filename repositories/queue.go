@@ -3,14 +3,15 @@ package repositories
 import (
 	"lincast/models"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type QueueRepository interface {
-	GetByUser(userId uint) (*[]models.QueueEpisode, error)
+	GetByUser(userId uuid.UUID) (*[]models.QueueEpisode, error)
 	Add(queueEpisode models.QueueEpisode) error
-	RemoveEpisode(userID uint, queueEpisodeID uint) error
-	RemoveAll(userID uint) error
+	RemoveEpisode(userID uuid.UUID, queueEpisodeID uint) error
+	RemoveAll(userID uuid.UUID) error
 }
 
 type queueRepository struct {
@@ -23,7 +24,7 @@ func NewQueueRepository(db *gorm.DB) QueueRepository {
 	}
 }
 
-func (qr *queueRepository) GetByUser(userId uint) (*[]models.QueueEpisode, error) {
+func (qr *queueRepository) GetByUser(userId uuid.UUID) (*[]models.QueueEpisode, error) {
 	var q []models.QueueEpisode
 
 	err := qr.db.Find(&q, "user_id = ?", userId).Error
@@ -43,7 +44,7 @@ func (qr *queueRepository) Add(queueEpisode models.QueueEpisode) error {
 	return nil
 }
 
-func (qr *queueRepository) RemoveEpisode(userID uint, queueEpisodeID uint) error {
+func (qr *queueRepository) RemoveEpisode(userID uuid.UUID, queueEpisodeID uint) error {
 	err := qr.db.Delete(&models.QueueEpisode{
 		Model: gorm.Model{
 			ID: queueEpisodeID,
@@ -58,7 +59,7 @@ func (qr *queueRepository) RemoveEpisode(userID uint, queueEpisodeID uint) error
 	return nil
 }
 
-func (qr *queueRepository) RemoveAll(userID uint) error {
+func (qr *queueRepository) RemoveAll(userID uuid.UUID) error {
 	err := qr.db.Delete(&models.QueueEpisode{}, "user_id = ?", userID).Error
 	if err != nil {
 		return err

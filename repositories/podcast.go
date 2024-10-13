@@ -3,6 +3,7 @@ package repositories
 import (
 	"lincast/models"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -12,7 +13,7 @@ type PodcastRepository interface {
 	Create(podcast models.Podcast) error
 	Update(podcast models.Podcast) error
 	Delete(id uint) error
-	UpdateSubscriptionStatus(userID uint, podcastID uint, subscribed bool) error
+	UpdateSubscriptionStatus(userID uuid.UUID, podcastID uint, subscribed bool) error
 }
 
 type podcastRepository struct {
@@ -64,7 +65,6 @@ func (pr *podcastRepository) GetByFeed(feedUrl string) (*models.Podcast, error) 
 		FeedLink: feedUrl,
 	}
 
-	// TODO check if this does work. If not, make use of the Where clause
 	if err := pr.db.First(&p).Error; err != nil {
 		return nil, err
 	}
@@ -72,8 +72,8 @@ func (pr *podcastRepository) GetByFeed(feedUrl string) (*models.Podcast, error) 
 	return &p, nil
 }
 
-func (pr *podcastRepository) UpdateSubscriptionStatus(userID uint, podcastID uint, subscribed bool) error {
-	user := models.User{Model: gorm.Model{ID: userID}}
+func (pr *podcastRepository) UpdateSubscriptionStatus(userID uuid.UUID, podcastID uint, subscribed bool) error {
+	user := models.User{ID: userID}
 	podcast := []models.Podcast{
 		{
 			Model: gorm.Model{ID: podcastID},
