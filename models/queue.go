@@ -1,14 +1,17 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
 
 // QueueEpisode represents an episode of the queue.
 type QueueEpisode struct {
-	EpisodeID string `json:"episodeID"`
-	Position  int    `json:"position"`
-
-	User   User `json:"-" gorm:"foreignKey:UserID"`
-	UserID uint `json:"userID"`
+	EpisodeID uint      `json:"episodeID"`
+	Episode   Episode   `json:"episode" gorm:"foreignKey:EpisodeID"`
+	Position  uint      `json:"position"`
+	User      User      `json:"-" gorm:"foreignKey:UserID"`
+	UserID    uuid.UUID `json:"userID"`
 
 	gorm.Model
 }
