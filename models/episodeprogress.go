@@ -1,11 +1,16 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
 
 type EpisodeProgress struct {
-	EpisodeID int  `json:"episodeID"`
-	UserID    uint `json:"userID"`
-	Progress  uint `json:"progress"`
+	EpisodeID uint      `json:"episodeID"`
+	Episode   Episode   `json:"episode" gorm:"foreignKey:EpisodeID"`
+	UserID    uuid.UUID `json:"userID"`
+	User      User      `json:"-" gorm:"foreignKey:UserID"`
+	Progress  uint      `json:"progress"`
 
 	gorm.Model
 }
