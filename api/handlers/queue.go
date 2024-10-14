@@ -34,7 +34,7 @@ func (m *Manager) QueueHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// Check if the position is repeated before set the new queue.
-			var positions []int
+			var positions []uint
 			for _, ep := range q {
 				for _, p := range positions {
 					if ep.Position == p {
@@ -174,7 +174,7 @@ func (m *Manager) AddToQueueHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if append {
-		var refPosition int
+		var refPosition uint
 		// To append the new episode to the queue we need to know which is the bigger position
 		// stored, so the position of the new episode will be that + 1.
 		if res := m.db.Model(&models.QueueEpisode{}).Select("position").Limit(1).Order("position desc").First(&refPosition); res.Error != nil {
