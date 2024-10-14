@@ -32,3 +32,6 @@ data/
 
 # Goreleaser
 dist/
+
+# Environment files
+.env

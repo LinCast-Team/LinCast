@@ -13,7 +13,9 @@ import (
 	"lincast/database"
 	"lincast/models"
 	"lincast/update"
+	"lincast/utils/parsing"
 
+	"github.com/joho/godotenv"
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -26,7 +28,6 @@ var (
 
 	// Default filenames
 	logToFile    = flag.Bool("log-to-file", false, "Log to a file")
-	dbFilename   = flag.String("db-filename", "podcasts.sqlite", "Database filename")
 	logsFilename = flag.String("logs-filename", "lincast.log", "Logs filename")
 
 	// Default settings of the server
@@ -43,6 +44,11 @@ var shutdownSignal = make(chan os.Signal, 1)
 func main() {
 	flag.Parse()
 
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	handleCmdArgs()
 
 	if *logToFile {
@@ -58,22 +64,11 @@ func run(devMode bool) {
 	// Subscribe to signals related with the stop of the program
 	signal.Notify(shutdownSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGQUIT)
 
-	wd, err := os.Getwd()
-	if err != nil {
-		log.WithError(err).Panicln("Error when trying to get the working directory")
-	}
+	dbPort, dbHost, dbUser, dbPassword, dbName := parsing.ParseEnv()
 
-	dbPath := filepath.Join(wd, "data/")
-	err = os.MkdirAll(dbPath, os.ModePerm)
+	db, err := database.New(dbPort, dbHost, dbUser, dbPassword, dbName)
 	if err != nil {
-		log.WithError(err).Panicln("Error when trying to make the directory where the database will be stored")
-	}
-
-	db, err := database.New(dbPath, *dbFilename)
-	if err != nil {
-		log.WithError(errorx.EnsureStackTrace(err)).WithField(
-			"path", filepath.Join(dbPath, *dbFilename),
-		).Panicln("Error when trying to initialize the database")
+		log.WithError(errorx.EnsureStackTrace(err)).Fatalln("Error when trying to initialize the database")
 	}
 
 	manualFeedUpd := make(chan *models.Podcast)
