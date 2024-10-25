@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"flag"
@@ -10,12 +10,11 @@ import (
 	"time"
 
 	"lincast/api"
-	"lincast/database"
-	"lincast/models"
+	"lincast/internal/domain/entities"
+	"lincast/internal/domain/repositories"
+	"lincast/internal/infra/database"
 	"lincast/update"
-	"lincast/utils/parsing"
 
-	"github.com/joho/godotenv"
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -43,12 +42,6 @@ var shutdownSignal = make(chan os.Signal, 1)
 
 func main() {
 	flag.Parse()
-
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
 	handleCmdArgs()
 
 	if *logToFile {
@@ -64,21 +57,42 @@ func run(devMode bool) {
 	// Subscribe to signals related with the stop of the program
 	signal.Notify(shutdownSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGQUIT)
 
-	dbPort, dbHost, dbUser, dbPassword, dbName := parsing.ParseEnv()
+	dbConfig := database.NewConfig()
 
-	db, err := database.New(dbPort, dbHost, dbUser, dbPassword, dbName)
+	db, err := database.NewConnection(dbConfig)
 	if err != nil {
-		log.WithError(errorx.EnsureStackTrace(err)).Fatalln("Error when trying to initialize the database")
+		log.Fatal(err)
 	}
 
-	manualFeedUpd := make(chan *models.Podcast)
+	if err := database.RunMigrations(db); err != nil {
+		log.Fatal(err)
+	}
+
+	// ctx := context.Background()
+
+	userRepository := repositories.NewUserRepository(db)
+	podcastRepository := repositories.NewPodcastRepository(db)
+	queueRepository := repositories.NewQueueRepository(db)
+	playerRepository := repositories.NewPlayerRepository(db)
+
+	manualFeedUpd := make(chan *entities.Podcast)
 
 	// Run the loop that updates the subscribed podcasts.
 	go runUpdateQueue(db, *updateFreq, manualFeedUpd)
 
 	go func() {
 		// Make a new instance of the server.
-		sv := api.New(*serverPort, *serverLocal, devMode, *serverLogs, db, manualFeedUpd)
+		sv := api.New(
+			*serverPort,
+			*serverLocal,
+			devMode,
+			*serverLogs,
+			manualFeedUpd,
+			&userRepository,
+			&podcastRepository,
+			&playerRepository,
+			&queueRepository,
+		)
 
 		log.WithFields(log.Fields{
 			"port":        *serverPort,
@@ -98,7 +112,7 @@ func run(devMode bool) {
 	<-shutdownSignal
 }
 
-func runUpdateQueue(db *gorm.DB, updateInterval time.Duration, manualFeedUpd chan *models.Podcast) {
+func runUpdateQueue(db *gorm.DB, updateInterval time.Duration, manualFeedUpd chan *entities.Podcast) {
 	log.WithField("updateInterval", updateInterval.String()).Debug("Starting feeds' update loop")
 
 	ticker := time.NewTicker(updateInterval)
