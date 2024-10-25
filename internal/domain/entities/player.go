@@ -1,4 +1,4 @@
-package models
+package entities
 
 import (
 	"time"
@@ -16,6 +16,12 @@ type PlaybackInfo struct {
 	CreatedAt time.Time `json:"createdAt" gorm:"autoCreateTime"`
 	UpdatedAt time.Time `json:"updatedAt" gorm:"autoUpdateTime"`
 	DeletedAt time.Time `json:"deletedAt" gorm:"autoDeleteTime"`
+}
+
+func NewPlaybackInfo(episodeID uint) *PlaybackInfo {
+	return &PlaybackInfo{
+		EpisodeID: episodeID,
+	}
 }
 
 func (pi *PlaybackInfo) BeforeCreate(tx *gorm.DB) (err error) {

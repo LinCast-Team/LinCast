@@ -1,4 +1,4 @@
-package models
+package entities
 
 import (
 	"github.com/google/uuid"
@@ -13,4 +13,12 @@ type EpisodeProgress struct {
 	Progress  uint      `json:"progress"`
 
 	gorm.Model
+}
+
+func NewEpisodeProgress(episodeID uint, userID uuid.UUID, progress uint) *EpisodeProgress {
+	return &EpisodeProgress{
+		EpisodeID: episodeID,
+		UserID:    userID,
+		Progress:  progress,
+	}
 }

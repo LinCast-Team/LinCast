@@ -1,4 +1,4 @@
-package models
+package entities
 
 import (
 	"github.com/google/uuid"
@@ -14,4 +14,12 @@ type QueueEpisode struct {
 	UserID    uuid.UUID `json:"userID"`
 
 	gorm.Model
+}
+
+func NewQueueEpisode(episodeID uint, position uint, userID uuid.UUID) *QueueEpisode {
+	return &QueueEpisode{
+		EpisodeID: episodeID,
+		Position:  position,
+		UserID:    userID,
+	}
 }
