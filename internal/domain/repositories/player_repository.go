@@ -1,14 +1,14 @@
 package repositories
 
 import (
-	"lincast/models"
+	"lincast/internal/domain/entities"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type PlayerRepository interface {
-	GetByUserId(userId uuid.UUID) (*models.PlaybackInfo, error)
+	GetByUserId(userId uuid.UUID) (*entities.PlaybackInfo, error)
 }
 
 type playerRepository struct {
@@ -21,8 +21,8 @@ func NewPlayerRepository(db *gorm.DB) PlayerRepository {
 	}
 }
 
-func (pr *playerRepository) GetByUserId(userID uuid.UUID) (*models.PlaybackInfo, error) {
-	p := models.User{
+func (pr *playerRepository) GetByUserId(userID uuid.UUID) (*entities.PlaybackInfo, error) {
+	p := entities.User{
 		ID: userID,
 	}
 

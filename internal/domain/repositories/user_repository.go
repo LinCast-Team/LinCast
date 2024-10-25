@@ -1,16 +1,16 @@
 package repositories
 
 import (
-	"lincast/models"
+	"lincast/internal/domain/entities"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type UserRepository interface {
-	GetById(id uuid.UUID) (*models.User, error)
-	Create(user models.User) error
-	Update(user models.User) error
+	GetById(id uuid.UUID) (*entities.User, error)
+	Create(user entities.User) error
+	Update(user entities.User) error
 	Delete(id uuid.UUID) error
 }
 
@@ -24,8 +24,8 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 	}
 }
 
-func (ur *userRepository) GetById(id uuid.UUID) (*models.User, error) {
-	var u models.User
+func (ur *userRepository) GetById(id uuid.UUID) (*entities.User, error) {
+	var u entities.User
 
 	if err := ur.db.First(&u, id).Error; err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func (ur *userRepository) GetById(id uuid.UUID) (*models.User, error) {
 	return &u, nil
 }
 
-func (ur *userRepository) Create(user models.User) error {
+func (ur *userRepository) Create(user entities.User) error {
 	if err := ur.db.Create(user).Error; err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (ur *userRepository) Create(user models.User) error {
 	return nil
 }
 
-func (ur *userRepository) Update(user models.User) error {
+func (ur *userRepository) Update(user entities.User) error {
 	if err := ur.db.Save(user).Error; err != nil {
 		return nil
 	}
@@ -51,7 +51,7 @@ func (ur *userRepository) Update(user models.User) error {
 }
 
 func (ur *userRepository) Delete(id uuid.UUID) error {
-	if err := ur.db.Delete(&models.User{ID: id}).Error; err != nil {
+	if err := ur.db.Delete(&entities.User{ID: id}).Error; err != nil {
 		return err
 	}
 
