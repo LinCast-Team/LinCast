@@ -9,8 +9,8 @@ import (
 
 type UserRepository interface {
 	GetById(id uuid.UUID) (*entities.User, error)
-	Create(user entities.User) error
-	Update(user entities.User) error
+	Create(user *entities.User) error
+	Update(user *entities.User) error
 	Delete(id uuid.UUID) error
 }
 
@@ -34,7 +34,7 @@ func (ur *userRepository) GetById(id uuid.UUID) (*entities.User, error) {
 	return &u, nil
 }
 
-func (ur *userRepository) Create(user entities.User) error {
+func (ur *userRepository) Create(user *entities.User) error {
 	if err := ur.db.Create(user).Error; err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (ur *userRepository) Create(user entities.User) error {
 	return nil
 }
 
-func (ur *userRepository) Update(user entities.User) error {
+func (ur *userRepository) Update(user *entities.User) error {
 	if err := ur.db.Save(user).Error; err != nil {
 		return nil
 	}
