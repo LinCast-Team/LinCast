@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"lincast/models"
+	"lincast/internal/domain/entities"
 
 	"github.com/joomcode/errorx"
 	"github.com/mmcdole/gofeed"
@@ -14,8 +14,8 @@ import (
 
 // GetPodcastData returns the data from the feed's URL, doing the parsing of the feed itself (into a struct of type *gofeed.Feed) and the podcast.
 // Possible errors:
-// 	- errorx.ExternalError: if the request to `feedURL` or the parsing of the response fails.
-func GetPodcastData(feedURL string) (parsedPodcast *models.Podcast, originalFeed *gofeed.Feed, err error) {
+//   - errorx.ExternalError: if the request to `feedURL` or the parsing of the response fails.
+func GetPodcastData(feedURL string) (parsedPodcast *entities.Podcast, originalFeed *gofeed.Feed, err error) {
 	parser := gofeed.NewParser()
 	feed, err := parser.ParseURL(feedURL)
 	if err != nil {
@@ -28,7 +28,7 @@ func GetPodcastData(feedURL string) (parsedPodcast *models.Podcast, originalFeed
 		feed.UpdatedParsed = new(time.Time)
 	}
 
-	p := &models.Podcast{
+	p := &entities.Podcast{
 		// Subscribed:  false,
 		AuthorName:  feed.Author.Name,
 		AuthorEmail: feed.Author.Email,
@@ -52,9 +52,9 @@ func GetPodcastData(feedURL string) (parsedPodcast *models.Podcast, originalFeed
 
 // GetEpisodes returns the episodes (struct Episodes) of the given Podcast.
 // Possible errors:
-// 	- errorx.ExternalError: if the request to `p.FeedLink` or the parsing of the response fails.
-func GetEpisodes(feed *gofeed.Feed) (*[]models.Episode, error) {
-	var episodes []models.Episode
+//   - errorx.ExternalError: if the request to `p.FeedLink` or the parsing of the response fails.
+func GetEpisodes(feed *gofeed.Feed) (*[]entities.Episode, error) {
+	var episodes []entities.Episode
 
 	for _, item := range feed.Items {
 		if len(item.Enclosures) == 0 {
@@ -88,7 +88,7 @@ func GetEpisodes(feed *gofeed.Feed) (*[]models.Episode, error) {
 			item.ITunesExt = new(ext.ITunesItemExtension)
 		}
 
-		e := models.Episode{
+		e := entities.Episode{
 			Title:           item.Title,
 			Description:     item.Description,
 			Link:            item.Link,
@@ -103,8 +103,6 @@ func GetEpisodes(feed *gofeed.Feed) (*[]models.Episode, error) {
 			EnclosureLength: item.Enclosures[0].Length,
 			EnclosureType:   item.Enclosures[0].Type,
 			Season:          item.ITunesExt.Season,
-			Played:          false,
-			CurrentProgress: 0,
 		}
 
 		episodes = append(episodes, e)

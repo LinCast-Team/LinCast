@@ -87,7 +87,7 @@ func (s *ServerTestSuite) TestNewServer() {
 	}
 
 	for _, tt := range tests {
-		server := New(tt.port, tt.localServer, tt.devMode, tt.logRequests, db, manualUpdate)
+		server := NewServer(tt.port, tt.localServer, tt.devMode, tt.logRequests, db, manualUpdate)
 
 		expectedAddr := "127.0.0.1:" + strconv.Itoa(int(tt.port))
 		if !tt.localServer {

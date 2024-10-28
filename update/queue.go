@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"lincast/models"
+	"lincast/internal/domain/entities"
 	"lincast/podcasts"
 
 	"github.com/joomcode/errorx"
@@ -15,7 +15,7 @@ import (
 // Job returns a new job to be processed by a worker of an active UpdateQueue. The channel Job.Done can be used to know
 // when that job has been processed and it shouldn't be used to send something, just to receive.
 type Job struct {
-	Podcast *models.Podcast
+	Podcast *entities.Podcast
 	Done    chan struct{}
 }
 
@@ -49,7 +49,7 @@ func (q *UpdateQueue) Send(job *Job) {
 	q.q <- *job
 }
 
-func NewJob(p *models.Podcast) *Job {
+func NewJob(p *entities.Podcast) *Job {
 	j := Job{
 		Podcast: p,
 		Done:    make(chan struct{}),
@@ -103,7 +103,7 @@ func (q *UpdateQueue) worker(id int) {
 			<-rateLimiter.C
 
 			// Check if the episode is already on the table.
-			result := q.dbInstance.Where("guid = ?", e.GUID).First(&models.Episode{})
+			result := q.dbInstance.Where("guid = ?", e.GUID).First(&entities.Episode{})
 			if result.Error != nil {
 				// The only error that we expect to get here is one of type `gorm.ErrRecordNotFound` (which means
 				// basically that the episode is not stored on the database). So, if we get another type of error
