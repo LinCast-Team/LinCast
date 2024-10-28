@@ -1,4 +1,4 @@
-package app
+package main
 
 import (
 	"flag"
@@ -9,12 +9,15 @@ import (
 	"syscall"
 	"time"
 
-	"lincast/api"
+	"lincast/internal/app/service"
 	"lincast/internal/domain/entities"
 	"lincast/internal/domain/repositories"
 	"lincast/internal/infra/database"
+	"lincast/internal/infra/http/server"
 	"lincast/update"
 
+	"github.com/go-chi/jwtauth/v5"
+	"github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/joomcode/errorx"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -71,9 +74,15 @@ func run(devMode bool) {
 	// ctx := context.Background()
 
 	userRepository := repositories.NewUserRepository(db)
-	podcastRepository := repositories.NewPodcastRepository(db)
-	queueRepository := repositories.NewQueueRepository(db)
-	playerRepository := repositories.NewPlayerRepository(db)
+	// podcastRepository := repositories.NewPodcastRepository(db)
+	// queueRepository := repositories.NewQueueRepository(db)
+	// playerRepository := repositories.NewPlayerRepository(db)
+
+	//NOTE - This maybe should be in a different place
+	jwtSecret := os.Getenv("JWT_SECRET")
+	tokenAuth := jwtauth.New("HS256", []byte(jwtSecret), nil, jwt.WithAcceptableSkew(30*time.Second))
+
+	userApplicationService := service.NewUserApplicationService(userRepository, tokenAuth)
 
 	manualFeedUpd := make(chan *entities.Podcast)
 
@@ -82,16 +91,14 @@ func run(devMode bool) {
 
 	go func() {
 		// Make a new instance of the server.
-		sv := api.New(
+		sv := server.NewServer(
 			*serverPort,
 			*serverLocal,
 			devMode,
 			*serverLogs,
 			manualFeedUpd,
-			&userRepository,
-			&podcastRepository,
-			&playerRepository,
-			&queueRepository,
+			userApplicationService,
+			tokenAuth,
 		)
 
 		log.WithFields(log.Fields{
@@ -160,7 +167,7 @@ func runUpdateQueue(db *gorm.DB, updateInterval time.Duration, manualFeedUpd cha
 }
 
 func updateAllPodcasts(db *gorm.DB, updateQueue *update.UpdateQueue) error {
-	var subscribedPodcasts []models.Podcast
+	var subscribedPodcasts []entities.Podcast
 	if res := db.Where("subscribed", true).Find(&subscribedPodcasts); res.Error != nil {
 		return errorx.InternalError.Wrap(res.Error, "error trying to get subscribed podcasts")
 	}
