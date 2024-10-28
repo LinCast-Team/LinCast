@@ -1,49 +1,42 @@
 package handlers
 
 import (
-	"lincast/api/dtos/requests"
-	"lincast/api/dtos/responses"
-	"lincast/models"
+	"encoding/json"
+	"lincast/internal/app/dto/request"
+	"lincast/internal/app/dto/response"
+	"lincast/internal/app/service"
 	"net/http"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/go-chi/render"
-	"golang.org/x/crypto/bcrypt"
 )
 
-// Función para hashear la contraseña
-func HashPassword(password string) (string, error) {
-	// Genera el hash usando bcrypt con un costo de 14
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	return string(bytes), err
+type AuthHandlers struct {
+	userService *service.UserApplicationService
 }
 
-// Función para verificar la contraseña
-func CheckPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
+func NewAuthHandlers(userService *service.UserApplicationService) *AuthHandlers {
+	return &AuthHandlers{
+		userService: userService,
+	}
 }
 
-func (m *Manager) SignUpHandler(w http.ResponseWriter, r *http.Request) {
-	data := &requests.SignUpDto{}
+func (m *AuthHandlers) SignUpHandler(w http.ResponseWriter, r *http.Request) {
+	data := &request.SignUpDto{}
 
 	if err := render.Bind(r, data); err != nil {
-		render.Render(w, r, responses.ErrInvalidRequest(err))
+		render.Render(w, r, response.ErrInvalidRequest(err))
 		return
 	}
 
-	hashedPassword, err := HashPassword(data.Password)
+	_, jwt, err := m.userService.RegisterUser(data.Username, data.Email, data.Name, data.Password)
 	if err != nil {
-		render.Render(w, r, responses.ErrInvalidRequest(err))
+		render.Render(w, r, response.ErrInvalidRequest(err))
 		return
 	}
 
-	// TODO Generate the JWT and register the user
-	user := &models.User{
-		Username: data.Username,
-		Email:    data.Email,
-		Name:     data.Name,
-		PasswordHash: hashedPassword,
+	err = json.NewEncoder(w).Encode(jwt)
+	if err != nil {
+		log.WithError(err).Panicln("failed to encode response")
 	}
-
-	// m.userRepository.
 }

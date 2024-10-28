@@ -1,11 +1,10 @@
 package server
 
 import (
+	"lincast/internal/app/service"
 	"lincast/internal/domain/entities"
-	"lincast/internal/domain/repositories"
 	"lincast/internal/infra/http/handlers"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
@@ -16,7 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// New creates a new instance of http.Server with the specified configurations.
+// NewServer creates a new instance of http.Server with the specified configurations.
 // It takes the following parameters:
 // - port: The port number on which the server will listen.
 // - localServer: A boolean indicating whether the server should only listen on the local loopback interface (127.0.0.1).
@@ -26,31 +25,22 @@ import (
 // - manualUpdate: A channel used for manual updates of podcast data.
 //
 // It returns a pointer to the created http.Server instance.
-func New(
+func NewServer(
 	port uint,
 	localServer bool,
 	devMode bool,
 	logRequests bool,
 	manualUpdate chan *entities.Podcast,
-	// TODO Implement the UnitOfWork pattern
-	userRepository *repositories.UserRepository,
-	podcastRepository *repositories.PodcastRepository,
-	playerRepository *repositories.PlayerRepository,
-	queueRepository *repositories.QueueRepository,
+	userApplicationService *service.UserApplicationService,
+	tokenAuth *jwtauth.JWTAuth,
 ) *http.Server {
-	jwtSecret := os.Getenv("JWT_SECRET")
-	tokenAuth := jwtauth.New("HS256", []byte(jwtSecret), nil)
-
 	handlersManager := handlers.NewManager(
 		manualUpdate,
-		tokenAuth,
-		userRepository,
-		podcastRepository,
-		playerRepository,
-		queueRepository,
 	)
 
-	router := createRouter(handlersManager, tokenAuth)
+	authHandlers := handlers.NewAuthHandlers(userApplicationService)
+
+	router := createRouter(handlersManager, authHandlers, tokenAuth)
 
 	var addr string
 	if localServer {
@@ -91,7 +81,7 @@ func createServer(addr string, port int, router http.Handler) *http.Server {
 }
 
 // createRouter returns a new instance of the router with their paths already set.
-func createRouter(handlersManager *handlers.Manager, tokenAuth *jwtauth.JWTAuth) *chi.Mux {
+func createRouter(handlersManager *handlers.Manager, authHandlers *handlers.AuthHandlers, tokenAuth *jwtauth.JWTAuth) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Use(middleware.RequestID)
@@ -107,6 +97,7 @@ func createRouter(handlersManager *handlers.Manager, tokenAuth *jwtauth.JWTAuth)
 			r.Get("/login", func(w http.ResponseWriter, r *http.Request) {
 				w.Write([]byte("TODO!"))
 			})
+			r.Post("/signup", authHandlers.SignUpHandler)
 		})
 
 		r.Group(func(r chi.Router) {

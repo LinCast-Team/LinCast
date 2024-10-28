@@ -9,18 +9,20 @@ import (
 )
 
 type User struct {
-	ID              uuid.UUID         `json:"id" gorm:"type:char(36);primary_key"`
-	Username        string            `json:"username" gorm:"unique"`
-	PasswordHash    string            `json:"-"`
-	Email           string            `json:"email" gorm:"unique"`
-	Name            string            `json:"name"`
-	PlayerID        uuid.UUID         `json:"playerID"`
-	Player          PlaybackInfo      `json:"player"`
-	Queue           []QueueEpisode    `json:"queue"`
-	EpisodeProgress []EpisodeProgress `json:"episodeProgress"`
-	CreatedAt       time.Time         `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt       time.Time         `json:"updatedAt" gorm:"autoUpdateTime"`
-	DeletedAt       time.Time         `json:"deletedAt" gorm:"autoDeleteTime"`
+	ID                 uuid.UUID         `json:"id" gorm:"type:char(36);primaryKey"`
+	Username           string            `json:"username" gorm:"unique"`
+	PasswordHash       string            `json:"-"`
+	Email              string            `json:"email" gorm:"unique"`
+	Name               string            `json:"name"`
+	RefreshToken       string            `json:"refreshToken" gorm:"default:null"`
+	RefreshTokenExpiry time.Time         `json:"refreshTokenExpiry" gorm:"default:null"`
+	PlayerID           uuid.UUID         `json:"playerID" gorm:"type:char(36);default:null"`
+	Player             PlaybackInfo      `json:"player"`
+	Queue              []QueueEpisode    `json:"queue"`
+	EpisodeProgress    []EpisodeProgress `json:"episodeProgress"`
+	CreatedAt          time.Time         `json:"createdAt" gorm:"autoCreateTime"`
+	UpdatedAt          time.Time         `json:"updatedAt" gorm:"autoUpdateTime"`
+	DeletedAt          time.Time         `json:"deletedAt" gorm:"default:null; index; autoDeleteTime"`
 }
 
 func NewUser(username, passwordHash, email, name string) (*User, error) {

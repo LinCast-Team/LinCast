@@ -1,14 +1,14 @@
 package handlers
 
 import (
+	"lincast/internal/domain/entities"
 	"lincast/internal/domain/repositories"
-	"lincast/models"
 
 	"github.com/go-chi/jwtauth/v5"
 )
 
 type Manager struct {
-	updateChannel     chan *models.Podcast
+	updateChannel     chan *entities.Podcast
 	tokenAuth         *jwtauth.JWTAuth
 	userRepository    *repositories.UserRepository
 	podcastRepository *repositories.PodcastRepository
@@ -20,20 +20,10 @@ type Manager struct {
 // this is to provide the access to the database in an ordered way to all the handlers, without the usage of global
 // variables.
 func NewManager(
-	manualUpdate chan *models.Podcast,
-	tokenAuth *jwtauth.JWTAuth,
-	userRepository *repositories.UserRepository,
-	podcastRepository *repositories.PodcastRepository,
-	playerRepository *repositories.PlayerRepository,
-	queueRepository *repositories.QueueRepository,
+	manualUpdate chan *entities.Podcast,
 ) *Manager {
 	m := Manager{
-		updateChannel:     manualUpdate,
-		tokenAuth:         tokenAuth,
-		userRepository:    userRepository,
-		podcastRepository: podcastRepository,
-		playerRepository:  playerRepository,
-		queueRepository:   queueRepository,
+		updateChannel: manualUpdate,
 	}
 
 	return &m
